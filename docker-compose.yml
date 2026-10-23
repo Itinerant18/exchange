@@ -1,0 +1,74 @@
+# Local development infrastructure for Exchnage.
+#
+# This file starts ONLY PostgreSQL and pgAdmin.
+# Express and React run directly on the host machine during development.
+#
+# Usage:
+#   1. Copy .env.example to .env and replace every placeholder.
+#   2. Run: docker compose up -d
+#   3. Check: docker compose ps
+
+services:
+  postgres:
+    image: postgres:17.11-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is required in .env}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required in .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required in .env}
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      # Bind to loopback only: the database is not reachable from other machines.
+      # Inside Docker, pgAdmin still connects via the service name "postgres".
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\"",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    networks:
+      - exchnage_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  pgadmin:
+    image: dpage/pgadmin4:9.18.0
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:?PGADMIN_DEFAULT_EMAIL is required in .env}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:?PGADMIN_DEFAULT_PASSWORD is required in .env}
+      TZ: UTC
+    ports:
+      # pgAdmin is an administration UI, not the database server.
+      - "127.0.0.1:${PGADMIN_PORT:-5050}:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - exchnage_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  exchnage_net:
+    driver: bridge
