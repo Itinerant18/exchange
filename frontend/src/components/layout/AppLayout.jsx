@@ -14,7 +14,15 @@ export function AppLayout() {
           </span>
           <span className={styles.brandName}>{appConfig.name}</span>
         </Link>
-        <span className={styles.badge}>Foundation build</span>
+        <nav className="nav" style={{ border: 'none', margin: 0, padding: 0 }}>
+          <Link to="/listings">Listings</Link>
+          <Link to="/bookings">My rentals</Link>
+          <Link to="/orders">Orders</Link>
+          <Link to="/disputes">Disputes</Link>
+          <Link to="/profile">Profile</Link>
+          <Link to="/admin">Admin</Link>
+        </nav>
+        <span className={styles.badge}>Phase 2</span>
       </header>
 
       <main className={styles.main}>

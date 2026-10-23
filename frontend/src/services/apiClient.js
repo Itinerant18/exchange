@@ -14,10 +14,12 @@ export class ApiError extends Error {
  * Small shared fetch wrapper. Feature services will call this later; it is not
  * used for business requests in the foundation phase.
  */
-export async function apiRequest(path, { method = 'GET', body, headers = {}, signal } = {}) {
+export async function apiRequest(path, { method = 'GET', body, headers = {}, signal, token } = {}) {
   if (!path.startsWith('/')) {
     throw new Error('API paths must start with "/"');
   }
+
+  const resolvedToken = token ?? localStorage.getItem('exchnage.accessToken');
 
   const response = await fetch(`${appConfig.apiBaseUrl}${path}`, {
     method,
@@ -25,6 +27,7 @@ export async function apiRequest(path, { method = 'GET', body, headers = {}, sig
     headers: {
       Accept: 'application/json',
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+      ...(resolvedToken ? { Authorization: `Bearer ${resolvedToken}` } : {}),
       ...headers,
     },
     body: body === undefined ? undefined : JSON.stringify(body),
