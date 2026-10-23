@@ -1,14 +1,13 @@
 import { AppError } from '../../appErrors/AppError.js';
-import { withTransaction } from '../../config/database.js';
+import { pool, withTransaction } from '../../config/database.js';
 import { writeAuditLog } from '../../services/auditLogService.js';
 import { loadListingRow } from '../listings/listings.service.js';
 import { claimUnitsToStatus, findAvailableUnitsForPeriod } from '../inventory/inventory.repository.js';
 import { expectIsoDate, isUuid } from '../../utils/validators.js';
 import { translatePgError } from '../../utils/pgErrorMapper.js';
+import * as settingsService from '../settings/settings.service.js';
+import * as deliveryService from '../delivery/delivery.service.js';
 import * as repository from './rentals.repository.js';
-
-// Business rule: rental periods span at most these many days per booking.
-export const MAX_RENTAL_DAYS = 90;
 
 const STATUSES = ['pending', 'confirmed', 'active', 'completed', 'cancelled', 'expired'];
 
@@ -16,7 +15,7 @@ const STATUSES = ['pending', 'confirmed', 'active', 'completed', 'cancelled', 'e
 
 /**
  * Creates a pending rental. Everything happens in one transaction:
- *   1. header snapshot (price/deposit) for the requested period,
+ *   1. header snapshot (price/deposit/transport) for the requested period,
  *   2. one booking item row per physical unit (the GiST exclusion constraint
  *      arbitrates date conflicts at the database level),
  *   3. a conditional claim reserving each unit (fails -> whole booking rolls back).
@@ -32,8 +31,15 @@ export async function createRentalBooking(user, context, body) {
     });
   }
   const days = Math.round((Date.parse(`${endDate}T00:00:00Z`) - Date.parse(`${startDate}T00:00:00Z`)) / 86_400_000);
-  if (days > MAX_RENTAL_DAYS) {
-    throw new AppError(`Rental periods are limited to ${MAX_RENTAL_DAYS} days.`, { statusCode: 400, code: 'PERIOD_TOO_LONG' });
+  const maxDays = await settingsService.maxRentalDays();
+  if (days > maxDays) {
+    throw new AppError(`Rental periods are limited to ${maxDays} days.`, { statusCode: 400, code: 'PERIOD_TOO_LONG' });
+  }
+  if (days < await settingsService.minRentalDays()) {
+    throw new AppError(`Rental periods must span at least ${await settingsService.minRentalDays()} day(s).`, {
+      statusCode: 400,
+      code: 'PERIOD_TOO_SHORT',
+    });
   }
 
   if (body.listingId === undefined || !isUuid(body.listingId)) {
@@ -70,10 +76,19 @@ export async function createRentalBooking(user, context, body) {
     }
   }
 
+  // Transportation: quoted BEFORE any money looks committed, from the single
+  // configured rate. Distances come from the client; we never invent them.
+  const transportQuote = await deliveryService.quoteTransport({
+    mode: body.transportMode ?? 'none',
+    outboundDistanceKm: body.outboundDistanceKm,
+    returnDistanceKm: body.returnDistanceKm,
+  });
+
+  const unitCount = selectedItemIds.length;
   const ratePaise = Number(listing.rental_price_paise);
   const depositPaise = Number(listing.deposit_paise ?? 0);
-  const subtotal = ratePaise * days;
-  const total = subtotal * selectedItemIds.length + depositPaise;
+  const subtotal = ratePaise * days * unitCount; // header subtotal = sum of item lines
+  const total = subtotal + depositPaise; // CHECK: total = subtotal + deposit
 
   try {
     const booking = await withTransaction(async (client) => {
@@ -87,6 +102,12 @@ export async function createRentalBooking(user, context, body) {
         deposit_amount_paise: depositPaise,
         total_amount_paise: total,
         deposit_paid: false,
+        transport_mode: transportQuote.mode,
+        outbound_distance_km: transportQuote.outbound?.distanceKm ?? null,
+        return_distance_km: transportQuote.return?.distanceKm ?? null,
+        transport_rate_paise_per_km: transportQuote.ratePaisePerKm > 0 ? transportQuote.ratePaisePerKm : null,
+        outbound_transport_amount_paise: transportQuote.outbound?.amountPaise ?? 0,
+        return_transport_amount_paise: transportQuote.return?.amountPaise ?? 0,
       });
 
       for (const itemId of selectedItemIds) {
@@ -97,7 +118,7 @@ export async function createRentalBooking(user, context, body) {
           start_date: startDate,
           end_date: endDate,
           daily_rate_paise: ratePaise,
-          line_total_paise: subtotal,
+          line_total_paise: ratePaise * days,
         });
       }
 
@@ -123,7 +144,14 @@ export async function createRentalBooking(user, context, body) {
         action: 'RENTAL_BOOKING_CREATED',
         entityType: 'rental_booking',
         entityId: header.id,
-        newValue: { listingId: body.listingId, startDate, endDate, units: selectedItemIds.length },
+        newValue: {
+          listingId: body.listingId,
+          startDate,
+          endDate,
+          units: unitCount,
+          transportMode: transportQuote.mode,
+          transportTotalPaise: transportQuote.totalAmountPaise,
+        },
       });
       return header;
     });
@@ -133,10 +161,22 @@ export async function createRentalBooking(user, context, body) {
       status: booking.status,
       startDate,
       endDate,
+      rentalDays: days,
+      unitCount,
       subtotalAmountPaise: subtotal,
       depositAmountPaise: depositPaise,
       totalAmountPaise: total,
-      units: selectedItemIds.length,
+      transport: {
+        mode: transportQuote.mode,
+        ratePaisePerKm: transportQuote.ratePaisePerKm,
+        outboundDistanceKm: transportQuote.outbound?.distanceKm ?? null,
+        returnDistanceKm: transportQuote.return?.distanceKm ?? null,
+        outboundAmountPaise: transportQuote.outbound?.amountPaise ?? 0,
+        returnAmountPaise: transportQuote.return?.amountPaise ?? 0,
+        totalAmountPaise: transportQuote.totalAmountPaise,
+      },
+      // COD, not a gateway: the renter owes these amounts on handover.
+      amountDueOnHandoverPaise: total + transportQuote.totalAmountPaise,
     };
   } catch (error) {
     throw translatePgError(error);
@@ -160,9 +200,12 @@ export async function getBooking(user, bookingId) {
     throw new AppError('Booking not found.', { statusCode: 404, code: 'BOOKING_NOT_FOUND' });
   }
   assertViewer(booking, user);
-  const [items, history] = await Promise.all([
+  const [items, history, inspection, extensions, disputes] = await Promise.all([
     repository.findBookingItems(bookingId),
     repository.findBookingHistory(bookingId),
+    repository.findInspectionForBooking(bookingId),
+    repository.listExtensionsForBooking(bookingId),
+    repository.findDisputesForBooking(bookingId),
   ]);
   return {
     ...repository.mapBookingRow(booking),
@@ -182,6 +225,30 @@ export async function getBooking(user, bookingId) {
       changedByUserId: row.changed_by_user_id ?? null,
       reason: row.reason ?? null,
       createdAt: row.created_at,
+    })),
+    inspection: inspection ? {
+      id: inspection.id,
+      result: inspection.result,
+      notes: inspection.notes,
+      evidenceUrls: inspection.evidence_urls ?? [],
+      estimatedRecoveryPaise: inspection.estimated_recovery_paise === null || inspection.estimated_recovery_paise === undefined ? null : Number(inspection.estimated_recovery_paise),
+      createdAt: inspection.created_at,
+    } : null,
+    extensions: extensions.map((row) => ({
+      id: row.id,
+      requestedByType: row.requested_by_type,
+      newEndDate: row.new_end_date,
+      additionalDays: row.additional_days,
+      additionalAmountPaise: Number(row.additional_amount_paise),
+      status: row.status,
+      decidedAt: row.decided_at,
+      rejectionReason: row.rejection_reason,
+    })),
+    disputes: disputes.map((row) => ({
+      id: row.id,
+      type: row.dispute_type,
+      status: row.status,
+      resolution: row.resolution,
     })),
   };
 }
@@ -234,10 +301,79 @@ export async function getListingAvailability(listingId, query) {
 // ---------------------------------------------------------------- transitions
 
 /**
+ * Provider accepts a pending booking. With COD as the only payment method,
+ * acceptance means the renter owes the agreed amounts at handover.
+ */
+export async function acceptRentalBooking(user, context, bookingId) {
+  const booking = await repository.findBookingById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found.', { statusCode: 404, code: 'BOOKING_NOT_FOUND' });
+  }
+  assertViewer(booking, user);
+  const isProvider = booking.listing_owner_type === 'SELLER' && booking.listing_owner_id === user.id;
+  if (!isProvider && !user.isAdmin) {
+    throw new AppError('Only the provider (listing owner) or an administrator can accept a booking.', {
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    });
+  }
+  if (booking.status !== 'pending') {
+    throw new AppError(`A booking in status ${booking.status} cannot be accepted.`, {
+      statusCode: 409,
+      code: 'BOOKING_CONFIRM_NOT_ALLOWED',
+    });
+  }
+
+  await withTransaction(async (client) => {
+    const moved = await repository.transitionBookingStatus(client, bookingId, { fromStatus: ['pending'], toStatus: 'confirmed' });
+    if (!moved) {
+      throw new AppError('The booking has already changed state.', { statusCode: 409, code: 'BOOKING_STATE_CONFLICT' });
+    }
+    await repository.setBookingItemsStatus(client, bookingId, { fromStatus: 'pending', toStatus: 'confirmed' });
+    await repository.insertStatusHistory(client, {
+      rental_booking_id: bookingId,
+      from_status: 'pending',
+      to_status: 'confirmed',
+      changed_by_user_id: user.id,
+      reason: 'Booking accepted (COD due on handover)',
+    });
+    await writeAuditLog(client, { ...context, action: 'RENTAL_BOOKING_ACCEPTED', entityType: 'rental_booking', entityId: bookingId });
+  });
+  return { id: bookingId, status: 'confirmed' };
+}
+
+/**
+ * Provider rejects a pending booking: releases the reserved units and creates
+ * cancellation refund records for any already-collected COD amounts.
+ */
+export async function rejectRentalBooking(user, context, bookingId, reason) {
+  const booking = await repository.findBookingById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found.', { statusCode: 404, code: 'BOOKING_NOT_FOUND' });
+  }
+  assertViewer(booking, user);
+  const isProvider = booking.listing_owner_type === 'SELLER' && booking.listing_owner_id === user.id;
+  if (!isProvider && !user.isAdmin) {
+    throw new AppError('Only the provider (listing owner) or an administrator can reject a booking.', {
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    });
+  }
+  if (booking.status !== 'pending') {
+    throw new AppError(`A booking in status ${booking.status} cannot be rejected.`, {
+      statusCode: 409,
+      code: 'BOOKING_REJECT_NOT_ALLOWED',
+    });
+  }
+  await cancelRentalBooking(user, context, bookingId, `Rejected by provider${reason ? `: ${reason}` : ''}`);
+  return { id: bookingId, status: 'cancelled' };
+}
+
+/**
  * Cancels a pending/confirmed booking. Renter-initiated cancellation is
- * allowed only before the rental starts; admins may cancel any active
- * pre-completion booking. A succeeded payment automatically creates a pending
- * refund record so the money trail stays complete.
+ * allowed only before the rental starts; admins may cancel any pre-completion
+ * booking. Succeeded COD payments automatically create pending refund records
+ * so the money trail stays complete.
  */
 export async function cancelRentalBooking(user, context, bookingId, reason) {
   const booking = await repository.findBookingById(bookingId);
@@ -255,7 +391,7 @@ export async function cancelRentalBooking(user, context, bookingId, reason) {
     });
   }
 
-  const result = await withTransaction(async (client) => {
+  await withTransaction(async (client) => {
     const moved = await repository.transitionBookingStatus(client, bookingId, {
       fromStatus: [booking.status],
       toStatus: 'cancelled',
@@ -264,13 +400,12 @@ export async function cancelRentalBooking(user, context, bookingId, reason) {
       throw new AppError('The booking has already changed state.', { statusCode: 409, code: 'BOOKING_STATE_CONFLICT' });
     }
 
-    const { rowCount: itemsMoved } = await client.query(
+    await client.query(
       `UPDATE public.rental_booking_items
        SET item_status = 'cancelled', updated_at = now()
        WHERE rental_booking_id = $1 AND item_status IN ('pending','confirmed','active')`,
       [bookingId],
     );
-    void itemsMoved;
 
     const itemIds = (await repository.findBookingItems(bookingId, client)).map((row) => row.inventory_item_id);
     // Release units: pending/confirmed bookings hold RESERVED, active ones RENTED.
@@ -281,14 +416,13 @@ export async function cancelRentalBooking(user, context, bookingId, reason) {
       [itemIds],
     );
 
-    // Pending refund when money was already captured.
+    // Pending refund when money was already collected.
     const succeededPayments = await client.query(
-      `SELECT id, amount_paise, payment_type FROM public.payments
+      `SELECT id, amount_paise FROM public.payments
        WHERE rental_booking_id = $1 AND status = 'succeeded' AND direction = 'in'`,
       [bookingId],
     );
     for (const payment of succeededPayments.rows) {
-      void payment.payment_type;
       const already = await client.query(
         `SELECT 1 FROM public.refunds WHERE payment_id = $1 AND status <> 'failed' AND status <> 'cancelled' LIMIT 1`,
         [payment.id],
@@ -363,8 +497,102 @@ export async function startRentalBooking(user, context, bookingId) {
   return { id: bookingId, status: 'active' };
 }
 
-/** Return: active -> completed; units move RENTED -> AVAILABLE. */
-export async function completeRentalBooking(user, context, bookingId, returnDate) {
+/**
+ * Transparent late-fee preview for an active booking. Returns the amount that
+ * WOULD apply under the current policy — but only an approved policy actually
+ * charges: until `late_fee_approved` is set by an administrator the fee stays
+ * a preview and nothing is imposed.
+ */
+export async function getLateFeeQuote(user, bookingId) {
+  const booking = await repository.findBookingById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found.', { statusCode: 404, code: 'BOOKING_NOT_FOUND' });
+  }
+  assertViewer(booking, user);
+  return computeLateFee(booking, booking.actual_return_date ?? null);
+}
+
+function daysBetweenInclusive(fromIso, toIso) {
+  return Math.max(0, Math.round((Date.parse(`${toIso}T00:00:00Z`) - Date.parse(`${fromIso}T00:00:00Z`)) / 86_400_000));
+}
+
+async function computeLateFee(booking, actualReturnDate) {
+  const graceDays = await settingsService.lateFeeGraceDays();
+  const ratePaise = await settingsService.lateFeePaisePerDay();
+  const approved = await settingsService.isLateFeeApproved();
+  const dueDate = booking.end_date; // end of booking = due-back day
+  const referenceDate = actualReturnDate ?? new Date().toISOString().slice(0, 10);
+  const rawOverdue = daysBetweenInclusive(dueDate, referenceDate) - graceDays;
+  const overdueDays = Math.max(0, rawOverdue);
+  const quotedAmountPaise = overdueDays * ratePaise;
+  return {
+    dueDate,
+    actualDate: actualReturnDate,
+    graceDays,
+    overdueDays,
+    ratePaisePerDay: ratePaise,
+    quotedAmountPaise,
+    enforced: approved && overdueDays > 0 && quotedAmountPaise > 0,
+    policyApproved: approved,
+  };
+}
+
+/**
+ * Post-completion late-fee application (admin decision): persists the overdue
+ * computation on the booking. The fee only charges through the standard COD
+ * payment intent workflow, so it never silently leaves the audit trail.
+ */
+export async function applyLateFee(user, context, bookingId, { overdueDays, lateFeeAmountPaise }) {
+  if (!user.isAdmin) {
+    throw new AppError('You do not have permission to perform this action.', { statusCode: 403, code: 'FORBIDDEN' });
+  }
+  const booking = await repository.findBookingById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found.', { statusCode: 404, code: 'BOOKING_NOT_FOUND' });
+  }
+  if (!['active', 'completed'].includes(booking.status)) {
+    throw new AppError('A late fee applies to active or completed bookings.', {
+      statusCode: 409,
+      code: 'BOOKING_LATE_FEE_NOT_APPLICABLE',
+    });
+  }
+  if (!Number.isInteger(overdueDays) || overdueDays < 0) {
+    throw new AppError('overdueDays must be a non-negative integer.', { statusCode: 400 });
+  }
+  if (!Number.isInteger(lateFeeAmountPaise) || lateFeeAmountPaise < 0) {
+    throw new AppError('lateFeeAmountPaise must be a non-negative integer.', { statusCode: 400 });
+  }
+  const approved = await settingsService.isLateFeeApproved();
+  if (lateFeeAmountPaise > 0 && !approved) {
+    throw new AppError('The late-fee policy is not approved; charges are not allowed until an administrator approves it.', {
+      statusCode: 409,
+      code: 'POLICY_NOT_APPROVED',
+    });
+  }
+
+  await withTransaction(async (client) => {
+    await repository.setLateFeeFields(client, bookingId, { overdueDays, lateFeeAmount: lateFeeAmountPaise });
+    await client.query(
+      `UPDATE public.rental_bookings SET late_fee_approved_at = now(), late_fee_approved_by = $2, updated_at = now()
+       WHERE id = $1`, [bookingId, user.id],
+    );
+    await writeAuditLog(client, {
+      ...context,
+      action: 'LATE_FEE_APPLIED',
+      entityType: 'rental_booking',
+      entityId: bookingId,
+      newValue: { overdueDays, lateFeeAmountPaise },
+    });
+  });
+  return { id: bookingId, overdueDays, lateFeeAmountPaise };
+}
+
+/**
+ * Return: active -> completed; units move RENTED -> AVAILABLE; the provider's
+ * optional inspection is recorded with the return so damage/missing reports
+ * always carry evidence and a timestamp from the same transaction.
+ */
+export async function completeRentalBooking(user, context, bookingId, body = {}) {
   const booking = await repository.findBookingById(bookingId);
   if (!booking) {
     throw new AppError('Booking not found.', { statusCode: 404, code: 'BOOKING_NOT_FOUND' });
@@ -382,12 +610,48 @@ export async function completeRentalBooking(user, context, bookingId, returnDate
       code: 'BOOKING_RETURN_NOT_ALLOWED',
     });
   }
+
+  let returnDate = body.actualReturnDate ?? body.returnDate;
   if (returnDate !== undefined) {
     expectIsoDate(returnDate, 'actualReturnDate');
     if (returnDate < booking.start_date) {
       throw new AppError('actualReturnDate cannot be before the rental start.', { statusCode: 400, code: 'INVALID_DATE_RANGE' });
     }
   }
+
+  // Inspection is optional; when supplied it must be complete.
+  let inspection = null;
+  if (body.inspection !== undefined && body.inspection !== null) {
+    const spec = body.inspection;
+    if (typeof spec !== 'object' || Array.isArray(spec)) {
+      throw new AppError('inspection must be an object.', { statusCode: 400 });
+    }
+    const result = String(spec.result ?? '').trim().toLowerCase();
+    if (!['pass', 'damage', 'missing'].includes(result)) {
+      throw new AppError("inspection.result must be 'pass', 'damage', or 'missing'.", { statusCode: 400 });
+    }
+    let recovery = null;
+    if (result !== 'pass') {
+      recovery = spec.estimatedRecoveryPaise;
+      if (recovery === undefined || !Number.isInteger(Number(recovery)) || Number(recovery) <= 0) {
+        throw new AppError('inspection.estimatedRecoveryPaise must be a positive integer when the result is damage or missing.', {
+          statusCode: 400,
+        });
+      }
+      recovery = Number(recovery);
+    }
+    const evidence = Array.isArray(spec.evidenceUrls) ? spec.evidenceUrls.filter((u) => typeof u === 'string' && u.length > 3).slice(0, 10) : [];
+    inspection = {
+      result,
+      notes: typeof spec.notes === 'string' && spec.notes.length > 0 ? spec.notes.slice(0, 2000) : null,
+      evidence,
+      estimatedRecoveryPaise: recovery,
+    };
+  }
+
+  // Late-fee context is informational here; charging happens via an approved
+  // policy downstream (applyLateFee + COD intent), never automatically.
+  const lateFeeContext = await computeLateFee(booking, returnDate ?? null);
 
   const result = await withTransaction(async (client) => {
     const moved = await repository.transitionBookingStatus(client, bookingId, { fromStatus: ['active'], toStatus: 'completed' });
@@ -413,17 +677,43 @@ export async function completeRentalBooking(user, context, bookingId, returnDate
       [bookingId],
     );
 
+    if (inspection) {
+      await repository.insertInspection(client, {
+        rental_booking_id: bookingId,
+        inspected_by_user_id: user.id,
+        result: inspection.result,
+        notes: inspection.notes,
+        evidence_urls: JSON.stringify(inspection.evidence),
+        estimated_recovery_paise: inspection.estimatedRecoveryPaise,
+      });
+      await writeAuditLog(client, {
+        ...context,
+        action: 'RETURN_INSPECTED',
+        entityType: 'rental_booking',
+        entityId: bookingId,
+        newValue: { result: inspection.result, estimatedRecoveryPaise: inspection.estimatedRecoveryPaise },
+      });
+    }
+
     await repository.insertStatusHistory(client, {
       rental_booking_id: bookingId,
       from_status: 'active',
       to_status: 'completed',
       changed_by_user_id: user.id,
-      reason: 'Item returned',
+      reason: inspection && inspection.result !== 'pass'
+        ? `Item returned (inspection: ${inspection.result})`
+        : 'Item returned',
     });
-    await writeAuditLog(client, { ...context, action: 'RENTAL_BOOKING_COMPLETED', entityType: 'rental_booking', entityId: bookingId });
+    await writeAuditLog(client, { ...context, action: 'RENTAL_BOOKING_COMPLETED', entityType: 'rental_booking', entityId: bookingId, newValue: { overduePreviewDays: lateFeeContext.overdueDays } });
   });
 
-  return { id: bookingId, status: 'completed' };
+  void result;
+  return {
+    id: bookingId,
+    status: 'completed',
+    lateFee: { ...lateFeeContext },
+    inspection: inspection ? { ...inspection } : null,
+  };
 }
 
 /** Admin expire: confirmed -> expired when the rental never started. */
@@ -465,11 +755,181 @@ export async function expireRentalBooking(user, context, bookingId) {
   return { id: bookingId, status: 'expired' };
 }
 
+// ---------------------------------------------------------------- extensions
+
+/**
+ * Renter (or provider/admin) requests a booking extension. The extra amount is
+ * quoted from the stored rate; nothing changes on the booking until approval.
+ */
+export async function requestBookingExtension(user, context, bookingId, body) {
+  const booking = await repository.findBookingById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found.', { statusCode: 404, code: 'BOOKING_NOT_FOUND' });
+  }
+  const viewer = assertViewer(booking, user);
+  const requestedByType = user.isAdmin && !viewer.isRenter && !viewer.isProvider ? 'admin' : viewer.isProvider ? 'provider' : 'renter';
+
+  if (!['pending', 'confirmed', 'active'].includes(booking.status)) {
+    throw new AppError(`A booking in status ${booking.status} cannot be extended.`, {
+      statusCode: 409,
+      code: 'BOOKING_EXTENSION_NOT_ALLOWED',
+    });
+  }
+
+  const newEndDateRaw = body.newEndDate ?? body.endDate;
+  if (typeof newEndDateRaw !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(newEndDateRaw)) {
+    throw new AppError('newEndDate must be an ISO date (YYYY-MM-DD).', { statusCode: 400, code: 'VALIDATION_ERROR' });
+  }
+  if (newEndDateRaw < booking.end_date) {
+    throw new AppError('A new end date must be on or after the current end date.', {
+      statusCode: 400,
+      code: 'INVALID_DATE_RANGE',
+    });
+  }
+  const additionalDays = Math.round((Date.parse(`${newEndDateRaw}T00:00:00Z`) - Date.parse(`${booking.end_date}T00:00:00Z`)) / 86_400_000);
+  const maxDays = await settingsService.maxRentalDays();
+  const totalDays = Math.round((Date.parse(`${newEndDateRaw}T00:00:00Z`) - Date.parse(`${booking.start_date}T00:00:00Z`)) / 86_400_000);
+  if (additionalDays <= 0) {
+    throw new AppError('The extension must add at least one day.', { statusCode: 400, code: 'VALIDATION_ERROR' });
+  }
+  if (totalDays > maxDays) {
+    throw new AppError(`Rental periods are limited to ${maxDays} days including extensions.`, {
+      statusCode: 400,
+      code: 'PERIOD_TOO_LONG',
+    });
+  }
+
+  const dailyRate = Number(booking.listing_rate_paise ?? 0);
+  const additionalAmount = dailyRate * additionalDays; // deposit unchanged by extension
+
+  const extension = await withTransaction(async (client) => {
+    const row = await repository.insertExtension(client, {
+      rental_booking_id: bookingId,
+      requested_by_type: requestedByType,
+      new_end_date: newEndDateRaw,
+      additional_days: additionalDays,
+      additional_amount_paise: additionalAmount,
+    });
+    await writeAuditLog(client, {
+      ...context,
+      action: 'BOOKING_EXTENSION_REQUESTED',
+      entityType: 'rental_booking',
+      entityId: bookingId,
+      newValue: { newEndDate: newEndDateRaw, additionalDays },
+    });
+    return row;
+  }).catch(translatePgError);
+  return mapExtension(extension);
+}
+
+function mapExtension(row) {
+  return {
+    id: row.id,
+    rentalBookingId: row.rental_booking_id,
+    requestedByType: row.requested_by_type,
+    newEndDate: row.new_end_date,
+    additionalDays: row.additional_days,
+    additionalAmountPaise: Number(row.additional_amount_paise),
+    status: row.status,
+    decidedBy: row.decided_by ?? null,
+    decidedAt: row.decided_at ?? null,
+    rejectionReason: row.rejection_reason ?? null,
+    createdAt: row.created_at,
+  };
+}
+
+export async function listBookingExtensions(user, bookingId) {
+  const booking = await repository.findBookingById(bookingId);
+  if (!booking) {
+    throw new AppError('Booking not found.', { statusCode: 404, code: 'BOOKING_NOT_FOUND' });
+  }
+  assertViewer(booking, user);
+  const rows = await repository.listExtensionsForBooking(bookingId);
+  return rows.map(mapExtension);
+}
+
+/**
+ * Approves or rejects a pending extension. Approval extends the booking item
+ * rows in the same transaction — the GiST exclusion constraint re-arbitrates
+ * the new ranges, so an extension colliding with another reservation fails
+ * without ever changing the booking.
+ */
+export async function decideBookingExtension(user, context, extensionId, body) {
+  if (!user.isAdmin) {
+    throw new AppError('You do not have permission to perform this action.', { statusCode: 403, code: 'FORBIDDEN' });
+  }
+  const decision = String(body.decision ?? '').trim().toLowerCase();
+  if (!['approve', 'reject'].includes(decision)) {
+    throw new AppError("decision must be 'approve' or 'reject'.", { statusCode: 400 });
+  }
+  return withTransaction(async (client) => {
+    const row = await repository.findExtensionById(extensionId, client);
+    if (!row) {
+      throw new AppError('Extension request not found.', { statusCode: 404, code: 'EXTENSION_NOT_FOUND' });
+    }
+    const booking = await repository.findBookingById(row.rental_booking_id, client);
+    if (decision === 'reject') {
+      const decided = await repository.decideExtension(client, extensionId, {
+        toStatus: 'rejected',
+        decidedBy: user.id,
+        rejectionReason: typeof body.reason === 'string' && body.reason.length > 0 ? body.reason.slice(0, 500) : null,
+      });
+      if (!decided) {
+        throw new AppError('The extension request has already been decided.', { statusCode: 409, code: 'EXTENSION_STATE_CONFLICT' });
+      }
+      await writeAuditLog(client, { ...context, action: 'BOOKING_EXTENSION_REJECTED', entityType: 'rental_booking', entityId: row.rental_booking_id });
+      return { ...mapExtension(decided) };
+    }
+
+    const dailyRate = Number(booking.listing_rate_paise ?? 0);
+    const deposit = Number(booking.deposit_amount_paise ?? 0);
+    const extended = await repository.applyBookingExtension(client, row.rental_booking_id, {
+      newEndDate: row.new_end_date,
+      dailyRatePaise: dailyRate,
+      additionalDays: row.additional_days,
+      currentSubtotal: Number(booking.subtotal_amount_paise),
+      depositAmountPaise: deposit,
+    });
+    if (!extended) {
+      throw new AppError('The booking has already changed state.', { statusCode: 409, code: 'BOOKING_STATE_CONFLICT' });
+    }
+    // Item rows carry the new blocking ranges; overlaps roll this whole tx back.
+    const guard = await repository.extendBookingItemDates(client, row.rental_booking_id, {
+      newEndDate: row.new_end_date,
+      dailyRatePaise: dailyRate,
+      additionalDays: row.additional_days,
+    });
+    if (guard === 0) {
+      throw new AppError('No blocking reservation rows remain; the extension cannot be applied.', {
+        statusCode: 409,
+        code: 'BOOKING_STATE_CONFLICT',
+      });
+    }
+    const decided = await repository.decideExtension(client, extensionId, {
+      toStatus: 'approved',
+      decidedBy: user.id,
+    });
+    if (!decided) {
+      throw new AppError('The extension request has already been decided.', { statusCode: 409, code: 'EXTENSION_STATE_CONFLICT' });
+    }
+    await repository.insertStatusHistory(client, {
+      rental_booking_id: row.rental_booking_id,
+      from_status: booking.status,
+      to_status: booking.status,
+      changed_by_user_id: user.id,
+      reason: `Extended to ${row.new_end_date} (+${row.additional_days} day(s))`,
+    });
+    await writeAuditLog(client, { ...context, action: 'BOOKING_EXTENSION_APPROVED', entityType: 'rental_booking', entityId: row.rental_booking_id, newValue: { newEndDate: row.new_end_date } });
+    return mapExtension(decided);
+  }).catch(translatePgError);
+}
+
 // -------------------------------------------------- used by payments service
 
 /**
- * Confirms a pending booking after its rental payment settles. Runs inside the
- * caller's transaction (payments settlement), so all effects commit together.
+ * Confirms a pending booking after its rental payment is recorded (COD
+ * collected). Runs inside the caller's transaction, so all effects commit
+ * together.
  */
 export async function markBookingConfirmedInTransaction(client, bookingId, changedByUserId) {
   const booking = await repository.findBookingById(bookingId, client);
@@ -509,5 +969,6 @@ export async function setBookingDepositPaidInTransaction(client, bookingId) {
      WHERE id = $1 AND deposit_paid = false`,
     [bookingId],
   );
+  void pool;
   return rowCount === 1;
 }

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { AppError } from '../appErrors/AppError.js';
-import { checkDatabaseConnection } from '../config/database.js';
+import { createRateLimiter } from '../middleware/rateLimit.js';
+import { checkDatabaseConnection, pool } from '../config/database.js';
 import { env } from '../config/env.js';
 import { platform } from '../config/platform.js';
 
@@ -10,7 +10,10 @@ import { usersRouter } from '../modules/users/users.routes.js';
 import { categoriesRouter, categoryAdminRouter, categoryAdminReadRouter } from '../modules/categories/categories.routes.js';
 import { listingsRouter, listingOwnerRouter } from '../modules/listings/listings.routes.js';
 import { inventoryRouter } from '../modules/inventory/inventory.routes.js';
-import { rentalsRouter, rentalActionRouter } from '../modules/rentals/rentals.routes.js';
+import { rentalsRouter, rentalActionRouter, extensionAdminRouter } from '../modules/rentals/rentals.routes.js';
+import { disputesRouter, disputesAdminRouter } from '../modules/disputes/disputes.routes.js';
+import { settingsAdminRouter } from '../modules/settings/settings.routes.js';
+import { deliveryRouter } from '../modules/delivery/delivery.routes.js';
 import { ordersRouter } from '../modules/orders/orders.routes.js';
 import { paymentsRouter, paymentsAdminRouter } from '../modules/payments/payments.routes.js';
 import { depositsRouter, depositsAdminRouter } from '../modules/deposits/deposits.routes.js';
@@ -47,8 +50,27 @@ router.get('/health', async (req, res, next) => {
   }
 });
 
-// Auth (register/login/refresh/logout/me)
-router.use('/auth', authRouter);
+router.get('/health/ready', async (req, res, next) => {
+  try {
+    const database = await checkDatabaseConnection();
+    if (!database.ok) {
+      throw new Error('database unavailable');
+    }
+    const { rows } = await pool.query('SELECT count(*)::int AS applied FROM public.schema_migrations');
+    const applied = rows[0]?.applied ?? 0;
+    if (applied < 9) {
+      throw new Error(`migrations not fully applied (have ${applied}, need >= 9)`);
+    }
+    res.status(200).json({
+      data: { status: 'ready', database: 'connected', migrationsApplied: applied, timestamp: new Date().toISOString() },
+    });
+  } catch (error) {
+    next(new AppError('Service not ready.', { statusCode: 503, code: 'NOT_READY', cause: error }));
+  }
+});
+
+// Auth (register/login/refresh/logout/me) — stricter per-IP limit
+router.use('/auth', createRateLimiter({ windowMs: 15 * 60 * 1000, max: 30, keyPrefix: 'auth' }), authRouter);
 
 // Users: own profile + addresses
 router.use('/users', usersRouter);
@@ -68,6 +90,17 @@ router.use('/inventory', inventoryRouter);
 // Rentals: public availability projection + authenticated booking flows
 router.use('/rentals', rentalsRouter);
 router.use('/rentals', rentalActionRouter);
+router.use('/admin/extensions', extensionAdminRouter);
+
+// Disputes: participant open/read + admin resolution
+router.use('/disputes', disputesRouter);
+router.use('/admin/disputes', disputesAdminRouter);
+
+// Settings: admin-only policy configuration
+router.use('/admin/settings', settingsAdminRouter);
+
+// Delivery: transport quote (public)
+router.use('/delivery', deliveryRouter);
 
 // Sales orders
 router.use('/orders', ordersRouter);

@@ -1,6 +1,7 @@
 import { AppError } from '../../appErrors/AppError.js';
 import { env } from '../../config/env.js';
 import * as authService from './auth.service.js';
+import * as passwordResetService from './passwordReset.service.js';
 
 const COOKIE_NAME = env.auth.refreshTokenCookieName;
 const EMAIL_PATTERN = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
@@ -74,7 +75,6 @@ export async function refresh(req, res, next) {
       data: { user: result.user, accessToken: result.accessToken, tokenType: 'Bearer' },
     });
   } catch (error) {
-    // Clear the stale cookie so browsers cannot retry with a dead token.
     res.clearCookie(COOKIE_NAME, clearCookieOptions());
     next(error);
   }
@@ -98,6 +98,30 @@ export async function me(req, res, next) {
       throw new AppError('User not found.', { statusCode: 404, code: 'NOT_FOUND' });
     }
     res.status(200).json({ data: user });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function forgotPassword(req, res, next) {
+  try {
+    const body = req.body ?? {};
+    const email = String(body.email ?? '').trim().toLowerCase();
+    const result = await passwordResetService.requestPasswordReset({ email });
+    res.status(200).json({ data: result });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function resetPassword(req, res, next) {
+  try {
+    const body = req.body ?? {};
+    const result = await passwordResetService.resetPassword({
+      token: body.token,
+      newPassword: body.newPassword,
+    });
+    res.status(200).json({ data: result });
   } catch (error) {
     next(error);
   }

@@ -2,7 +2,7 @@ import { pool } from '../../config/database.js';
 
 const REFUND_COLUMNS = `
     r.id, r.payment_id, r.refund_amount_paise, r.reason, r.status, r.processed_at,
-    r.created_by_user_id, r.created_at, r.updated_at`;
+    r.created_by_user_id, r.created_at, r.updated_at, p.payment_type`;
 
 export async function insertRefund(client, { payment_id, refund_amount_paise, reason, created_by_user_id, status = 'pending' }) {
   const { rows } = await client.query(
@@ -57,12 +57,12 @@ export async function listRefundsForAdmin({ status }, { limit, offset }) {
   }
   const [list, count] = await Promise.all([
     pool.query(
-      `SELECT ${REFUND_COLUMNS} FROM public.refunds r ${where}
+      `SELECT ${REFUND_COLUMNS} FROM public.refunds r JOIN public.payments p ON p.id = r.payment_id ${where}
        ORDER BY r.created_at DESC
        LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
       [...params, limit, offset],
     ),
-    pool.query(`SELECT count(*)::int AS total FROM public.refunds r ${where}`, params),
+    pool.query(`SELECT count(*)::int AS total FROM public.refunds r JOIN public.payments p ON p.id = r.payment_id ${where}`, params),
   ]);
   return { rows: list.rows.map(mapRefundRow), total: count.rows[0].total };
 }

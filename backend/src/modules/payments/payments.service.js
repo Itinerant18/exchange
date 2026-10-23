@@ -5,18 +5,28 @@ import {
   markBookingConfirmedInTransaction,
   setBookingDepositPaidInTransaction,
 } from '../rentals/rentals.service.js';
+import * as rentalsRepository from '../rentals/rentals.repository.js';
+import * as ledgerService from '../ledger/ledger.service.js';
+import * as settingsService from '../settings/settings.service.js';
 import { markOrderPaidInTransaction } from '../orders/orders.service.js';
 import { isUuid } from '../../utils/validators.js';
 import { translatePgError } from '../../utils/pgErrorMapper.js';
 import * as repository from './payments.repository.js';
+
+// Payment types that attach to a rental booking. Renter-side types are
+// initiated by the renter; provider-side types are COD charges collected by
+// the provider (or an administrator on their behalf).
+const BOOKING_PAYMENT_TYPES = ['rental', 'deposit', 'transport', 'late_fee', 'damage_charge'];
+const RENTER_SIDE_TYPES = ['rental', 'deposit'];
+const PROVIDER_SIDE_TYPES = ['transport', 'late_fee', 'damage_charge'];
 
 // ------------------------------------------------------------------- intents
 
 /**
  * Creates a pending payment for an authenticated participant. This NEVER
  * captures money and never changes business state — it is a record of an
- * intent (e.g. a manual transfer the buyer/renter will arrange). Settlement is
- * a separate, admin-recorded workflow (see settlePayment).
+ * intent (e.g. cash on delivery, or a manual transfer the payer will arrange).
+ * Settlement is a separate, admin-recorded workflow (see settlePayment).
  */
 export async function createPaymentIntent(user, context, body) {
   const paymentType = String(body.paymentType ?? '').trim().toLowerCase();
@@ -27,19 +37,19 @@ export async function createPaymentIntent(user, context, body) {
   }
   void context;
 
-  if (paymentType === 'rental' || paymentType === 'deposit') {
+  if (!BOOKING_PAYMENT_TYPES.includes(paymentType) && paymentType !== 'sale') {
+    throw new AppError(`paymentType must be one of: ${BOOKING_PAYMENT_TYPES.join(', ')}, sale.`, { statusCode: 400 });
+  }
+  if (paymentType !== 'sale') {
     if (!isUuid(body.rentalBookingId)) {
-      throw new AppError('rentalBookingId is required for rental and deposit payments.', { statusCode: 400, code: 'INVALID_ID' });
+      throw new AppError(`rentalBookingId is required for ${paymentType} payments.`, { statusCode: 400, code: 'INVALID_ID' });
     }
     return createBookingPayment(user, paymentType, body);
   }
-  if (paymentType === 'sale') {
-    if (!isUuid(body.orderId)) {
-      throw new AppError('orderId is required for sale payments.', { statusCode: 400, code: 'INVALID_ID' });
-    }
-    return createOrderPayment(user, body);
+  if (!isUuid(body.orderId)) {
+    throw new AppError('orderId is required for sale payments.', { statusCode: 400, code: 'INVALID_ID' });
   }
-  throw new AppError('paymentType must be one of: rental, deposit, sale.', { statusCode: 400 });
+  return createOrderPayment(user, body);
 }
 
 async function resolveMyBooking(user, bookingId) {
@@ -61,13 +71,41 @@ async function resolveMyOrder(user, orderId) {
 }
 
 async function createBookingPayment(user, paymentType, body) {
-  const booking = await resolveMyBooking(user, body.rentalBookingId);
+  const booking = await rentalsRepository.findBookingById(body.rentalBookingId);
   if (!booking) {
     throw new AppError('Booking not found.', { statusCode: 404, code: 'BOOKING_NOT_FOUND' });
   }
-  // Rental charge precedes confirmation; the deposit may be collected while
-  // pending or after confirmation, always before handover.
-  const payableStates = paymentType === 'rental' ? ['pending'] : ['pending', 'confirmed'];
+
+  // Permission model per type. Renter-side charges are initiated by the
+  // renter; provider-side COD charges (transport, late fees, damage recovery)
+  // are recorded by the provider or an administrator. Money mutations never
+  // trust a client-supplied user id or amount (amounts derive from the row).
+  if (RENTER_SIDE_TYPES.includes(paymentType)) {
+    if (booking.renter_user_id !== user.id && !user.isAdmin) {
+      throw new AppError('You do not have access to this booking.', { statusCode: 403, code: 'FORBIDDEN' });
+    }
+  } else if (PROVIDER_SIDE_TYPES.includes(paymentType)) {
+    const isProvider = booking.listing_owner_type === 'SELLER' && booking.listing_owner_id === user.id;
+    if (!isProvider && !user.isAdmin) {
+      throw new AppError('Only the provider or an administrator can record this charge.', { statusCode: 403, code: 'FORBIDDEN' });
+    }
+  }
+
+  if (paymentType === 'late_fee' && booking.late_fee_amount_paise === null) {
+    throw new AppError('No late fee has been approved for this booking yet.', {
+      statusCode: 409,
+      code: 'LATE_FEE_NOT_APPROVED',
+    });
+  }
+
+  // Payable state windows per charge type.
+  const payableStates = {
+    rental: ['pending'],
+    deposit: ['pending', 'confirmed'],
+    transport: ['pending', 'confirmed'],
+    late_fee: ['active', 'completed'],
+    damage_charge: ['active', 'completed'],
+  }[paymentType];
   if (!payableStates.includes(booking.status)) {
     throw new AppError(`A ${paymentType} payment can no longer be initiated for a ${booking.status} booking.`, {
       statusCode: 409,
@@ -81,8 +119,33 @@ async function createBookingPayment(user, paymentType, body) {
     if (existing) return { existing: true, payment: repository.mapPaymentRow(existing) };
   }
 
-  const amount = paymentType === 'rental' ? Number(booking.subtotal_amount_paise) : Number(booking.deposit_amount_paise);
-  if (amount <= 0) {
+  // Amounts derive exclusively from the stored business rows — never from the
+  // request body — so a client cannot alter what is owed.
+  let amount;
+  if (paymentType === 'rental') {
+    amount = Number(booking.subtotal_amount_paise);
+  } else if (paymentType === 'deposit') {
+    amount = Number(booking.deposit_amount_paise);
+  } else if (paymentType === 'transport') {
+    amount = Number(booking.outbound_transport_amount_paise) + Number(booking.return_transport_amount_paise);
+  } else if (paymentType === 'late_fee') {
+    amount = Number(booking.late_fee_amount_paise);
+  } else {
+    // damage_charge: an explicit positive integer approved as part of the
+    // return inspection workflow (manual-quote policy).
+    amount = body.amountPaise;
+    if (!Number.isInteger(amount) || amount <= 0) {
+      throw new AppError('amountPaise must be a positive integer for damage charges.', { statusCode: 400 });
+    }
+    const inspection = await rentalsRepository.findInspectionForBooking(booking.id);
+    if (!inspection || inspection.result === 'pass') {
+      throw new AppError('A damage charge requires a recorded damage or missing-item inspection.', {
+        statusCode: 409,
+        code: 'INSPECTION_REQUIRED',
+      });
+    }
+  }
+  if (!Number.isInteger(amount) || amount <= 0) {
     throw new AppError('No payment is required for this component of the booking.', {
       statusCode: 409,
       code: 'NO_PAYMENT_REQUIRED',
@@ -91,11 +154,24 @@ async function createBookingPayment(user, paymentType, body) {
 
   // A duplicate settled charge must always be refused: use succeeded payments as source of truth.
   const existingPayments = await repository.listPaymentsForEntity({ rentalBookingId: booking.id }, { statuses: ['pending', 'succeeded'] });
-  if (existingPayments.some((payment) => payment.payment_type === paymentType && ['pending', 'succeeded'].includes(payment.status))) {
+  // Provider-side one-off quotes (late fee, damage) may be re-quoted at a new
+  // amount, so the duplicate guard applies only to fixed-amount types.
+  const duplicateGuardedTypes = RENTER_SIDE_TYPES.concat(['transport']);
+  if (duplicateGuardedTypes.includes(paymentType)
+      && existingPayments.some((payment) => payment.payment_type === paymentType && ['pending', 'succeeded'].includes(payment.status))) {
     throw new AppError('An equivalent payment already exists for this booking.', {
       statusCode: 409,
       code: 'PAYMENT_ALREADY_EXISTS',
     });
+  }
+  if (duplicateGuardedTypes.includes(paymentType) === false && paymentType === 'damage_charge') {
+    const openDuplicate = existingPayments.some((payment) => payment.payment_type === 'damage_charge' && payment.status === 'pending');
+    if (openDuplicate) {
+      throw new AppError('A pending damage-charge payment already exists for this booking. Settle or fail it first.', {
+        statusCode: 409,
+        code: 'PAYMENT_ALREADY_EXISTS',
+      });
+    }
   }
 
   if (paymentType === 'deposit') {
@@ -230,6 +306,14 @@ export async function settlePayment(user, context, paymentId, body) {
     ? body.providerTransactionId.trim().slice(0, 255)
     : null;
 
+  // Policy reads happen outside the transaction: they configure how the
+  // earnings ledger records the collection, and settlement semantics do not
+  // depend on reading them atomically with the write.
+  const [providerReceivesTransport, commissionBps] = await Promise.all([
+    settingsService.readBooleanSetting('transport_provider_receives').catch(() => false),
+    settingsService.commissionBps().catch(() => 0),
+  ]);
+
   const result = await withTransaction(async (client) => {
     const payment = await repository.findPaymentById(paymentId, client);
     if (!payment) {
@@ -280,6 +364,42 @@ export async function settlePayment(user, context, paymentId, body) {
       );
     } else if (payment.payment_type === 'sale') {
       await markOrderPaidInTransaction(client, payment.order_id, user.id, { userId: user.id, ipAddress: context?.ipAddress ?? null, userAgent: context?.userAgent ?? null });
+    }
+
+    // Earnings ledger: credit the provider the moment the COD amount is
+    // recorded. Deposits are customer liabilities, never income. Sale orders
+    // may contain items from multiple owners — each owner is credited their
+    // own item total (idempotent per owner + order).
+    if (payment.payment_type === 'sale') {
+      const owners = await client.query(
+        `SELECT l.owner_user_id, l.owner_type, SUM(oi.unit_price_paise)::bigint AS owner_total_paise
+         FROM public.order_items oi
+         JOIN public.listings l ON l.id = oi.listing_id
+         WHERE oi.order_id = $1 AND l.owner_user_id IS NOT NULL
+         GROUP BY l.owner_user_id, l.owner_type`,
+        [payment.order_id],
+      );
+      for (const ownerRow of owners.rows) {
+        if (ownerRow.owner_type !== 'SELLER') continue;
+        await ledgerService.creditBookingEarningsInTransaction(client, {
+          booking: { id: null, order_id: payment.order_id, listing_owner_type: 'SELLER', listing_owner_id: ownerRow.owner_user_id },
+          paymentType: 'sale',
+          amountPaise: Number(ownerRow.owner_total_paise),
+          providerReceivesTransport,
+          commissionBps,
+        });
+      }
+    } else {
+      const booking = await rentalsRepository.findBookingById(payment.rental_booking_id, client);
+      if (booking) {
+        await ledgerService.creditBookingEarningsInTransaction(client, {
+          booking,
+          paymentType: payment.payment_type,
+          amountPaise: Number(payment.amount_paise),
+          providerReceivesTransport,
+          commissionBps,
+        });
+      }
     }
 
     await writeAuditLog(client, {

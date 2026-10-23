@@ -2,11 +2,18 @@ import { AppError } from '../../appErrors/AppError.js';
 import { withTransaction } from '../../config/database.js';
 import { writeAuditLog } from '../../services/auditLogService.js';
 import { expectAmount, expectEnum, isUuid } from '../../utils/validators.js';
+import { translatePgError } from '../../utils/pgErrorMapper.js';
 import * as repository from './refunds.repository.js';
 import * as paymentsRepository from '../payments/payments.repository.js';
+import * as rentalsRepository from '../rentals/rentals.repository.js';
+import * as ledgerService from '../ledger/ledger.service.js';
 import { insertRefund, sumActiveRefunds } from './refunds.repository.js';
 
 const REASONS = ['customer_request', 'item_returned', 'quality_issue', 'duplicate_charge', 'cancellation', 'platform_initiated'];
+
+// Income-type charges whose refund reverses the provider's ledger balance.
+// Deposit refunds are liability returns and never touch the earnings ledger.
+const REFUNDABLE_INCOME_TYPES = ['rental', 'transport', 'late_fee', 'damage_charge', 'sale'];
 
 export async function createRefund(user, context, body) {
   if (!isUuid(body.paymentId)) {
@@ -91,6 +98,29 @@ export async function settleRefund(user, context, refundId, outcome) {
       payload: { refundId, recordedBy: user.id, mode: 'manual_offline' },
     });
 
+    // A successful refund reverses provider earnings for income-type charges
+    // (rental/transport/late fee/damage). Deposits are liabilities, so their
+    // release never touches the earnings ledger. The advisory lock inside the
+    // debit helper serializes balance mutation per provider.
+    if (toStatus === 'succeeded' && refund.payment_type && REFUNDABLE_INCOME_TYPES.includes(refund.payment_type)) {
+      const payment = await paymentsRepository.findPaymentById(refund.payment_id, client);
+      const bookingRow = await rentalsRepository.findBookingById(payment.rental_booking_id, client);
+      if (payment && bookingRow && bookingRow.listing_owner_type === 'SELLER' && bookingRow.listing_owner_id) {
+        await ledgerService.debitEntriesInTransaction(client, {
+          userId: bookingRow.listing_owner_id,
+          entries: [{
+            type: 'refund',
+            rentalBookingId: bookingRow.id,
+            sourceType: 'refund',
+            amountPaise: Number(refund.refund_amount_paise),
+            idempotencyKey: `refund:${refundId}`,
+            memo: `Refund of ${refund.payment_type} charge`,
+          }],
+          memoFallback: 'Customer refund',
+        });
+      }
+    }
+
     await writeAuditLog(client, {
       ...context,
       action: toStatus === 'succeeded' ? 'REFUND_SUCCEEDED' : 'REFUND_FAILED',
@@ -98,7 +128,7 @@ export async function settleRefund(user, context, refundId, outcome) {
       entityId: refundId,
       newValue: { paymentId: refund.payment_id, amountPaise: Number(refund.refund_amount_paise) },
     });
-  });
+  }).catch(translatePgError);
 }
 
 export async function listRefundsForAdmin(query, pagination) {

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { AppError } from '../../appErrors/AppError.js';
-import { authenticate } from '../../middleware/authenticate.js';
+import { authenticate, requireRole } from '../../middleware/authenticate.js';
 import { auditContext } from '../../services/auditLogService.js';
 import { paginationMeta, sendData } from '../../utils/http.js';
 import { parsePagination } from '../../utils/http.js';
@@ -9,6 +9,7 @@ import * as service from './rentals.service.js';
 
 export const rentalsRouter = Router();
 export const rentalActionRouter = Router();
+export const extensionAdminRouter = Router();
 
 function assertBookingId(value) {
   if (!isUuid(value)) {
@@ -68,6 +69,26 @@ rentalActionRouter.get('/bookings/:id', async (req, res, next) => {
   }
 });
 
+rentalActionRouter.post('/bookings/:id/accept', async (req, res, next) => {
+  try {
+    assertBookingId(req.params.id);
+    sendData(res, await service.acceptRentalBooking(req.authUser, auditContext(req), req.params.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+rentalActionRouter.post('/bookings/:id/reject', async (req, res, next) => {
+  try {
+    assertBookingId(req.params.id);
+    const body = assertObject(req.body ?? {});
+    const reason = typeof body.reason === 'string' && body.reason.trim() ? body.reason.trim().slice(0, 500) : undefined;
+    sendData(res, await service.rejectRentalBooking(req.authUser, auditContext(req), req.params.id, reason));
+  } catch (error) {
+    next(error);
+  }
+});
+
 rentalActionRouter.post('/bookings/:id/cancel', async (req, res, next) => {
   try {
     assertBookingId(req.params.id);
@@ -92,16 +113,64 @@ rentalActionRouter.post('/bookings/:id/return', async (req, res, next) => {
   try {
     assertBookingId(req.params.id);
     const body = assertObject(req.body ?? {});
-    sendData(res, await service.completeRentalBooking(req.authUser, auditContext(req), req.params.id, body.actualReturnDate));
+    sendData(res, await service.completeRentalBooking(req.authUser, auditContext(req), req.params.id, body));
   } catch (error) {
     next(error);
   }
 });
 
+// Late-fee transparency: quoted always, charged only via the approved policy.
+rentalActionRouter.get('/bookings/:id/late-fee', async (req, res, next) => {
+  try {
+    assertBookingId(req.params.id);
+    sendData(res, await service.getLateFeeQuote(req.authUser, req.params.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+extensionAdminRouter.use(authenticate, requireRole('admin'));
+extensionAdminRouter.patch('/:id/decision', async (req, res, next) => {
+  try {
+    if (!isUuid(req.params.id)) throw new AppError('The extension identifier is not valid.', { statusCode: 400, code: 'INVALID_ID' });
+    sendData(res, await service.decideBookingExtension(req.authUser, auditContext(req), req.params.id, req.body ?? {}));
+  } catch (error) { next(error); }
+});
 rentalActionRouter.post('/bookings/:id/expire', async (req, res, next) => {
   try {
     assertBookingId(req.params.id);
     sendData(res, await service.expireRentalBooking(req.authUser, auditContext(req), req.params.id));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Admin-only late-fee application after an overdue return.
+rentalActionRouter.post('/bookings/:id/late-fee', async (req, res, next) => {
+  try {
+    assertBookingId(req.params.id);
+    const body = assertObject(req.body ?? {});
+    sendData(res, await service.applyLateFee(req.authUser, auditContext(req), req.params.id, body));
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Extensions: renter/provider request, administrator decides.
+rentalActionRouter.post('/bookings/:id/extensions', async (req, res, next) => {
+  try {
+    assertBookingId(req.params.id);
+    const body = assertObject(req.body ?? {});
+    sendData(res, await service.requestBookingExtension(req.authUser, auditContext(req), req.params.id, body), { status: 201 });
+  } catch (error) {
+    next(error);
+  }
+});
+
+rentalActionRouter.get('/bookings/:id/extensions', async (req, res, next) => {
+  try {
+    assertBookingId(req.params.id);
+    sendData(res, await service.listBookingExtensions(req.authUser, req.params.id));
   } catch (error) {
     next(error);
   }

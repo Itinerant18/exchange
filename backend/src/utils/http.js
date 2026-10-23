@@ -32,6 +32,14 @@ export function paginationMeta({ page, limit }, total) {
   };
 }
 
+/** Validates that a request body is a plain JSON object (controller-level). */
+export function assertObject(body, message = 'The request body must be a JSON object.') {
+  if (body === null || typeof body !== 'object' || Array.isArray(body)) {
+    throw new AppError(message, { statusCode: 400 });
+  }
+  return body;
+}
+
 /** Normalizes a success response envelope: { data, meta? }. */
 export function sendData(res, data, { status = 200, meta } = {}) {
   const body = { data };
