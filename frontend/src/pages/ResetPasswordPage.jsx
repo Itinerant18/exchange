@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { apiRequest } from '../services/apiClient.js';
-
+import { useNavigate, useSearchParams } from 'react-router-dom';import { apiRequest } from '../services/apiClient.js';
+import { authErrorMessage } from '../config/authMessages.js';
 export function ResetPasswordPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -19,7 +18,7 @@ export function ResetPasswordPage() {
       setMsg('Password reset. You can now log in.');
       setTimeout(() => navigate('/login'), 1200);
     } catch (err) {
-      setError(err.message || 'Reset failed');
+      setError(authErrorMessage(err));
     } finally { setBusy(false); }
   }
 

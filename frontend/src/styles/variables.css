@@ -1,31 +1,94 @@
 :root {
   color-scheme: light;
 
-  --color-canvas: #f5f0e8;
-  --color-canvas-deep: #eae0d3;
-  --color-surface: rgba(255, 255, 255, 0.72);
-  --color-ink: #191612;
-  --color-muted: #6e655b;
-  --color-line: rgba(25, 22, 18, 0.14);
-  --color-accent: #a9432f;
-  --color-accent-soft: #f0d8cc;
-  --color-success: #2f6b4f;
-  --color-success-soft: rgba(47, 107, 79, 0.12);
+  /* ── Canvas & surfaces ── */
+  --color-canvas: #faf7f2;
+  --color-canvas-alt: #f3eee4;
+  --color-surface: #ffffff;
+  --color-surface-raised: #ffffff;
+  --color-overlay: rgba(25, 22, 18, 0.55);
 
-  --font-display: Georgia, 'Times New Roman', Times, serif;
-  --font-body: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'Cascadia Code', 'SFMono-Regular', Consolas, monospace;
+  /* ── Ink & muted ── */
+  --color-ink: #1a1714;
+  --color-ink-soft: #4a433b;
+  --color-muted: #8a7e72;
+  --color-faint: #b5aaa0;
 
+  /* ── Lines & borders ── */
+  --color-line: rgba(26, 23, 20, 0.10);
+  --color-line-strong: rgba(26, 23, 20, 0.18);
+
+  /* ── Brand palette ── */
+  --color-accent: #b85c38;
+  --color-accent-deep: #9c4a2b;
+  --color-accent-soft: #f7ebe4;
+  --color-accent-line: rgba(184, 92, 56, 0.25);
+
+  --color-olive: #6b7a4f;
+  --color-olive-soft: #e8ede2;
+  --color-slate: #3d4a5c;
+  --color-slate-soft: #e6eaf0;
+
+  --color-success: #3d7a5a;
+  --color-success-soft: #e3f0e9;
+  --color-warning: #c4883a;
+  --color-warning-soft: #fbf0dd;
+  --color-danger: #c44d32;
+  --color-danger-soft: #fbe9e3;
+
+  /* ── Typography ── */
+  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+
+  /* ── Type scale ── */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  --text-5xl: 3rem;
+  --text-hero: clamp(3rem, 8vw, 6.5rem);
+
+  /* ── Spacing scale ── */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
-  --space-5: 1.5rem;
-  --space-6: 2rem;
-  --space-8: 3rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-20: 5rem;
 
-  --radius-md: 0.75rem;
-  --radius-lg: 1.5rem;
-  --shadow-card: 0 1.5rem 4rem rgba(73, 48, 35, 0.08);
-  --content-width: 78rem;
+  /* ── Radii ── */
+  --radius-sm: 0.4rem;
+  --radius-md: 0.6rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-full: 999px;
+
+  /* ── Shadows ── */
+  --shadow-xs: 0 1px 2px rgba(26, 23, 20, 0.04);
+  --shadow-sm: 0 1px 3px rgba(26, 23, 20, 0.06), 0 1px 2px rgba(26, 23, 20, 0.04);
+  --shadow-md: 0 4px 12px rgba(26, 23, 20, 0.06), 0 2px 4px rgba(26, 23, 20, 0.04);
+  --shadow-lg: 0 10px 30px rgba(26, 23, 20, 0.08), 0 4px 8px rgba(26, 23, 20, 0.04);
+  --shadow-xl: 0 20px 50px rgba(26, 23, 20, 0.10), 0 8px 16px rgba(26, 23, 20, 0.06);
+  --shadow-card: 0 2px 8px rgba(26, 23, 20, 0.04), 0 8px 24px rgba(26, 23, 20, 0.03);
+
+  /* ── Layout ── */
+  --content-width: 80rem;
+  --container-padding: var(--space-6);
+
+  /* ── Transitions ── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
 }

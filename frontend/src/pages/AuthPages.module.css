@@ -1,0 +1,326 @@
+/* ── Auth pages layout ── */
+.page {
+  min-height: calc(100vh - 8rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-8) var(--container-padding);
+  background: var(--color-canvas);
+}
+
+.pageInner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  max-width: 80rem;
+  min-height: 48rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+
+.formSection {
+  padding: var(--space-12) var(--space-10);
+  display: flex;
+  flex-direction: column;
+}
+
+.formHeader {
+  margin-bottom: var(--space-8);
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-decoration: none;
+  color: var(--color-ink);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-8);
+}
+
+.logo svg {
+  color: var(--color-accent);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  color: var(--color-ink);
+  margin-bottom: var(--space-2);
+}
+
+.subtitle {
+  font-size: var(--text-base);
+  color: var(--color-muted);
+  margin: 0;
+}
+
+/* ── Form ── */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  flex: 1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.fieldHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.forgotLink {
+  font-size: var(--text-sm);
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.forgotLink:hover {
+  text-decoration: underline;
+}
+
+.optional {
+  color: var(--color-muted);
+  font-weight: 400;
+}
+
+.submitBtn {
+  margin-top: var(--space-2);
+  width: 100%;
+  justify-content: center;
+  padding-block: 0.75rem;
+  font-size: var(--text-base);
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.terms {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  text-align: center;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.redirectNote {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  text-align: center;
+  margin: 0;
+  padding-top: var(--space-4);
+}
+
+.redirectNote .link {
+  color: var(--color-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.redirectNote .link:hover {
+  text-decoration: underline;
+}
+
+/* ── Panel section (right side) ── */
+.panelSection {
+  position: relative;
+  background: var(--color-canvas-alt);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-10);
+}
+
+.panelBg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(184, 92, 56, 0.08), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 70% 80%, rgba(107, 122, 79, 0.06), transparent 70%);
+}
+
+.panelPattern {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(var(--color-line) 1px, transparent 1px);
+  background-size: 20px 20px;
+  opacity: 0.5;
+}
+
+.panelContent {
+  position: relative;
+  z-index: 1;
+  max-width: 20rem;
+  text-align: center;
+}
+
+.panelIllustration {
+  color: var(--color-accent);
+  opacity: 0.6;
+  margin-bottom: var(--space-8);
+}
+
+.panelTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  margin-bottom: var(--space-3);
+}
+
+.panelDesc {
+  font-size: var(--text-base);
+  color: var(--color-ink-soft);
+  line-height: 1.7;
+  margin-bottom: var(--space-8);
+}
+
+.panelBenefits {
+  list-style: none;
+  text-align: left;
+  margin-bottom: var(--space-6);
+}
+
+.panelBenefits li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+
+.benefitNum {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  font-weight: 600;
+  min-width: 1.5rem;
+}
+
+.panelFoot {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+/* ── Panel-specific styles ── */
+/* Login page */
+.panelSection.loginPanel {
+  background: var(--color-canvas-alt);
+}
+
+.quote {
+  margin: 0 0 var(--space-8);
+}
+
+.quoteText {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--color-ink);
+  margin-bottom: var(--space-3);
+}
+
+.quoteAuthor {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.panelList {
+  list-style: none;
+  text-align: left;
+  margin-bottom: var(--space-8);
+}
+
+.panelList li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+
+.listCheck {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-success);
+  flex-shrink: 0;
+}
+
+.panelCta {
+  width: 100%;
+  justify-content: center;
+}
+
+/* ── Responsive ── */
+@media (max-width: 64rem) {
+  .pageInner {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    border-radius: 0;
+  }
+
+  .formSection {
+    padding: var(--space-8) var(--space-6);
+  }
+
+  .panelSection {
+    display: none;
+  }
+}
+
+@media (max-width: 48rem) {
+  .page {
+    padding: var(--space-4);
+  }
+
+  .formSection {
+    padding: var(--space-6) var(--space-4);
+  }
+
+  .formHeader {
+    margin-bottom: var(--space-6);
+  }
+
+  .title {
+    font-size: var(--text-2xl);
+  }
+}

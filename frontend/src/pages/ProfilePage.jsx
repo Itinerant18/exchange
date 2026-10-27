@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../services/apiClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
-
+import { authErrorMessage } from '../config/authMessages.js';
 export function ProfilePage() {
   const { user, refreshUser } = useAuth();
   const [addresses, setAddresses] = useState([]);
   const [err, setErr] = useState('');
 
   useEffect(() => {
-    apiRequest('/users/me/addresses').then((d) => setAddresses(Array.isArray(d) ? d : (d?.data ?? []))).catch((e) => setErr(e.message));
+    apiRequest('/users/me/addresses').then((d) => setAddresses(Array.isArray(d) ? d : (d?.data ?? []))).catch((e) => setErr(authErrorMessage(e)));
   }, []);
 
   return (

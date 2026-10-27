@@ -1,71 +1,101 @@
-*,
-*::before,
-*::after {
+*, *::before, *::after {
   box-sizing: border-box;
 }
 
 html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  scroll-behavior: smooth;
 }
 
-body,
-h1,
-h2,
-h3,
-h4,
-p,
-figure,
-blockquote,
-dl,
-dd {
+body, h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd {
   margin: 0;
 }
 
-ul[role='list'],
-ol[role='list'] {
+ul[role='list'], ol[role='list'] {
   padding: 0;
   list-style: none;
 }
 
 body {
   min-height: 100vh;
-  line-height: 1.5;
 }
 
-img,
-picture,
-svg,
-video,
-canvas {
+img, picture, svg, video, canvas {
   display: block;
   max-width: 100%;
+  height: auto;
 }
 
-input,
-button,
-textarea,
-select {
+input, button, textarea, select {
   font: inherit;
-}
-
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
-}
-
-a {
   color: inherit;
 }
 
-p,
-h1,
-h2,
-h3,
-h4 {
+button, a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a { color: inherit; }
+
+p, h1, h2, h3, h4, h5, h6 {
   overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* Remove default button styles */
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+/* Remove default fieldset styles */
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Remove default legend styles */
+legend {
+  padding: 0;
+  margin: 0;
+}
+
+/* Remove default search input styles */
+input[type='search'] {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
 }
 
 #root {
   min-height: 100vh;
 }
+
+/* Modern scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
