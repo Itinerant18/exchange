@@ -67,13 +67,14 @@ export async function createRentalBooking(user, context, body) {
     }
     selectedItemIds = body.itemIds;
   } else {
-    selectedItemIds = await findAvailableUnitsForPeriod(body.listingId, { startDate, endDate });
-    if (selectedItemIds.length === 0) {
+    const available = await findAvailableUnitsForPeriod(body.listingId, { startDate, endDate });
+    if (available.length === 0) {
       throw new AppError('The selected days are not available for this listing.', {
         statusCode: 409,
         code: 'DATES_NOT_AVAILABLE',
       });
     }
+    selectedItemIds = [available[0]];
   }
 
   // Transportation: quoted BEFORE any money looks committed, from the single
