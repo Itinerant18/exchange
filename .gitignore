@@ -35,3 +35,7 @@ Thumbs.db
 
 # Local tooling
 *.local
+
+test-results/
+playwright-report/
+

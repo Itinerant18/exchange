@@ -65,6 +65,9 @@ export async function resetPassword({ token, newPassword }) {
     if (!record || record.used_at !== null || new Date(record.expires_at) < new Date()) {
       throw new AppError('The reset token is invalid or has expired.', { statusCode: 400, code: 'INVALID_TOKEN' });
     }
+    if (record.used_at !== null) {
+      throw new AppError('The reset token has already been used.', { statusCode: 400, code: 'TOKEN_USED' });
+    }
 
     const passwordHash = await hashPassword(newPassword);
     await client.query(

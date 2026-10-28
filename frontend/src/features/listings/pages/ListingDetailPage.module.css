@@ -1,0 +1,446 @@
+.page {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-6) var(--space-20);
+}
+
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  margin-bottom: var(--space-6);
+}
+
+.breadcrumb a {
+  color: var(--color-ink-secondary);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  color: var(--color-accent);
+}
+
+.breadcrumbDivider {
+  opacity: 0.4;
+}
+
+.breadcrumbCurrent {
+  color: var(--color-ink);
+  font-weight: 600;
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Two-Column High-Fashion Grid ── */
+.pdpGrid {
+  display: grid;
+  grid-template-columns: 1fr 480px;
+  gap: var(--space-12);
+  align-items: start;
+}
+
+/* ── Visual Column (Left) ── */
+.visualCol {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+}
+
+.gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.mainImageFrame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: var(--color-canvas-alt);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.mainImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.noImagePlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  color: var(--color-muted);
+  background: var(--color-canvas-alt);
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.thumbnails {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+}
+
+.thumbBtn {
+  width: 80px;
+  height: 106px;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  border: 1px solid var(--color-line-strong);
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: all var(--duration-fast) var(--ease-editorial);
+  flex-shrink: 0;
+}
+
+.thumbBtn:hover {
+  opacity: 1;
+}
+
+.thumbBtnActive {
+  opacity: 1;
+  border: 2px solid var(--color-border-focus);
+}
+
+.thumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.garmentDetails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 500;
+  color: var(--color-ink);
+}
+
+.descriptionText {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.65;
+  color: var(--color-ink-secondary);
+}
+
+.specsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
+.specItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.specLabel {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+}
+
+.specVal {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+/* ── Console Column (Right - Sticky) ── */
+.consoleCol {
+  position: relative;
+}
+
+.stickyConsole {
+  position: sticky;
+  top: 90px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.consoleHeader {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.designerBrand {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+}
+
+.garmentTitle {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 500;
+  line-height: 1.2;
+  color: var(--color-ink);
+}
+
+.ratingBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.stars {
+  color: var(--color-gold);
+  letter-spacing: 2px;
+  font-size: var(--text-sm);
+}
+
+.ratingScore {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.ratingCount {
+  font-size: var(--text-2xs);
+  color: var(--color-muted);
+}
+
+.priceContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.priceRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.rentalPrice {
+  font-family: var(--font-body);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.rentalDurationTag {
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+
+.retailCompare {
+  font-size: var(--text-xs);
+  color: var(--color-ink-strike);
+  text-decoration: line-through;
+}
+
+.alertError {
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+  border: 1px solid rgba(139, 38, 62, 0.2);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+}
+
+/* ── Transport / Shipping ── */
+.transportModule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.transportLabel {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-ink);
+}
+
+.radioOption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-ink-secondary);
+  cursor: pointer;
+}
+
+/* ── Action Button ── */
+.actionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.bookButton {
+  width: 100%;
+  padding: 1rem;
+  background: var(--color-accent);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-editorial);
+}
+
+.bookButton:hover:not(:disabled) {
+  background: var(--color-accent-deep);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.bookButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.actionNote {
+  margin: 0;
+  font-size: var(--text-2xs);
+  color: var(--color-accent);
+  text-align: center;
+  font-weight: 500;
+}
+
+/* ── Loading / Error states ── */
+.loadingPage, .errorPage {
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--color-line);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+  .pdpGrid {
+    grid-template-columns: 1fr;
+    gap: var(--space-8);
+  }
+
+  .stickyConsole {
+    position: static;
+  }
+}
+
+/* ── Live Availability Status ── */
+.availabilityStatus {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-xs);
+  display: flex;
+  align-items: center;
+}
+
+.availChecking {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.availReady {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  font-weight: 600;
+  width: 100%;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-xs);
+}
+
+.availSoldOut {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+  font-weight: 600;
+  width: 100%;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-xs);
+}
+
+/* ── Pricing Breakdown ── */
+.pricingBreakdown {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-canvas);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+}
+
+.breakdownRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--color-ink-secondary);
+}
+
+.freeHighlight {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.totalRow {
+  padding-top: var(--space-2);
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--color-line-strong);
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}

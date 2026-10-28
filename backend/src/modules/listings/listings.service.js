@@ -42,8 +42,10 @@ export async function getPublicListing(user, listingId) {
       categorySlug: listing.categorySlug, title: listing.title, description: listing.description,
       condition: listing.condition, size: listing.size, colour: listing.colour, brand: listing.brand,
       rentalPricePaise: listing.rentalPricePaise, salePricePaise: listing.salePricePaise,
-      depositPaise: listing.depositPaise, isRental: listing.isRental, isSale: listing.isSale,
-      createdAt: listing.createdAt, images: listing.images,
+      depositPaise: listing.depositPaise, replacementValuePaise: listing.replacementValuePaise,
+      isRental: listing.isRental, isSale: listing.isSale,
+      city: listing.city, deliveryAvailable: listing.deliveryAvailable, deliveryRadiusKm: listing.deliveryRadiusKm,
+      ownerId: listing.ownerId, createdAt: listing.createdAt, images: listing.images,
       availableUnits: listing.inventory.available,
     };
   }

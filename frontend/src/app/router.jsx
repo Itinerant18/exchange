@@ -1,20 +1,27 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AppLayout } from '../components/layout/AppLayout.jsx';
-import { HomePage } from '../features/home/pages/HomePage.jsx';
-import { LoginPage } from '../pages/LoginPage.jsx';
-import { RegisterPage } from '../pages/RegisterPage.jsx';
-import { ForgotPasswordPage } from '../pages/ForgotPasswordPage.jsx';
-import { ResetPasswordPage } from '../pages/ResetPasswordPage.jsx';
-import { ListingsPage } from '../pages/ListingsPage.jsx';
-import { ListingDetailPage } from '../pages/ListingDetailPage.jsx';
-import { CreateListingPage } from '../pages/CreateListingPage.jsx';
-import { MyBookingsPage } from '../pages/MyBookingsPage.jsx';
-import { BookingDetailPage } from '../pages/BookingDetailPage.jsx';
-import { MyOrdersPage } from '../pages/MyOrdersPage.jsx';
-import { ProfilePage } from '../pages/ProfilePage.jsx';
-import { AdminPage } from '../pages/AdminPage.jsx';
-import { DisputesPage } from '../pages/DisputesPage.jsx';
 import { ProtectedRoute } from '../components/ProtectedRoute.jsx';
+
+import { HomePage } from '../features/home/pages/HomePage.jsx';
+import {
+  LoginPage,
+  RegisterPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+} from '../features/auth/index.js';
+import {
+  ListingsPage,
+  ListingDetailPage,
+  CreateListingPage,
+} from '../features/listings/index.js';
+import {
+  MyBookingsPage,
+  BookingDetailPage,
+} from '../features/rentals/index.js';
+import { MyOrdersPage } from '../features/orders/index.js';
+import { ProfilePage } from '../features/profile/index.js';
+import { DisputesPage } from '../features/disputes/index.js';
+import { AdminPage } from '../features/admin/index.js';
 
 export const router = createBrowserRouter([
   {

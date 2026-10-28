@@ -1,47 +1,62 @@
 :root {
   color-scheme: light;
 
-  /* ── Canvas & surfaces ── */
-  --color-canvas: #faf7f2;
-  --color-canvas-alt: #f3eee4;
+  /* ── Editorial Canvas & Surfaces ── */
+  --color-canvas: #faf9f6;
+  --color-canvas-editorial: #faf9f6;
+  --color-canvas-alt: #f4f2ec;
   --color-surface: #ffffff;
+  --color-surface-pure: #ffffff;
   --color-surface-raised: #ffffff;
-  --color-overlay: rgba(25, 22, 18, 0.55);
+  --color-overlay: rgba(22, 21, 20, 0.6);
 
-  /* ── Ink & muted ── */
-  --color-ink: #1a1714;
-  --color-ink-soft: #4a433b;
-  --color-muted: #8a7e72;
+  /* ── High-Contrast Editorial Inks ── */
+  --color-ink: #161514;
+  --color-ink-primary: #161514;
+  --color-ink-soft: #47433f;
+  --color-ink-secondary: #5c5752;
+  --color-muted: #8c8680;
   --color-faint: #b5aaa0;
+  --color-ink-strike: #a8a29e;
 
-  /* ── Lines & borders ── */
-  --color-line: rgba(26, 23, 20, 0.10);
-  --color-line-strong: rgba(26, 23, 20, 0.18);
+  /* ── Lines, Borders & Dividers ── */
+  --color-line: rgba(22, 21, 20, 0.08);
+  --color-line-subtle: rgba(22, 21, 20, 0.06);
+  --color-line-strong: rgba(22, 21, 20, 0.20);
+  --color-border-focus: #161514;
 
-  /* ── Brand palette ── */
-  --color-accent: #b85c38;
-  --color-accent-deep: #9c4a2b;
-  --color-accent-soft: #f7ebe4;
-  --color-accent-line: rgba(184, 92, 56, 0.25);
+  /* ── Circular Luxury Accents ── */
+  --color-accent: #17382b;              /* Signature Forest / Couture Green */
+  --color-accent-deep: #0f241c;
+  --color-accent-soft: #eaf1ed;
+  --color-accent-line: rgba(23, 56, 43, 0.25);
 
-  --color-olive: #6b7a4f;
-  --color-olive-soft: #e8ede2;
+  --color-terracotta: #b85c38;
+  --color-terracotta-soft: #f7ebe4;
+
+  --color-gold: #c5a059;                /* Champagne Gold / VIP */
+  --color-gold-soft: #fbf6ec;
+
+  --color-olive: #4f5d3e;
+  --color-olive-soft: #ebefe6;
+
   --color-slate: #3d4a5c;
   --color-slate-soft: #e6eaf0;
 
-  --color-success: #3d7a5a;
-  --color-success-soft: #e3f0e9;
+  --color-success: #17382b;
+  --color-success-soft: #eaf1ed;
   --color-warning: #c4883a;
   --color-warning-soft: #fbf0dd;
-  --color-danger: #c44d32;
-  --color-danger-soft: #fbe9e3;
+  --color-danger: #8b263e;              /* Bordeaux / Urgent Alert */
+  --color-danger-soft: #faebef;
 
-  /* ── Typography ── */
-  --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
-  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* ── Typography Stack ── */
+  --font-display: 'Canela', 'Didot', 'Playfair Display', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-body: 'GT America', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 
-  /* ── Type scale ── */
+  /* ── Type Scale ── */
+  --text-2xs: 0.6875rem;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
   --text-base: 1rem;
@@ -51,9 +66,9 @@
   --text-3xl: 1.875rem;
   --text-4xl: 2.25rem;
   --text-5xl: 3rem;
-  --text-hero: clamp(3rem, 8vw, 6.5rem);
+  --text-hero: clamp(2.75rem, 6vw, 5rem);
 
-  /* ── Spacing scale ── */
+  /* ── Spacing Scale ── */
   --space-1: 0.25rem;
   --space-2: 0.5rem;
   --space-3: 0.75rem;
@@ -65,28 +80,35 @@
   --space-12: 3rem;
   --space-16: 4rem;
   --space-20: 5rem;
+  --space-24: 6rem;
 
-  /* ── Radii ── */
-  --radius-sm: 0.4rem;
-  --radius-md: 0.6rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
-  --radius-full: 999px;
+  /* ── Architectural Radii (Restrained & Sharp) ── */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-full: 9999px;
 
-  /* ── Shadows ── */
-  --shadow-xs: 0 1px 2px rgba(26, 23, 20, 0.04);
-  --shadow-sm: 0 1px 3px rgba(26, 23, 20, 0.06), 0 1px 2px rgba(26, 23, 20, 0.04);
-  --shadow-md: 0 4px 12px rgba(26, 23, 20, 0.06), 0 2px 4px rgba(26, 23, 20, 0.04);
-  --shadow-lg: 0 10px 30px rgba(26, 23, 20, 0.08), 0 4px 8px rgba(26, 23, 20, 0.04);
-  --shadow-xl: 0 20px 50px rgba(26, 23, 20, 0.10), 0 8px 16px rgba(26, 23, 20, 0.06);
-  --shadow-card: 0 2px 8px rgba(26, 23, 20, 0.04), 0 8px 24px rgba(26, 23, 20, 0.03);
+  /* ── Aspect Ratios ── */
+  --aspect-product: 3 / 4;
+  --aspect-hero: 16 / 9;
 
-  /* ── Layout ── */
-  --content-width: 80rem;
+  /* ── Soft Diffusion Shadows ── */
+  --shadow-xs: 0 1px 2px rgba(22, 21, 20, 0.04);
+  --shadow-sm: 0 2px 6px rgba(22, 21, 20, 0.04), 0 1px 2px rgba(22, 21, 20, 0.02);
+  --shadow-md: 0 6px 18px rgba(22, 21, 20, 0.06), 0 2px 6px rgba(22, 21, 20, 0.03);
+  --shadow-lg: 0 16px 36px rgba(22, 21, 20, 0.08), 0 4px 12px rgba(22, 21, 20, 0.04);
+  --shadow-card: 0 2px 8px rgba(22, 21, 20, 0.04), 0 8px 24px rgba(22, 21, 20, 0.02);
+  --shadow-hover: 0 12px 32px rgba(22, 21, 20, 0.09);
+  --shadow-modal: 0 24px 60px rgba(22, 21, 20, 0.16);
+
+  /* ── Layout Constraints ── */
+  --content-width: 82rem;
   --container-padding: var(--space-6);
 
-  /* ── Transitions ── */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* ── Motion & Transitions ── */
+  --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --duration-fast: 150ms;
   --duration-base: 250ms;

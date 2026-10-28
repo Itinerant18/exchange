@@ -1,0 +1,46 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-canvas);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+}
+
+.perk {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.iconCircle {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.perkCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.perkTitle {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.perkDesc {
+  font-size: var(--text-2xs);
+  color: var(--color-muted);
+  line-height: 1.4;
+}

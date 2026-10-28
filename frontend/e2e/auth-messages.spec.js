@@ -26,7 +26,7 @@ test.describe('auth error messages', () => {
     });
 
     // Make sure the Vite dev server and backend are reachable.
-    const viteResp = await fetch('http://127.0.0.1:5173/src/pages/LoginPage.jsx');
+    const viteResp = await fetch('http://127.0.0.1:5173/src/features/auth/pages/LoginPage.jsx');
     expect(viteResp.status, 'Vite dev server should be reachable').toBe(200);
     const backendResp = await fetch(`${BACKEND}/health`);
     expect(backendResp.status, 'Backend health endpoint should be reachable').toBe(200);

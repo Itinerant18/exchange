@@ -1,0 +1,239 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  transition: transform var(--duration-base) var(--ease-editorial),
+              box-shadow var(--duration-base) var(--ease-editorial);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-hover);
+}
+
+.imageWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--aspect-product);
+  background-color: var(--color-canvas-alt);
+  overflow: hidden;
+}
+
+.imageLink {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.placeholderLink {
+  display: block;
+  width: 100%;
+  height: 100%;
+  text-decoration: none;
+}
+
+.placeholderBox {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  color: var(--color-muted);
+  background: var(--color-canvas-alt);
+  transition: background var(--duration-fast) var(--ease-editorial);
+}
+
+.placeholderBox:hover {
+  background: var(--color-canvas);
+}
+
+.placeholderText {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s var(--ease-editorial);
+}
+
+.card:hover .image {
+  transform: scale(1.04);
+}
+
+/* ── Overlays ── */
+.badgeGroup {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  z-index: 2;
+}
+
+.badgeRental {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: var(--color-accent);
+  color: #ffffff;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: var(--radius-xs);
+}
+
+.badgeSale {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: var(--color-terracotta);
+  color: #ffffff;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: var(--radius-xs);
+}
+
+.wishlistBtn {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(22, 21, 20, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink-secondary);
+  cursor: pointer;
+  z-index: 2;
+  transition: all var(--duration-fast) var(--ease-editorial);
+}
+
+.wishlistBtn:hover {
+  background: #ffffff;
+  color: var(--color-danger);
+  transform: scale(1.1);
+}
+
+.wishlistBtnActive {
+  color: var(--color-danger);
+  background: #ffffff;
+}
+
+.quickSizes {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: var(--space-2) var(--space-3);
+  background: rgba(250, 249, 246, 0.92);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-soft);
+  opacity: 0;
+  transform: translateY(100%);
+  transition: all var(--duration-base) var(--ease-editorial);
+}
+
+.card:hover .quickSizes {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ── Content ── */
+.content {
+  padding: var(--space-4) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.designerRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.designer {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-ink);
+}
+
+.location {
+  font-size: var(--text-2xs);
+  color: var(--color-muted);
+}
+
+.title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.titleLink {
+  color: var(--color-ink-soft);
+  text-decoration: none;
+}
+
+.titleLink:hover {
+  color: var(--color-accent);
+}
+
+.pricingRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.rentalPriceBlock {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+}
+
+.rentalPrice {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.rentalPeriod {
+  font-size: var(--text-2xs);
+  color: var(--color-muted);
+}
+
+.retailAnchor {
+  font-size: var(--text-2xs);
+  color: var(--color-ink-strike);
+  text-decoration: line-through;
+}

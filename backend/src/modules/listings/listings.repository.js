@@ -4,7 +4,7 @@ const LISTING_COLUMNS = `
     l.id, l.owner_type, l.owner_user_id, l.category_id, l.title, l.description,
     l.condition, l.size, l.colour, l.brand, l.rental_price_paise, l.sale_price_paise,
     l.deposit_paise, l.replacement_value_paise, l.is_rental, l.is_sale,
-    l.listing_status, l.created_at, l.updated_at,
+    l.listing_status, l.city, l.delivery_available, l.delivery_radius_km, l.created_at, l.updated_at,
     c.name AS category_name, c.slug AS category_slug, c.is_active AS category_is_active`;
 
 function insertValues(fields) {
@@ -275,6 +275,9 @@ export function mapListingRow(row) {
     isRental: row.is_rental,
     isSale: row.is_sale,
     status: row.listing_status,
+    city: row.city ?? null,
+    deliveryAvailable: row.delivery_available ?? false,
+    deliveryRadiusKm: row.delivery_radius_km !== null && row.delivery_radius_km !== undefined ? Number(row.delivery_radius_km) : null,
     categoryActive: row.category_is_active === undefined ? null : row.category_is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

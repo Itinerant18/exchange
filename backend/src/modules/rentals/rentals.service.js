@@ -295,7 +295,7 @@ export async function getListingAvailability(listingId, query) {
     throw new AppError('Listing not found.', { statusCode: 404, code: 'LISTING_NOT_FOUND' });
   }
   const availableUnitIds = await findAvailableUnitsForPeriod(listingId, { startDate, endDate });
-  return { listingId, startDate, endDate, availableUnits: availableUnitIds.length };
+  return { listingId, startDate, endDate, availableUnits: availableUnitIds.length, unitIds: availableUnitIds };
 }
 
 // ---------------------------------------------------------------- transitions
