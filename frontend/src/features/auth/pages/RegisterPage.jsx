@@ -98,7 +98,6 @@ export function RegisterPage() {
                 value={form.password}
                 onChange={(e) => setForm({ ...form, password: e.target.value })}
                 autoComplete="new-password"
-                minLength={10}
                 required
               />
               <p className="form-hint">

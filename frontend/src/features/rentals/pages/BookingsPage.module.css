@@ -1,8 +1,8 @@
-/* ── Page layout ── */
+/* ── Page Layout ── */
 .page {
   max-width: var(--content-width);
   margin: 0 auto;
-  padding: 0 var(--container-padding);
+  padding: var(--space-8) var(--space-4) var(--space-16);
 }
 
 .pageHeader {
@@ -10,23 +10,25 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--space-6);
-  margin-bottom: var(--space-10);
+  margin-bottom: var(--space-8);
   padding-bottom: var(--space-6);
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: 1px solid var(--color-hairline);
 }
 
 .pageTitle {
   font-family: var(--font-display);
-  font-size: var(--text-3xl);
-  font-weight: 500;
-  letter-spacing: -0.03em;
-  color: var(--color-ink);
+  font-size: 36px;
+  font-weight: 300;
+  letter-spacing: -1.08px;
+  color: #FFFFFF;
   margin-bottom: var(--space-2);
 }
 
 .pageSubtitle {
-  font-size: var(--text-base);
-  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 300;
+  color: #999999;
   margin: 0;
 }
 
@@ -38,26 +40,24 @@
   justify-content: center;
   gap: var(--space-4);
   padding: var(--space-16) var(--space-6);
-  color: var(--color-muted);
+  color: #999999;
   text-align: center;
 }
 
 .spinner {
   width: 32px;
   height: 32px;
-  border: 3px solid var(--color-line);
-  border-top-color: var(--color-accent);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top-color: #FFFFFF;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
-/* ── Bookings list ── */
+/* ── Bookings List ── */
 .bookingsList {
   display: flex;
   flex-direction: column;
@@ -70,17 +70,18 @@
   gap: var(--space-4);
   padding: var(--space-5);
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-lg);
+  color: var(--color-on-surface);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
   text-decoration: none;
-  transition: all var(--duration-base) var(--ease-out);
-  box-shadow: var(--shadow-sm);
+  transition: border-color var(--duration-base) var(--ease-editorial);
+  box-shadow: none;
 }
 
 .bookingCard:hover {
-  border-color: var(--color-line-strong);
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  border-color: #DDDDDD;
+  box-shadow: none;
+  transform: none;
 }
 
 .bookingHeader {
@@ -98,16 +99,16 @@
 
 .bookingId {
   font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-muted);
+  font-size: 11px;
+  color: var(--color-on-surface-muted);
   letter-spacing: 0.02em;
 }
 
 .bookingTitle {
   font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: 500;
-  color: var(--color-ink);
+  font-size: 20px;
+  font-weight: 300;
+  color: var(--color-on-surface);
   letter-spacing: -0.01em;
   margin: 0;
 }
@@ -117,14 +118,14 @@
   text-transform: capitalize;
 }
 
-/* ── Booking details ── */
+/* ── Booking Details ── */
 .bookingDetails {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-6);
   padding: var(--space-4) 0;
-  border-top: 1px solid var(--color-line);
-  border-bottom: 1px solid var(--color-line);
+  border-top: 1px solid #EBEBEB;
+  border-bottom: 1px solid #EBEBEB;
 }
 
 .bookingDetails > div {
@@ -134,16 +135,17 @@
 }
 
 .detailLabel {
-  font-size: var(--text-xs);
+  font-family: var(--font-extended);
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-muted);
+  color: var(--color-on-surface-muted);
   font-weight: 500;
 }
 
 .detailValue {
-  font-size: var(--text-base);
-  color: var(--color-ink);
+  font-size: 14px;
+  color: var(--color-on-surface);
   font-weight: 500;
   margin: 0;
 }
@@ -156,41 +158,46 @@
 }
 
 .viewText {
-  font-size: var(--text-sm);
-  color: var(--color-accent);
-  font-weight: 500;
+  font-family: var(--font-extended);
+  font-size: 13px;
+  color: var(--color-on-primary);
+  font-weight: 400;
 }
 
 .bookingCard:hover .viewText {
   text-decoration: underline;
 }
 
-/* ── Empty state ── */
+/* ── Empty State ── */
 .emptyState {
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   padding: var(--space-16) var(--space-6);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  border: 1px solid #DDDDDD;
+  border-radius: var(--radius-sm);
   gap: var(--space-4);
 }
 
 .emptyIcon {
-  color: var(--color-faint);
+  color: var(--color-on-surface-muted);
   margin-bottom: var(--space-2);
 }
 
 .emptyTitle {
   font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 500;
-  color: var(--color-ink-soft);
+  font-size: 20px;
+  font-weight: 300;
+  color: var(--color-on-surface);
   margin: 0;
 }
 
 .emptyDesc {
-  font-size: var(--text-base);
-  color: var(--color-muted);
+  font-size: 14px;
+  color: var(--color-on-surface-muted);
   margin: 0;
   max-width: 24rem;
 }

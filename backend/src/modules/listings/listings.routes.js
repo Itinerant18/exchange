@@ -8,6 +8,14 @@ export const listingOwnerRouter = Router();
 // Public catalog. Optional auth lets owners see their own non-public rows.
 listingsRouter.use(maybeAuthenticate);
 listingsRouter.get('/', controller.listPublic);
+// Available inventory unit ids (rental availability + buy-now mode).
+listingsRouter.get('/:id/units', controller.listUnits);
+// Facet value counts for the discovery FilterModal — uses the same filter
+// grammar as listPublic so counts stay in sync with the visible catalog.
+listingsRouter.get('/facets', controller.listFacets);
+// 'Our Runway' reviews for a single listing (Phase 2) — registered before /:id
+// so Express does not have to disambiguate trailing segments.
+listingsRouter.get('/:id/reviews', controller.listReviews);
 listingsRouter.get('/:id', controller.getDetail);
 
 // Owner-scoped listing management. Guards registered before handlers.

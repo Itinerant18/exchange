@@ -18,15 +18,17 @@ export function MyOrdersPage() {
       <h1 className="page-title">My orders</h1>
       {error && <p className="error">{error}</p>}
       {loading ? <p className="muted">Loading…</p> : (
-        <table className="table">
-          <thead><tr><th>ID</th><th>Status</th><th>Total (paise)</th></tr></thead>
-          <tbody>
-            {rows.map((o) => (
-              <tr key={o.id}><td><code>{o.id.slice(0, 8)}</code></td><td><span className="badge">{o.status}</span></td><td>{o.totalAmountPaise}</td></tr>
-            ))}
-            {rows.length === 0 && <tr><td colSpan={3} className="muted">No orders.</td></tr>}
-          </tbody>
-        </table>
+        <div className="table-container">
+          <table className="table">
+            <thead><tr><th>ID</th><th>Status</th><th>Total (paise)</th></tr></thead>
+            <tbody>
+              {rows.map((o) => (
+                <tr key={o.id}><td><code>{o.id.slice(0, 8)}</code></td><td><span className="badge">{o.status}</span></td><td>{o.totalAmountPaise}</td></tr>
+              ))}
+              {rows.length === 0 && <tr><td colSpan={3} className="muted">No orders.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );

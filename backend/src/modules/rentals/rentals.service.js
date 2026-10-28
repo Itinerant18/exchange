@@ -87,8 +87,34 @@ export async function createRentalBooking(user, context, body) {
   const unitCount = selectedItemIds.length;
   const ratePaise = Number(listing.rental_price_paise);
   const depositPaise = Number(listing.deposit_paise ?? 0);
-  const subtotal = ratePaise * days * unitCount; // header subtotal = sum of item lines
-  const total = subtotal + depositPaise; // CHECK: total = subtotal + deposit
+
+  // Damage waiver: an opt-in flat fee per booking, priced by platform policy.
+  // Never applied unless the renter explicitly selected it.
+  const wantsDamageWaiver = Boolean(body.damageWaiver);
+  const damageWaiverFeePaise = wantsDamageWaiver ? await settingsService.damageWaiverPaise() : 0;
+
+  // Free backup size: a preference recorded on the booking; when the owner
+  // holds a spare unit for the same window it is reserved as a zero-rated
+  // line travelling in the same delivery.
+  const backupSize = typeof body.backupSize === 'string' && body.backupSize.trim().length > 0
+    ? body.backupSize.trim().slice(0, 50)
+    : null;
+  const backupRequested = backupSize !== null;
+  if (backupRequested) {
+    const backupEnabled = await settingsService.isBackupSizesEnabled();
+    if (!backupEnabled) {
+      throw new AppError('Free backup sizes are not offered for this listing.', {
+        statusCode: 409,
+        code: 'BACKUP_SIZES_DISABLED',
+      });
+    }
+  }
+
+  const subtotal = ratePaise * days * unitCount; // header subtotal = sum of primary item lines
+  const total = subtotal + depositPaise + damageWaiverFeePaise; // CHECK: total = subtotal + deposit + waiver
+  // Whether the free backup-size pairing actually reserved a spare unit.
+  // Declared outside the transaction so the response can report it.
+  let backupReserved = false;
 
   try {
     const booking = await withTransaction(async (client) => {
@@ -102,6 +128,9 @@ export async function createRentalBooking(user, context, body) {
         deposit_amount_paise: depositPaise,
         total_amount_paise: total,
         deposit_paid: false,
+        damage_waiver_selected: wantsDamageWaiver,
+        damage_waiver_fee_paise: damageWaiverFeePaise,
+        backup_size: backupSize,
         transport_mode: transportQuote.mode,
         outbound_distance_km: transportQuote.outbound?.distanceKm ?? null,
         return_distance_km: transportQuote.return?.distanceKm ?? null,
@@ -122,9 +151,29 @@ export async function createRentalBooking(user, context, body) {
         });
       }
 
+      const reservedUnitIds = [...selectedItemIds];
+      if (backupRequested) {
+        const stillAvailable = await findAvailableUnitsForPeriod(body.listingId, { startDate, endDate });
+        const spareUnitId = stillAvailable.find((id) => !selectedItemIds.includes(id));
+        if (spareUnitId) {
+          await repository.insertBookingItem(client, {
+            rental_booking_id: header.id,
+            inventory_item_id: spareUnitId,
+            item_status: 'pending',
+            start_date: startDate,
+            end_date: endDate,
+            daily_rate_paise: 0,
+            line_total_paise: 0,
+            is_backup_size: true,
+          });
+          reservedUnitIds.push(spareUnitId);
+          backupReserved = true;
+        }
+      }
+
       // Each unit must still be AVAILABLE here. If a concurrent transaction
       // claimed one, the update count mismatches and everything rolls back.
-      const claimed = await claimUnitsToStatus(client, selectedItemIds, ['AVAILABLE'], 'RESERVED');
+      const claimed = await claimUnitsToStatus(client, reservedUnitIds, ['AVAILABLE'], 'RESERVED');
       if (!claimed) {
         throw new AppError('One of the units is no longer available.', {
           statusCode: 409,
@@ -149,6 +198,9 @@ export async function createRentalBooking(user, context, body) {
           startDate,
           endDate,
           units: unitCount,
+          damageWaiver: wantsDamageWaiver,
+          backupSize,
+          backupReserved,
           transportMode: transportQuote.mode,
           transportTotalPaise: transportQuote.totalAmountPaise,
         },
@@ -165,6 +217,12 @@ export async function createRentalBooking(user, context, body) {
       unitCount,
       subtotalAmountPaise: subtotal,
       depositAmountPaise: depositPaise,
+      damageWaiver: {
+        selected: wantsDamageWaiver,
+        feePaise: damageWaiverFeePaise,
+      },
+      backupSize,
+      backupReserved,
       totalAmountPaise: total,
       transport: {
         mode: transportQuote.mode,
@@ -217,6 +275,7 @@ export async function getBooking(user, bookingId) {
       endDate: row.end_date,
       dailyRatePaise: Number(row.daily_rate_paise),
       lineTotalPaise: Number(row.line_total_paise),
+      isBackupSize: row.is_backup_size === true,
     })),
     history: history.map((row) => ({
       id: row.id,
@@ -889,6 +948,7 @@ export async function decideBookingExtension(user, context, extensionId, body) {
       additionalDays: row.additional_days,
       currentSubtotal: Number(booking.subtotal_amount_paise),
       depositAmountPaise: deposit,
+      damageWaiverFeePaise: Number(booking.damage_waiver_fee_paise ?? 0),
     });
     if (!extended) {
       throw new AppError('The booking has already changed state.', { statusCode: 409, code: 'BOOKING_STATE_CONFLICT' });

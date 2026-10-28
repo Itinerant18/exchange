@@ -1,6 +1,6 @@
 # Exchange24 — Complete Project History & Status Report
 
-Generated: 2026-10-23
+Generated: 2026-10-23 · Updated: 2026-10-28 (RTR-parity pass)
 Branch: `feature/phase2-completion` (baseline commit `beeffa4`, phase-2 commit `35efe6f`)
 
 This document consolidates everything accomplished across the original backend
@@ -27,7 +27,7 @@ exchange/
 ├── backend/
 │   ├── database/
 │   │   ├── migrate.js
-│   │   ├── migrations/          # 001..009 (immutable, checksum-guarded)
+│   │   ├── migrations/          # 001..013 (immutable, checksum-guarded)
 │   │   ├── factories/grant-admin.js
 │   │   └── seeds/               # (dev seed, optional)
 │   ├── scripts/e2e-smoke.mjs    # 51-check lifecycle smoke
@@ -115,6 +115,28 @@ exchange/
 - `metrics_events` (id, event_type, listing_id, owner_user_id, viewer_user_id,
   viewer_session_key, hour_bucket, occurred_at) — 008
 
+### 3.3 RTR-parity extensions (migrations 010–012)
+
+- `listings.attributes` (JSONB, `NOT NULL DEFAULT '{}'`, shape-checked) — 012:
+  structured facet bag — facet key → array of enum values (`occasion`,
+  `neckline`, `sleeve`, `length`, `print`, `embellishment`, `stylePersona`,
+  `seasonality`, `maternity`). Values governed by the shared facet taxonomy in
+  the service layer; persisted via GIN index `listings_attributes_gin_idx`
+  (jsonb_path_ops) powering the filter-facet queries.
+- `rental_bookings` — 010: `damage_waiver_selected` (bool),
+  `damage_waiver_fee_paise` (0 unless selected — CHECK enforced),
+  `backup_size` (varchar preference).
+- `rental_booking_items.is_backup_size` (bool) — 010: the free backup garment
+  is a second physical unit reserved as a zero-rated line
+  (`daily_rate_paise = 0 AND line_total_paise = 0` when flagged) travelling in
+  the same delivery window; excluded from pricing, counted by inspections.
+- `platform_settings` entries — 010: `damage_waiver_fee_paise` (1250 = ₹12.50,
+  approved), `backup_sizes_enabled` (true, approved).
+- `reviews` body specs — 011: `size_worn`, `reviewer_height_cm` (100–250),
+  `reviewer_weight_kg` (25–300), `bust_size`, `body_type` (petite/slim/average/
+  athletic/curvy/plus_size), `fit_rating` (RUNS_SMALL/TRUE_TO_SIZE/RUNS_LARGE).
+  All nullable; PDP aggregates `fit_rating` into the fit meter.
+
 ### 3.2 Key constraints
 
 - GiST exclusion on `rental_booking_items` prevents overlapping date ranges
@@ -132,14 +154,14 @@ exchange/
 | Auth | `src/modules/auth/` | register, login, refresh (rotation + reuse detection), logout, me, forgot-password, reset-password |
 | Users | `src/modules/users/` | profile, addresses (default demotion) |
 | Categories | `src/modules/categories/` | public tree/detail + admin CRUD (public-first mount) |
-| Listings | `src/modules/listings/` | CRUD, images (primary demotion), visibility, retire-with-claim-guard, location fields |
+| Listings | `src/modules/listings/` | CRUD, images (primary demotion), visibility, retire-with-claim-guard, location fields, JSONB attributes (facet taxonomy) + facet counts + units + per-listing reviews |
 | Inventory | `src/modules/inventory/` | unit lifecycle, blocking-rental freeze |
-| Rentals | `src/modules/rentals/` | booking state machine, transport, extensions, late-fee, inspection, accept/reject |
+| Rentals | `src/modules/rentals/` | booking state machine, transport, extensions, late-fee, inspection, accept/reject, damage waiver + free backup-size pairing |
 | Orders | `src/modules/orders/` | sale orders, unit claim |
 | Payments | `src/modules/payments/` | intents, manual COD settlement, idempotency |
 | Deposits | `src/modules/deposits/` | hold/release/deduct |
 | Refunds | `src/modules/refunds/` | create + settle, ledger debit |
-| Reviews | `src/modules/reviews/` | eligibility, moderation |
+| Reviews | `src/modules/reviews/` | eligibility, moderation, reviewer body specs + fit ratings |
 | KYC | `src/modules/kyc/` | attempts + admin review |
 | Admin | `src/modules/admin/` | audit logs |
 | Settings | `src/modules/settings/` | policy CRUD + approval |
@@ -157,12 +179,16 @@ Users: `GET/PATCH /users/me`, `GET/POST/PATCH/DELETE /users/me/addresses[/:id]`
 Categories: `GET /categories`, `GET /categories/:id`,
 `POST/PATCH/DELETE /categories` (admin), `GET /admin/categories`
 
-Listings: `GET /listings`, `GET /listings/:id`, `GET /listings/:id/related`,
-`POST/PATCH/DELETE /listings` (owner), images sub-routes
+Listings: `GET /listings`, `GET /listings/facets` (facet counts for the
+FilterModal), `GET /listings/:id`, `GET /listings/:id/related`,
+`GET /listings/:id/units` (available unit ids), `GET /listings/:id/reviews`
+("Our Runway" list), `POST/PATCH/DELETE /listings` (owner; accepts `attributes`
+against the facet taxonomy), images sub-routes
 
 Inventory: `GET/POST/PATCH/DELETE /inventory/...`
 
-Rentals: `GET /rentals/availability`, `POST /rentals/bookings`,
+Rentals: `GET /rentals/availability`, `POST /rentals/bookings` (body accepts
+`damageWaiver: boolean` and `backupSize: string`),
 `GET /rentals/bookings[/:id]`, `POST .../accept|reject|cancel|start|return|expire`,
 `GET .../late-fee`, `POST .../late-fee`, `POST/GET .../extensions`
 
@@ -175,7 +201,8 @@ Deposits: `GET /deposits`, `POST /admin/deposits/:id/release|deduct`
 
 Refunds: `POST /refunds`, `POST /admin/refunds/:id/settle`, `GET /admin/refunds`
 
-Reviews: `GET/POST /reviews`, `GET/PATCH /admin/reviews/:id`
+Reviews: `GET/POST /reviews` (create body accepts `sizeWorn`, `heightCm`,
+`weightKg`, `bustSize`, `bodyType`, `fitRating`), `GET/PATCH /admin/reviews/:id`
 
 KYC: `POST /kyc/...`, `GET/PATCH /admin/kyc/:id`
 
@@ -222,13 +249,16 @@ Health: `GET /health`, `GET /health/ready`
 
 ## 8. Test Results
 
-- **E2E smoke:** 51/51 PASS (full lifecycle + negative paths)
+- **E2E smoke:** 51/51 PASS (full lifecycle + negative paths, incl. backup-size
+  pairing and damage-waiver pricing assertions)
 - **Integration:** 24/24 PASS
   - errors: 5/5
   - auth: 7/7 (incl. refresh rotation + token-reuse revokes all)
   - users: 4/4 (incl. default-address demotion)
   - categories: 4/4 (incl. cycles, uniqueness, deactivation gating)
   - health: 4/4
+- **Frontend Playwright e2e:** 3/3 PASS (auth error-message contract; requires
+  Vite dev server on :5173 + backend on :5000 already running)
 - All suites run on isolated scratch DBs; no destructive ops on dev DB.
 
 ## 9. Remaining / Approval-Dependent Items
@@ -240,7 +270,9 @@ Health: `GET /health`, `GET /health/ready`
 - Transport collection recipient (provider vs platform) — decision point.
 - Commission bps — unapproved (default 5%).
 - Email provider for password reset (dev token returned outside production).
-- Frontend UI completion (foundation in place; core flows to be wired).
+- Frontend UI: RTR-parity pass wired (FilterModal facets, BagDrawer slide-out,
+  backup-size selector, damage-waiver opt-in, ModeSwitcher, fit reviews panel);
+  editorial CMS modules and wishlists remain open.
 - Production deployment (no credentials/access provided).
 
 ## 10. Git History

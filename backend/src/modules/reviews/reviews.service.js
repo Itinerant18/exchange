@@ -5,6 +5,9 @@ import { expectEnum, expectInt, expectString, isUuid } from '../../utils/validat
 import { translatePgError } from '../../utils/pgErrorMapper.js';
 import * as repository from './reviews.repository.js';
 
+const BODY_TYPES = ['petite', 'slim', 'average', 'athletic', 'curvy', 'plus_size'];
+const FIT_RATINGS = ['RUNS_SMALL', 'TRUE_TO_SIZE', 'RUNS_LARGE'];
+
 // ---------------------------------------------------------------------- read
 
 export async function getPublicReview(user, reviewId) {
@@ -31,6 +34,19 @@ export async function listReviewsForUser(revieweeUserId, query, pagination) {
   return { rows: rows.map(mapPublicRow), total, reputation };
 }
 
+/**
+ * 'Our Runway' reviews for a single listing plus the fit-meter aggregate.
+ * Only the listing's own active status gates visibility (read through the
+ * listing module's loader); review rows are published ones only.
+ */
+export async function listReviewsForListing(listingId, pagination) {
+  if (!isUuid(listingId)) {
+    throw new AppError('The listing identifier is not valid.', { statusCode: 400, code: 'INVALID_ID' });
+  }
+  const { rows, total, fitStats } = await repository.listPublishedReviewsForListing(listingId, pagination);
+  return { rows: rows.map(mapListingReviewRow), total, fitStats };
+}
+
 export async function listMyWritten(user, pagination) {
   const { rows, total } = await repository.listReviewsByAuthor(user.id, pagination);
   return { rows, total };
@@ -52,6 +68,27 @@ export async function createReview(user, context, body) {
   const comment = body.comment === undefined || body.comment === null
     ? null
     : expectString(body.comment, 'comment', { min: 1, max: 2000 });
+
+  // Optional reviewer body specs ("Our Runway" fields). Everything is
+  // nullable; provided values must fall inside sane human ranges.
+  const sizeWorn = body.sizeWorn === undefined || body.sizeWorn === null
+    ? null
+    : expectString(body.sizeWorn, 'sizeWorn', { min: 1, max: 50 });
+  const heightCm = body.reviewerHeightCm === undefined || body.reviewerHeightCm === null
+    ? null
+    : expectInt(Number(body.reviewerHeightCm), 'reviewerHeightCm', { min: 100, max: 250 });
+  const weightKg = body.reviewerWeightKg === undefined || body.reviewerWeightKg === null
+    ? null
+    : expectInt(Number(body.reviewerWeightKg), 'reviewerWeightKg', { min: 25, max: 300 });
+  const bustSize = body.bustSize === undefined || body.bustSize === null
+    ? null
+    : expectString(body.bustSize, 'bustSize', { min: 1, max: 20 });
+  const bodyType = body.bodyType === undefined || body.bodyType === null
+    ? null
+    : expectEnum(body.bodyType, 'bodyType', BODY_TYPES).toLowerCase();
+  const fitRating = body.fitRating === undefined || body.fitRating === null
+    ? null
+    : expectEnum(body.fitRating, 'fitRating', FIT_RATINGS);
 
   const hasBooking = body.qualifyingRentalBookingId !== undefined && body.qualifyingRentalBookingId !== null;
   const hasOrder = body.qualifyingOrderId !== undefined && body.qualifyingOrderId !== null;
@@ -84,13 +121,19 @@ export async function createReview(user, context, body) {
         qualifying_order_id: hasOrder ? body.qualifyingOrderId : null,
         rating,
         comment,
+        size_worn: sizeWorn,
+        reviewer_height_cm: heightCm,
+        reviewer_weight_kg: weightKg,
+        bust_size: bustSize,
+        body_type: bodyType,
+        fit_rating: fitRating,
       });
       await writeAuditLog(client, {
         ...context,
         action: 'REVIEW_CREATED',
         entityType: 'review',
         entityId: row.id,
-        newValue: { transactionId: groupId, rating },
+        newValue: { transactionId: groupId, rating, fitRating },
       });
       return row;
     });
@@ -165,6 +208,22 @@ async function resolveOrderParticipant(user, orderId, side) {
   return sellerOwner.owner_user_id;
 }
 
+function mapListingReviewRow(row) {
+  return {
+    id: row.id,
+    rating: row.rating,
+    comment: row.comment ?? null,
+    reviewerDisplayName: row.reviewer_display_name ?? null,
+    sizeWorn: row.size_worn ?? null,
+    reviewerHeightCm: row.reviewer_height_cm === null || row.reviewer_height_cm === undefined ? null : Number(row.reviewer_height_cm),
+    reviewerWeightKg: row.reviewer_weight_kg === null || row.reviewer_weight_kg === undefined ? null : Number(row.reviewer_weight_kg),
+    bustSize: row.bust_size ?? null,
+    bodyType: row.body_type ?? null,
+    fitRating: row.fit_rating ?? null,
+    createdAt: row.created_at,
+  };
+}
+
 // -------------------------------------------------------------- moderation
 
 export async function moderateReview(user, context, reviewId, body) {
@@ -206,6 +265,12 @@ function mapPublicRow(row) {
     reviewerDisplayName: row.reviewer_display_name ?? null,
     qualifyingRentalBookingId: row.qualifying_rental_booking_id ?? null,
     qualifyingOrderId: row.qualifying_order_id ?? null,
+    sizeWorn: row.size_worn ?? null,
+    reviewerHeightCm: row.reviewer_height_cm === null || row.reviewer_height_cm === undefined ? null : Number(row.reviewer_height_cm),
+    reviewerWeightKg: row.reviewer_weight_kg === null || row.reviewer_weight_kg === undefined ? null : Number(row.reviewer_weight_kg),
+    bustSize: row.bust_size ?? null,
+    bodyType: row.body_type ?? null,
+    fitRating: row.fit_rating ?? null,
     createdAt: row.created_at,
   };
 }
@@ -220,6 +285,12 @@ function mapReviewDetail(row) {
     rating: row.rating,
     comment: row.comment ?? null,
     status: row.status,
+    sizeWorn: row.size_worn ?? null,
+    reviewerHeightCm: row.reviewer_height_cm === null || row.reviewer_height_cm === undefined ? null : Number(row.reviewer_height_cm),
+    reviewerWeightKg: row.reviewer_weight_kg === null || row.reviewer_weight_kg === undefined ? null : Number(row.reviewer_weight_kg),
+    bustSize: row.bust_size ?? null,
+    bodyType: row.body_type ?? null,
+    fitRating: row.fit_rating ?? null,
     qualifyingRentalBookingId: row.qualifying_rental_booking_id ?? null,
     qualifyingOrderId: row.qualifying_order_id ?? null,
     createdAt: row.created_at,

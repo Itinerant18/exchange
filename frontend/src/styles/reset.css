@@ -85,12 +85,12 @@ input[type='search'] {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-line-strong);
+  background: var(--color-hairline);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-muted);
+  background: var(--color-on-primary);
 }
 
 @media (prefers-reduced-motion: reduce) {

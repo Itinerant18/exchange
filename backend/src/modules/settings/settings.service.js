@@ -63,6 +63,16 @@ export async function minRentalDays() {
   return readIntegerSetting('min_rental_days', { min: 1 });
 }
 
+/** Optional damage waiver flat fee per booking (paise). Only charged when the renter opts in. */
+export async function damageWaiverPaise() {
+  return readIntegerSetting('damage_waiver_fee_paise', { min: 0 });
+}
+
+/** Whether free backup-size pairing is offered at booking time. */
+export async function isBackupSizesEnabled() {
+  return readBooleanSetting('backup_sizes_enabled');
+}
+
 // ---------------------------------------------------------------- admin
 
 export async function listAllSettings() {

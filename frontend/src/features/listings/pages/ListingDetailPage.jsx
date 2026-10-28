@@ -2,18 +2,23 @@ import { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { listingsApi } from '../../../api/listingsApi.js';
 import { rentalsApi } from '../../../api/rentalsApi.js';
+import { ordersApi } from '../../../api/ordersApi.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
+import { useBag } from '../../../context/BagContext.jsx';
+import { useFavorites } from '../../../context/FavoritesContext.jsx';
 import { formatPaiseToRupees, calculateReturnDate, formatDate } from '../../../utils/formatters.js';
 import { RentalDatePicker } from '../../../components/rental/RentalDatePicker.jsx';
 import { BackupSizeSelector } from '../../../components/rental/BackupSizeSelector.jsx';
 import { FitInsights } from '../../../components/rental/FitInsights.jsx';
 import { CustomerReviews } from '../../../components/rental/CustomerReviews.jsx';
 import { DamageWaiverBadge } from '../../../components/rental/DamageWaiverBadge.jsx';
+import { ModeSwitcher } from '../../../components/rental/ModeSwitcher.jsx';
 import styles from './ListingDetailPage.module.css';
 
 export function ListingDetailPage() {
   const { id } = useParams();
   const { isAuthed } = useAuth();
+  const { isFavorite, toggleFavorite } = useFavorites();
   const navigate = useNavigate();
 
   const [listing, setListing] = useState(null);
@@ -27,6 +32,18 @@ export function ListingDetailPage() {
   const [primarySize, setPrimarySize] = useState('');
   const [backupSize, setBackupSize] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Slide-out bag (RTR CEBagComponent analogue): booking is started here and
+  // confirmed inside the drawer so the shopper can keep browsing.
+  const { addToBag } = useBag();
+
+  // Rent vs Buy pre-owned mode (RTR-style buy box). Defaults to rent when the
+  // listing supports rental, falling back to buy for resale-only listings.
+  const [mode, setMode] = useState('rent');
+  // Opt-in damage care flat fee; actual charge is computed by the backend.
+  const [damageWaiver, setDamageWaiver] = useState(false);
+  // Available units for buy mode.
+  const [buyUnitIds, setBuyUnitIds] = useState([]);
 
   // Live Availability from Backend
   const [checkingAvailability, setCheckingAvailability] = useState(false);
@@ -42,10 +59,20 @@ export function ListingDetailPage() {
         if (data?.size) {
           setPrimarySize(data.size);
         }
+        // Resale-only listings open in buy mode.
+        if (data?.isSale && !data?.isRental) setMode('buy');
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [id]);
+
+  // Buy mode needs an available inventory unit to purchase.
+  useEffect(() => {
+    if (!id || mode !== 'buy') return;
+    listingsApi.getAvailableUnits(id)
+      .then((res) => setBuyUnitIds(res?.unitIds ?? []))
+      .catch(() => setBuyUnitIds([]));
+  }, [id, mode]);
 
   // Compute calculated return date based on delivery date & rental duration
   const returnDate = useMemo(() => {
@@ -76,22 +103,20 @@ export function ListingDetailPage() {
 
   // Exact pricing breakdown calculated from backend daily rental rate & duration
   const pricing = useMemo(() => {
-    if (!listing) return { dailyRate: 0, subtotal: 0, deposit: 0, total: 0 };
+    if (!listing) return { dailyRate: 0, subtotal: 0, deposit: 0, waiverFee: 1250, total: 0, buyPrice: 0 };
     const dailyRate = Number(listing.rentalPricePaise || 0);
     const deposit = Number(listing.depositPaise || 0);
     const subtotal = dailyRate * rentalDuration;
-    const total = subtotal + deposit;
-    return { dailyRate, subtotal, deposit, total };
-  }, [listing, rentalDuration]);
+    // Flat per-booking waiver, mirroring the platform setting default.
+    const waiverFee = damageWaiver ? 1250 : 0;
+    const total = subtotal + deposit + waiverFee;
+    const buyPrice = Number(listing.salePricePaise || 0);
+    return { dailyRate, subtotal, deposit, waiverFee, total, buyPrice };
+  }, [listing, rentalDuration, damageWaiver]);
 
-  async function handleBookRental(e) {
+  function handleAddToBag(e) {
     e.preventDefault();
     setError('');
-
-    if (!isAuthed) {
-      navigate('/login');
-      return;
-    }
 
     if (!deliveryDate) {
       setError('Please select a delivery date for your event.');
@@ -103,24 +128,58 @@ export function ListingDetailPage() {
       return;
     }
 
+    const payload = {
+      listingId: id,
+      startDate: deliveryDate,
+      endDate: returnDate,
+      transportMode: 'none',
+      durationDays: rentalDuration,
+      // Free backup-size preference (second size rides along at $0).
+      backupSize: backupSize || undefined,
+      // Opt-in damage care waiver.
+      damageWaiver,
+    };
+
+    // If available units were returned by backend, select 1 unit so subtotal isn't multiplied
+    if (availableUnitIds.length > 0) {
+      payload.itemIds = [availableUnitIds[0]];
+    }
+
+    addToBag(payload, {
+      title,
+      brand,
+      image: displayImages[0] || undefined,
+      size: primarySize || listingSize,
+      backupSize: backupSize || undefined,
+      durationDays: rentalDuration,
+      subtotalPaise: pricing.subtotal + pricing.waiverFee,
+      depositPaise: pricing.deposit,
+      totalPaise: pricing.total,
+    });
+  }
+
+  async function handleBuyNow(e) {
+    e.preventDefault();
+    setError('');
+
+    if (!isAuthed) {
+      navigate('/login');
+      return;
+    }
+
+    if (buyUnitIds.length === 0) {
+      setError('This pre-owned piece is currently sold. Browse similar looks in the catalog.');
+      return;
+    }
+
     setSubmitting(true);
     try {
-      const payload = {
-        listingId: id,
-        startDate: deliveryDate,
-        endDate: returnDate,
-        transportMode: 'none',
-      };
-
-      // If available units were returned by backend, select 1 unit so subtotal isn't multiplied
-      if (availableUnitIds.length > 0) {
-        payload.itemIds = [availableUnitIds[0]];
-      }
-
-      const res = await rentalsApi.createBooking(payload);
-      navigate(`/bookings/${res.id}`);
+      await ordersApi.createOrder({
+        items: [{ inventoryItemId: buyUnitIds[0] }],
+      });
+      navigate('/orders');
     } catch (err) {
-      setError(err.message || 'Failed to create booking reservation.');
+      setError(err.message || 'Failed to create purchase order.');
     } finally {
       setSubmitting(false);
     }
@@ -271,14 +330,29 @@ export function ListingDetailPage() {
           />
 
           {/* Real Customer Photos & Reviews from Backend */}
-          <CustomerReviews ownerId={ownerId} activeUserSize={primarySize} listingTitle={title} />
+          <CustomerReviews listingId={id} activeUserSize={primarySize} listingTitle={title} />
         </div>
 
         {/* ── Right Column: Sticky Booking & Sizing Console ── */}
         <div className={styles.consoleCol}>
           <div className={styles.stickyConsole}>
             <div className={styles.consoleHeader}>
-              <span className={styles.designerBrand}>{brand}</span>
+              <div className={styles.designerAndWishlistRow}>
+                <span className={styles.designerBrand}>{brand}</span>
+                <button
+                  type="button"
+                  className={`${styles.pdpWishlistBtn} ${isFavorite(id) ? styles.pdpWishlistBtnActive : ''}`}
+                  onClick={() => {
+                    if (!isAuthed) { navigate('/login'); return; }
+                    toggleFavorite(id);
+                  }}
+                  aria-label={isFavorite(id) ? 'Remove from saved' : 'Save to hearts'}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill={isFavorite(id) ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                  </svg>
+                </button>
+              </div>
               <h1 className={styles.garmentTitle}>{title}</h1>
 
               {/* Price Anchoring */}
@@ -305,6 +379,14 @@ export function ListingDetailPage() {
               <div className={styles.alertError} role="alert">
                 {error}
               </div>
+            )}
+
+            {isRental && isSale && (
+              <ModeSwitcher
+                mode={mode}
+                onModeChange={setMode}
+                availableModes={['rent', 'buy']}
+              />
             )}
 
             {/* ── Interactive Date Picker (4 vs 8 Days) ── */}
@@ -343,12 +425,55 @@ export function ListingDetailPage() {
               onBackupSizeChange={setBackupSize}
             />
 
+            {mode === 'buy' ? (
+              <>
+                {/* ── Buy Pre-Owned Buy Box ── */}
+                <div className={styles.pricingBreakdown}>
+                  <div className={styles.breakdownRow}>
+                    <span>Buy Pre-Owned ({condition || 'pre-loved'})</span>
+                    <span>{formatPaiseToRupees(pricing.buyPrice)}</span>
+                  </div>
+                  {estimatedRetail && (
+                    <div className={styles.breakdownRow}>
+                      <span>Estimated retail</span>
+                      <span>{formatPaiseToRupees(estimatedRetail)}</span>
+                    </div>
+                  )}
+                  <div className={`${styles.breakdownRow} ${styles.totalRow}`}>
+                    <strong>Total Amount</strong>
+                    <strong>{formatPaiseToRupees(pricing.buyPrice)}</strong>
+                  </div>
+                </div>
+
+                <div className={styles.actionBlock}>
+                  <button
+                    type="button"
+                    className={styles.bookButton}
+                    onClick={handleBuyNow}
+                    disabled={submitting || buyUnitIds.length === 0}
+                  >
+                    {submitting
+                      ? 'Placing Order…'
+                      : buyUnitIds.length === 0
+                      ? 'Sold — Browse Similar Looks'
+                      : `Buy Yours Now — ${formatPaiseToRupees(pricing.buyPrice)}`}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
             {/* ── Real Pricing Breakdown (Direct from Backend Rates) ── */}
             <div className={styles.pricingBreakdown}>
               <div className={styles.breakdownRow}>
                 <span>Rental ({rentalDuration} days @ {formatPaiseToRupees(pricing.dailyRate)}/day)</span>
                 <span>{formatPaiseToRupees(pricing.subtotal)}</span>
               </div>
+              {damageWaiver && (
+                <div className={styles.breakdownRow}>
+                  <span>Damage Care (opt-in)</span>
+                  <span>{formatPaiseToRupees(pricing.waiverFee)}</span>
+                </div>
+              )}
               <div className={styles.breakdownRow}>
                 <span>Security Deposit (100% refundable upon return)</span>
                 <span>{formatPaiseToRupees(pricing.deposit)}</span>
@@ -368,25 +493,33 @@ export function ListingDetailPage() {
               <button
                 type="button"
                 className={styles.bookButton}
-                onClick={handleBookRental}
-                disabled={submitting || checkingAvailability || isSoldOutForDates || !isDateSelected}
+                onClick={handleAddToBag}
+                disabled={checkingAvailability || isSoldOutForDates || !isDateSelected}
               >
                 {submitting
-                  ? 'Reserving Look…'
+                  ? 'Adding…'
                   : !isDateSelected
-                  ? 'Select Delivery Date to Reserve'
+                  ? 'Select Delivery Date to Add to Bag'
                   : isSoldOutForDates
                   ? 'Unavailable on Selected Dates'
-                  : `Reserve Look — ${formatPaiseToRupees(pricing.total)}`}
+                  : `Add to Bag — ${formatPaiseToRupees(pricing.total)}`}
               </button>
 
               <p className={styles.actionNote}>
                 ✓ Includes primary size ({primarySize || listingSize}) + free backup size ({backupSize || 'None'})
               </p>
             </div>
+              </>
+            )}
 
-            {/* ── Trust Perks (Damage waiver & cleaning) ── */}
-            <DamageWaiverBadge />
+            {/* ── Trust Perks (+ opt-in Damage Care waiver) ── */}
+            {mode === 'rent' && (
+              <DamageWaiverBadge
+                checked={damageWaiver}
+                onChange={setDamageWaiver}
+                feePaise={1250}
+              />
+            )}
           </div>
         </div>
       </div>

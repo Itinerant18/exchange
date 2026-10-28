@@ -1,0 +1,422 @@
+/* ── Rent The Runway Full-Coverage Hero Architecture ── */
+
+.heroWrapper {
+  width: 100%;
+  max-width: 1540px;
+  margin: 0 auto;
+  padding: var(--space-2) var(--space-4) var(--space-6);
+}
+
+.fullCoverageHero {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2560 / 948;
+  min-height: 480px;
+  border-radius: 32px;
+  overflow: hidden;
+  background-color: #120006;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 768px) {
+  .heroWrapper {
+    padding: var(--space-2) var(--space-2) var(--space-4);
+  }
+  
+  .fullCoverageHero {
+    aspect-ratio: 16 / 15;
+    min-height: 540px;
+    border-radius: 24px;
+  }
+}
+
+/* 1. Cinematic Background Video & Fallback Poster */
+.mediaContainer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.heroVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.fallbackPoster {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  animation: gentleScale 16s ease-in-out infinite alternate;
+}
+
+@keyframes gentleScale {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.04); }
+}
+
+/* 2. Editorial Gradient Scrim */
+.editorialScrim {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  background: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.82) 0%,
+    rgba(0, 0, 0, 0.5) 45%,
+    rgba(0, 0, 0, 0.1) 75%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+@media (min-width: 960px) {
+  .editorialScrim {
+    width: 60%;
+  }
+}
+
+.vignetteOverlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.7) 0%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* 3. Left-Aligned Text Overlay (HeroUnitCopy) */
+.heroUnitCopy {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: 0;
+  width: 100%;
+  max-width: 680px;
+  padding: var(--space-6) var(--space-6) var(--space-6) var(--space-12);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  z-index: 10;
+}
+
+@media (max-width: 768px) {
+  .heroUnitCopy {
+    top: 45%;
+    padding: var(--space-4) var(--space-6);
+    align-items: center;
+    text-align: center;
+    max-width: 100%;
+  }
+}
+
+.eyebrowPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.3rem 0.9rem;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-full);
+  color: #FFFFFF;
+  font-family: var(--font-extended);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-3);
+}
+
+.eyebrowSparkle {
+  color: #E2B777;
+}
+
+.headline {
+  font-family: var(--font-display);
+  font-size: clamp(2.1rem, 4.5vw, 3.75rem);
+  font-weight: 300;
+  line-height: 1.08;
+  letter-spacing: -1.2px;
+  color: #FFFFFF;
+  margin: 0 0 var(--space-3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.subheadline {
+  font-family: var(--font-body);
+  font-size: clamp(14px, 1.8vw, 17px);
+  font-weight: 300;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.88);
+  max-width: 520px;
+  margin: 0 0 var(--space-6);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Dual Pill CTAs */
+.ctaContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  width: auto;
+}
+
+@media (max-width: 540px) {
+  .ctaContainer {
+    flex-direction: column;
+    width: 100%;
+  }
+}
+
+.primaryCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 1.75rem;
+  background-color: var(--color-canvas);
+  color: #FFFFFF;
+  font-family: var(--font-extended);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-hairline);
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: all var(--duration-fast) var(--ease-editorial);
+  white-space: nowrap;
+}
+
+.primaryCta:hover {
+  background-color: #420022;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+.secondaryCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 1.75rem;
+  background-color: #FFFFFF;
+  color: var(--color-canvas);
+  border: 1px solid var(--color-canvas);
+  font-family: var(--font-extended);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  transition: all var(--duration-fast) var(--ease-editorial);
+  white-space: nowrap;
+}
+
+.secondaryCta:hover {
+  background-color: #F8F8F8;
+}
+
+@media (max-width: 540px) {
+  .primaryCta,
+  .secondaryCta {
+    width: 100%;
+  }
+}
+
+/* Reel Tabs */
+.reelTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--space-2);
+}
+
+.reelTab {
+  background: rgba(0, 0, 0, 0.4);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-extended);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: capitalize;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reelTab:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #FFFFFF;
+}
+
+.reelTabActive {
+  background: #FFFFFF;
+  color: var(--color-canvas);
+  border-color: #FFFFFF;
+  font-weight: 600;
+}
+
+/* 4. Floating Promo Callout Pill (SubscriptionPromoCallout) */
+.subscriptionCallout {
+  position: absolute;
+  bottom: 24px;
+  right: 56px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  padding: 10px 20px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.25);
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.subscriptionCallout:hover {
+  background: rgba(255, 255, 255, 0.88);
+}
+
+@media (max-width: 960px) {
+  .subscriptionCallout {
+    right: 24px;
+    bottom: 20px;
+    padding: 8px 14px;
+    gap: var(--space-2);
+  }
+}
+
+@media (max-width: 768px) {
+  .subscriptionCallout {
+    left: 50%;
+    transform: translateX(-50%);
+    right: auto;
+    bottom: 16px;
+    width: max-content;
+    max-width: 92%;
+  }
+}
+
+.calloutLeft {
+  text-align: right;
+}
+
+.calloutTitle {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: #1D1D1D;
+  line-height: 1.2;
+}
+
+.calloutSub {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: #707070;
+}
+
+.calloutDivider {
+  width: 1px;
+  height: 32px;
+  background-color: #4051D5; /* RTR accent blue line */
+}
+
+.calloutRight {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.calloutPrice {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+  color: var(--color-canvas);
+  line-height: 1;
+}
+
+.calloutPeriodBlock {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.calloutPeriod {
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 600;
+  color: #1D1D1D;
+}
+
+.calloutTerms {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: #707070;
+  white-space: nowrap;
+}
+
+/* 5. Floating Video Control Button (AtomVideoPauseButton) */
+.videoControls {
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  z-index: 20;
+}
+
+@media (max-width: 768px) {
+  .videoControls {
+    top: 18px;
+    bottom: auto;
+    right: 18px;
+  }
+}
+
+.controlBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  color: #231F20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+  font-size: 12px;
+}
+
+.controlBtn:hover {
+  background: #FFFFFF;
+  transform: scale(1.05);
+}
+
+.controlIcon {
+  width: 12px;
+  height: 12px;
+  fill: #231F20;
+}

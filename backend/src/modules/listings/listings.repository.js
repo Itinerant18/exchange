@@ -1,10 +1,12 @@
 import { pool } from '../../config/database.js';
+import { FACET_KEYS } from './listingAttributes.js';
 
 const LISTING_COLUMNS = `
     l.id, l.owner_type, l.owner_user_id, l.category_id, l.title, l.description,
     l.condition, l.size, l.colour, l.brand, l.rental_price_paise, l.sale_price_paise,
     l.deposit_paise, l.replacement_value_paise, l.is_rental, l.is_sale,
-    l.listing_status, l.city, l.delivery_available, l.delivery_radius_km, l.created_at, l.updated_at,
+    l.listing_status, l.city, l.delivery_available, l.delivery_radius_km, l.attributes,
+    l.created_at, l.updated_at,
     c.name AS category_name, c.slug AS category_slug, c.is_active AS category_is_active`;
 
 function insertValues(fields) {
@@ -20,11 +22,12 @@ export async function insertListing(client, fields) {
     `INSERT INTO public.listings
         (owner_type, owner_user_id, category_id, title, description, condition, size, colour, brand,
          rental_price_paise, sale_price_paise, deposit_paise, replacement_value_paise,
-         is_rental, is_sale, listing_status)
+         is_rental, is_sale, attributes, listing_status)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-             COALESCE($16::varchar, 'active'))
+             $16::jsonb, COALESCE($17::varchar, 'active'))
      RETURNING id`,
-    [...insertValues(fields), fields.listing_status ?? null],
+    [...insertValues(fields), fields.attributes ? JSON.stringify(fields.attributes) : '{}',
+      fields.listing_status ?? null],
   );
   return rows[0];
 }
@@ -88,9 +91,10 @@ export async function findListingDetail(listingId) {
 
 /**
  * Public catalog query. Only active listings in active categories. Filters:
- * categoryId, condition, mode (rent|sale), price range, keyword, sort.
+ * categoryId, condition, mode (rent|sale), price range, keyword, sort, and
+ * facet attributes ({ occasion: [...], neckline: [...], ... }).
  */
-export async function listPublicListings({ categoryId, condition, mode, minPrice, maxPrice, keyword, sortKey }, { limit, offset }) {
+export async function listPublicListings({ categoryId, condition, mode, minPrice, maxPrice, keyword, attributes, sortKey }, { limit, offset }) {
   const conditions = ['l.listing_status = $1', 'c.is_active = $2'];
   const filterParams = ['active', true];
 
@@ -114,6 +118,26 @@ export async function listPublicListings({ categoryId, condition, mode, minPrice
   if (condition) addCondition('l.condition = $#', condition);
   if (keyword) addCondition('l.title ILIKE $#', `%${keyword}%`);
 
+  // Facet filters: every selected value of a facet must match (OR within a
+  // facet, AND across facets) — ?occasion=Cocktail,BlackTie&neckline=VNeck.
+  if (attributes) {
+    for (const [key, values] of Object.entries(attributes)) {
+      if (!FACET_KEYS.includes(key) || values.length === 0) continue;
+      const facetParamIndex = filterParams.length + 1;
+      const valuesParamIndex = filterParams.length + 2;
+      conditions.push(`l.attributes ?$&$${facetParamIndex} = true
+        AND l.attributes->$${facetParamIndex} ?| $${valuesParamIndex}::text[]`);
+      // jsonb `?|` needs a text[] — bind values as array plus the key.
+      conditions.pop();
+      filterParams.push(key, values);
+      const keyIdx = filterParams.length - 1;
+      const valuesIdx = filterParams.length;
+      conditions.push(
+        `(l.attributes ? $${keyIdx} AND l.attributes->$${keyIdx} ?| $${valuesIdx}::text[])`,
+      );
+    }
+  }
+
   const orderBy = sortKey === 'price_asc' || sortKey === 'price_desc'
     ? `ORDER BY ${(mode === 'rent' ? 'l.rental_price_paise' : mode === 'sale' ? 'l.sale_price_paise' : 'COALESCE(l.rental_price_paise, l.sale_price_paise)')} ${sortKey === 'price_asc' ? 'ASC NULLS LAST' : 'DESC NULLS LAST'}, l.created_at DESC`
     : 'ORDER BY l.created_at DESC';
@@ -134,6 +158,68 @@ export async function listPublicListings({ categoryId, condition, mode, minPrice
     pool.query(countQuery, filterParams),
   ]);
   return { rows: listResult.rows.map(mapListingRow), total: countResult.rows[0].total };
+}
+
+/**
+ * Facet counts over the currently matching public catalog. Each facet key is
+ * counted independently: counts for facet K include the base filters plus the
+ * OTHER facet filters, but not K's own values, so the FilterModal can show
+ * "how many results would this value add?" RTR-style.
+ */
+export async function listFacetCounts(filters, knownFacetCountsFilter = null) {
+  const baseConditions = ['l.listing_status = $1', 'c.is_active = $2'];
+  const baseParams = ['active', true];
+  if (filters?.categoryId) {
+    baseParams.push(filters.categoryId);
+    baseConditions.push(`l.category_id = $${baseParams.length}`);
+  }
+  if (filters?.condition) {
+    baseParams.push(filters.condition);
+    baseConditions.push(`l.condition = $${baseParams.length}`);
+  }
+  if (filters?.mode === 'rent') baseConditions.push('l.is_rental = true');
+  if (filters?.mode === 'sale') baseConditions.push('l.is_sale = true');
+  if (filters?.keyword) {
+    baseParams.push(`%${filters.keyword}%`);
+    baseConditions.push(`l.title ILIKE $${baseParams.length}`);
+  }
+
+  // Other-facet attribute filters use JSONB containment so a value count
+  // respects the remaining constraints without re-parsing per-key params.
+  if (filters?.attributes) {
+    for (const [key, values] of Object.entries(filters.attributes)) {
+      baseParams.push(JSON.stringify({ [key]: values }));
+      baseConditions.push(`l.attributes @> $${baseParams.length}::jsonb`);
+    }
+  }
+
+  const facetsToCount = knownFacetCountsFilter?.facets ?? FACET_KEYS;
+  const baseWhereSql = baseConditions.join(' AND ');
+  const baseParamsCount = baseParams.length;
+
+  const queries = facetsToCount.map((key) => {
+    const params = [...baseParams];
+    const keyIdx = params.push(key);
+    const sql = `SELECT $${keyIdx}::text AS facet, v.value AS value, count(*)::int AS total
+       FROM public.listings l
+       JOIN public.categories c ON c.id = l.category_id
+       CROSS JOIN LATERAL jsonb_array_elements_text(l.attributes->$${keyIdx}::text) AS v(value)
+       WHERE ${baseWhereSql}
+         AND NOT l.attributes @> $${baseParamsCount + 1}::jsonb
+       GROUP BY v.value
+       ORDER BY total DESC`;
+    return { key, params, sql };
+  });
+
+  const facets = {};
+  const results = await Promise.all(
+    queries.map(({ key, params, sql }) => pool.query(sql, params)),
+  );
+  results.forEach((result, index) => {
+    const key = facetsToCount[index];
+    facets[key] = result.rows.map((row) => ({ value: row.value, count: row.total }));
+  });
+  return facets;
 }
 
 /**
@@ -181,11 +267,12 @@ export async function updateListingRow(client, listingId, fields) {
         replacement_value_paise = CASE WHEN $20 THEN $21::bigint ELSE replacement_value_paise END,
         is_rental      = CASE WHEN $22 THEN $23::boolean ELSE is_rental END,
         is_sale        = CASE WHEN $24 THEN $25::boolean ELSE is_sale END,
-        listing_status = CASE WHEN $26 THEN $27::varchar ELSE listing_status END
+        listing_status = CASE WHEN $26 THEN $27::varchar ELSE listing_status END,
+        attributes     = CASE WHEN $28 THEN $29::jsonb  ELSE attributes END
      WHERE id = $1
      RETURNING id, owner_type, owner_user_id, category_id, title, description, condition, size, colour, brand,
         rental_price_paise, sale_price_paise, deposit_paise, replacement_value_paise,
-        is_rental, is_sale, listing_status, created_at, updated_at`,
+        is_rental, is_sale, listing_status, attributes, created_at, updated_at`,
     [
       listingId,
       has('title'), fields.title ?? null,
@@ -201,9 +288,21 @@ export async function updateListingRow(client, listingId, fields) {
       has('is_rental'), fields.is_rental ?? null,
       has('is_sale'), fields.is_sale ?? null,
       has('listing_status'), fields.listing_status ?? null,
+      has('attributes'), fields.attributes !== undefined ? JSON.stringify(fields.attributes) : null,
     ],
   );
   return rows[0] ?? null;
+}
+
+/** Available inventory unit ids for a listing (public buy-mode helper). */
+export async function findAvailableUnitIds(listingId, limit = 20) {
+  const { rows } = await pool.query(
+    `SELECT id FROM public.inventory_items
+     WHERE listing_id = $1 AND operational_status = 'AVAILABLE'
+     ORDER BY created_at ASC LIMIT $2`,
+    [listingId, limit],
+  );
+  return rows.map((row) => row.id);
 }
 
 export async function countListingUnitClaims(listingId) {
@@ -278,6 +377,7 @@ export function mapListingRow(row) {
     city: row.city ?? null,
     deliveryAvailable: row.delivery_available ?? false,
     deliveryRadiusKm: row.delivery_radius_km !== null && row.delivery_radius_km !== undefined ? Number(row.delivery_radius_km) : null,
+    attributes: row.attributes ?? {},
     categoryActive: row.category_is_active === undefined ? null : row.category_is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

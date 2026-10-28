@@ -1,8 +1,34 @@
 import styles from './DamageWaiverBadge.module.css';
+import { formatPaiseToRupees } from '../../utils/formatters.js';
 
-export function DamageWaiverBadge() {
+const DEFAULT_WAIVER_FEE_PAISE = 1250; // mirrors the platform setting default
+
+/**
+ * Damage-waiver opt-in for the PDP buy box. Renters add a flat per-booking
+ * fee that covers minor tears and spills; the actual charge is computed by
+ * the backend at booking time from platform settings.
+ */
+export function DamageWaiverBadge({ checked = false, onChange, feePaise }) {
+  const fee = feePaise ?? DEFAULT_WAIVER_FEE_PAISE;
+  const interactive = typeof onChange === 'function';
+
   return (
     <div className={styles.container}>
+      {interactive && (
+        <label className={styles.waiverRow}>
+          <input
+            type="checkbox"
+            className={styles.waiverCheckbox}
+            checked={checked}
+            onChange={(e) => onChange(e.target.checked)}
+          />
+          <span className={styles.waiverCopy}>
+            <strong className={styles.waiverTitle}>Add Damage Care — {formatPaiseToRupees(fee)}</strong>
+            <span className={styles.waiverDesc}>Covers minor tears, spills & zipper snags. No deposit reduction required.</span>
+          </span>
+        </label>
+      )}
+
       <div className={styles.perk}>
         <div className={styles.iconCircle}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

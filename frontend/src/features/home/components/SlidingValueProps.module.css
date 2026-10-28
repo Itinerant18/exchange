@@ -1,0 +1,106 @@
+.section {
+  background: var(--color-surface, #FBFBF5);
+  border-top: 1px solid var(--color-border, #E3E1DE);
+  border-bottom: 1px solid var(--color-border, #E3E1DE);
+  padding: var(--space-12, 4.5rem) 0;
+}
+
+.container {
+  max-width: var(--page-max-width, 1400px);
+  margin: 0 auto;
+  padding: 0 var(--page-pad, 1.5rem);
+}
+
+.header {
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto var(--space-10, 3rem);
+}
+
+.eyebrow {
+  display: block;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-muted, #78716C);
+  margin-bottom: 6px;
+}
+
+.heading {
+  font-family: var(--font-display, 'Martina Plantijn', serif);
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 400;
+  color: var(--color-on-surface, #1C1917);
+  margin: 0 0 var(--space-2, 0.5rem);
+}
+
+.subheading {
+  font-size: 15px;
+  color: var(--color-on-surface-muted, #78716C);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.cardsGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6, 1.5rem);
+}
+
+@media (min-width: 768px) {
+  .cardsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.card {
+  background: #FFFFFF;
+  border: 1px solid var(--color-border, #E3E1DE);
+  border-radius: 24px;
+  padding: var(--space-8, 2rem);
+  display: flex;
+  flex-direction: column;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: #1C1917;
+}
+
+.cardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-6, 1.5rem);
+}
+
+.stepNum {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-muted, #78716C);
+}
+
+.icon {
+  font-size: 18px;
+  color: var(--color-on-surface, #1C1917);
+}
+
+.title {
+  font-family: var(--font-display, 'Martina Plantijn', serif);
+  font-size: 21px;
+  font-weight: 400;
+  color: var(--color-on-surface, #1C1917);
+  margin: 0 0 var(--space-3, 0.75rem);
+}
+
+.desc {
+  font-size: 13.5px;
+  color: var(--color-on-surface-muted, #78716C);
+  line-height: 1.65;
+  margin: 0;
+}

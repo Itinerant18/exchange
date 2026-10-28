@@ -4,6 +4,7 @@ import { listingsApi } from '../../../api/listingsApi.js';
 import { categoriesApi } from '../../../api/categoriesApi.js';
 import { api } from '../../../api/apiClient.js';
 import { formatPaiseToRupees } from '../../../utils/formatters.js';
+import { FACET_TAXONOMY } from '../../../components/rental/FilterModal.jsx';
 import styles from './CreateListingPage.module.css';
 
 const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2', '4', '6', '8', '10', '12'];
@@ -32,6 +33,20 @@ export function CreateListingPage() {
     imageUrl: '',
     deliveryAvailable: true,
   });
+
+  // Structured style attributes ({ occasion: [...], length: [...] }).
+  const [attributes, setAttributes] = useState({});
+
+  function toggleFacetValue(facetKey, value) {
+    setAttributes((current) => {
+      const values = current[facetKey] ?? [];
+      const next = { ...current, [facetKey]: values.includes(value)
+        ? values.filter((v) => v !== value)
+        : [...values, value] };
+      if (next[facetKey].length === 0) delete next[facetKey];
+      return next;
+    });
+  }
 
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -98,6 +113,10 @@ export function CreateListingPage() {
 
       if (form.isSale && form.salePriceRupees !== '') {
         payload.salePricePaise = Math.round(Number(form.salePriceRupees) * 100);
+      }
+
+      if (Object.keys(attributes).length > 0) {
+        payload.attributes = attributes;
       }
 
       // 2. Create listing row
@@ -301,6 +320,35 @@ export function CreateListingPage() {
                   required
                 />
               </div>
+            </div>
+
+            {/* Section 1b: Style Attributes (facet taxonomy) */}
+            <div className={styles.section}>
+              <h2 className={styles.sectionHeading}>1b. Style Attributes</h2>
+              <p className={styles.sectionNote}>
+                These attributes power discovery filters. Pick every value that applies.
+              </p>
+              {FACET_TAXONOMY.map((facet) => (
+                <div key={facet.key} className={styles.formGroup}>
+                  <span className={styles.label}>{facet.label}</span>
+                  <div className={styles.chipRow}>
+                    {facet.values.map((value) => {
+                      const isSelected = (attributes[facet.key] ?? []).includes(value);
+                      return (
+                        <button
+                          key={value}
+                          type="button"
+                          className={`${styles.chip} ${isSelected ? styles.chipActive : ''}`}
+                          onClick={() => toggleFacetValue(facet.key, value)}
+                          aria-pressed={isSelected}
+                        >
+                          {value.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/_/g, ' ')}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Section 2: Imagery */}

@@ -2,6 +2,10 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { listingsApi } from '../../../api/listingsApi.js';
 import { ListingCard } from '../../../components/rental/ListingCard.jsx';
+import { HeroVideoShowcase } from '../components/HeroVideoShowcase.jsx';
+import { BrandTicker } from '../components/BrandTicker.jsx';
+import { MoleculeVisualNav } from '../components/MoleculeVisualNav.jsx';
+import { SlidingValueProps } from '../components/SlidingValueProps.jsx';
 import styles from './HomePage.module.css';
 
 export function HomePage() {
@@ -22,145 +26,33 @@ export function HomePage() {
 
   return (
     <div className={styles.home}>
-      {/* ── Editorial Hero ── */}
+      {/* ── 1. Editorial Hero (Video Reel Showcase) ── */}
       <section className={styles.hero}>
-        <div className={styles.heroContent}>
-          <div className={styles.heroBadge}>
-            <span>✦ THE CIRCULAR DESIGNER CLOSET</span>
-          </div>
-
-          <h1 className={styles.heroTitle}>
-            Wear the Designer.<br />Skip the Retail.
-          </h1>
-
-          <p className={styles.heroSubtitle}>
-            Rent luxury evening gowns, cocktail dresses, and festive occasion wear. Every booking includes a complimentary backup size and professional eco-friendly dry cleaning.
-          </p>
-
-          <div className={styles.heroCtas}>
-            <Link to="/listings?rental=true" className={styles.primaryCta}>
-              Explore Event Rentals
-            </Link>
-            <Link to="/listings?sale=true" className={styles.secondaryCta}>
-              Shop Pre-Loved Sale
-            </Link>
-          </div>
-
-          <div className={styles.heroMetrics}>
-            <div className={styles.metric}>
-              <span className={styles.metricValue}>2 Sizes</span>
-              <span className={styles.metricLabel}>Free backup size included in every order</span>
-            </div>
-            <div className={styles.metric}>
-              <span className={styles.metricValue}>100% Handled</span>
-              <span className={styles.metricLabel}>Zero dry cleaning or laundry needed</span>
-            </div>
-            <div className={styles.metric}>
-              <span className={styles.metricValue}>Prepaid Return</span>
-              <span className={styles.metricLabel}>Reusable garment bag with courier drop-off</span>
-            </div>
-          </div>
-        </div>
+        <HeroVideoShowcase />
       </section>
 
-      {/* ── Occasion Curations ── */}
-      <section className={styles.occasionsSection}>
-        <div className={styles.sectionHeader}>
-          <span className={styles.sectionEyebrow}>CURATED EDITS</span>
-          <h2 className={styles.sectionHeading}>Rent by Occasion</h2>
-          <p className={styles.sectionDesc}>Filter available designer pieces for your upcoming calendar events.</p>
-        </div>
+      {/* ── 2. Designer Brand Marquee Ticker (RTR Ticker analogue) ── */}
+      <BrandTicker />
 
-        <div className={styles.occasionGrid}>
-          <Link to="/listings?q=Wedding" className={styles.occasionCard}>
-            <div className={styles.occasionOverlay}>
-              <span className={styles.occasionTitle}>Wedding Guest</span>
-              <span className={styles.occasionSub}>Sarees, Lehengas & Gowns</span>
-            </div>
-          </Link>
+      {/* ── 3. Visual Occasions Carousel (RTR MoleculeVisualNav analogue) ── */}
+      <MoleculeVisualNav />
 
-          <Link to="/listings?q=Cocktail" className={styles.occasionCard}>
-            <div className={styles.occasionOverlay}>
-              <span className={styles.occasionTitle}>Cocktail & Party</span>
-              <span className={styles.occasionSub}>Mini, Midi & Statement Silhouettes</span>
-            </div>
-          </Link>
-
-          <Link to="/listings?q=Gown" className={styles.occasionCard}>
-            <div className={styles.occasionOverlay}>
-              <span className={styles.occasionTitle}>Black Tie Gala</span>
-              <span className={styles.occasionSub}>Floor-Length Luxury & Couture</span>
-            </div>
-          </Link>
-
-          <Link to="/listings?q=Dress" className={styles.occasionCard}>
-            <div className={styles.occasionOverlay}>
-              <span className={styles.occasionTitle}>Vacation & Resort</span>
-              <span className={styles.occasionSub}>Breezy Linens & Floral Maxis</span>
-            </div>
-          </Link>
-        </div>
-      </section>
-
-      {/* ── How It Works (Rent the Runway Standard) ── */}
-      <section className={styles.howItWorks}>
-        <div className={styles.sectionHeader}>
-          <span className={styles.sectionEyebrow}>HOW IT WORKS</span>
-          <h2 className={styles.sectionHeading}>Four Simple Steps to Great Style</h2>
-        </div>
-
-        <div className={styles.stepsGrid}>
-          <div className={styles.stepCard}>
-            <div className={styles.stepNum}>01</div>
-            <h3 className={styles.stepTitle}>Choose Your Dates</h3>
-            <p className={styles.stepText}>
-              Select a 4-day or 8-day rental duration. We recommend scheduling delivery 1–2 days before your event.
-            </p>
-          </div>
-
-          <div className={styles.stepCard}>
-            <div className={styles.stepNum}>02</div>
-            <h3 className={styles.stepTitle}>Free Backup Size</h3>
-            <p className={styles.stepText}>
-              Pick your primary size plus a complimentary second backup size so you are guaranteed a flawless fit.
-            </p>
-          </div>
-
-          <div className={styles.stepCard}>
-            <div className={styles.stepNum}>03</div>
-            <h3 className={styles.stepTitle}>Wear & Dazzle</h3>
-            <p className={styles.stepText}>
-              Step out in luxury without the retail price tag. Minor spills and routine wear are covered by our care policy.
-            </p>
-          </div>
-
-          <div className={styles.stepCard}>
-            <div className={styles.stepNum}>04</div>
-            <h3 className={styles.stepTitle}>Effortless Return</h3>
-            <p className={styles.stepText}>
-              Slip both dresses into the pre-paid reusable garment bag. Drop off by noon on your return date. We handle dry cleaning!
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Live Designer Rentals from Backend ── */}
+      {/* ── 4. Trending Rental Looks Grid ── */}
       <section className={styles.trendingSection}>
-        <div className={styles.sectionHeaderRow}>
+        <div className={styles.sectionHeader}>
           <div>
-            <span className={styles.sectionEyebrow}>AVAILABLE IN ATELIER</span>
-            <h2 className={styles.sectionHeading}>Current Event Rentals</h2>
+            <span className={styles.sectionEyebrow}>MOST COVETED</span>
+            <h2 className={styles.sectionHeading}>Trending for the Season</h2>
+            <p className={styles.sectionDesc}>The most reserved designer pieces across our rental collective.</p>
           </div>
-          <Link to="/listings" className={styles.viewAllLink}>
-            View Catalog ({listings.length}) →
+          <Link to="/listings" className={styles.exploreAllLink}>
+            Explore Full Wardrobe →
           </Link>
         </div>
 
         {loading ? (
-          <div className={styles.listingsGrid}>
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className={styles.skeletonCard} />
-            ))}
+          <div className={styles.loadingState}>
+            <p>Curating trending pieces...</p>
           </div>
         ) : listings.length > 0 ? (
           <div className={styles.listingsGrid}>
@@ -170,15 +62,28 @@ export function HomePage() {
           </div>
         ) : (
           <div className={styles.emptyState}>
-            <p className={styles.emptyTitle}>No active rentals currently in the atelier.</p>
-            <p className={styles.emptySub}>
-              List your designer outfit or check back soon as our community adds new pieces.
-            </p>
-            <Link to="/listings/new" className={styles.primaryCta} style={{ marginTop: '1rem' }}>
-              List an Outfit
-            </Link>
+            <p>No listings currently available. Be the first to list a designer look!</p>
+            <Link to="/listings/new" className={styles.ctaButton}>List a Piece</Link>
           </div>
         )}
+      </section>
+
+      {/* ── 5. How It Works (RTR 3-Step Sliding Value Proposition) ── */}
+      <SlidingValueProps />
+
+      {/* ── 6. Bottom Membership & Seller CTA ── */}
+      <section className={styles.bottomCtaSection}>
+        <div className={styles.bottomCtaContainer}>
+          <span className={styles.ctaEyebrow}>CIRCULAR FASHION REVOLUTION</span>
+          <h2 className={styles.ctaHeading}>Monetize Your Own Atelier Wardrobe</h2>
+          <p className={styles.ctaText}>
+            List your luxury lehengas, gowns, and designer occasion wear. Earn recurring rental income while verified courier delivery and deposit security are completely handled.
+          </p>
+          <div className={styles.ctaButtonGroup}>
+            <Link to="/listings/new" className={styles.primaryCtaBtn}>Start Renting Out</Link>
+            <Link to="/listings" className={styles.secondaryCtaBtn}>Browse Collection</Link>
+          </div>
+        </div>
       </section>
     </div>
   );

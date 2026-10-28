@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { rentalsApi } from '../../../api/rentalsApi.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { formatPaiseToRupees, formatDate } from '../../../utils/formatters.js';
+import { ReviewFormModal } from '../../../components/rental/ReviewFormModal.jsx';
 import styles from './BookingDetailPage.module.css';
 
 const STATUS_CONFIG = {
@@ -28,6 +29,7 @@ export function BookingDetailPage() {
   const [error, setError] = useState('');
   const [actionBusy, setActionBusy] = useState(false);
   const [actionSuccess, setActionSuccess] = useState('');
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -243,7 +245,34 @@ export function BookingDetailPage() {
               </div>
             </section>
           )}
+
+          {/* ── Our Runway Customer Review Section ── */}
+          {booking.status === 'completed' && booking.renterUserId === user?.id && (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Our Runway Review</h2>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-on-surface-muted)', margin: '0 0 var(--space-4) 0' }}>
+                Share your styling experience and sizing specs (height, weight, body type, fit rating) to help fellow members rent with confidence.
+              </p>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => setReviewModalOpen(true)}
+              >
+                ★ Share Review & Fit Specs
+              </button>
+            </section>
+          )}
         </main>
+
+        <ReviewFormModal
+          bookingId={booking.id}
+          listingTitle={booking.listingTitle}
+          isOpen={reviewModalOpen}
+          onClose={() => setReviewModalOpen(false)}
+          onSuccess={() => {
+            setActionSuccess('Your review and fit metrics have been submitted to Our Runway!');
+          }}
+        />
 
         {/* ── Sidebar ── */}
         <aside className={styles.sidebar}>

@@ -33,8 +33,12 @@ export const endpoints = Object.freeze({
   },
 
   // Listings & Catalog
+  // Facet value counts for the discovery FilterModal.
   listings: {
     list: '/listings',
+    facets: '/listings/facets',
+    units: (id) => `/listings/${id}/units`,
+    reviews: (id) => `/listings/${id}/reviews`,
     byId: (id) => `/listings/${id}`,
     create: '/listings',
     update: (id) => `/listings/${id}`,

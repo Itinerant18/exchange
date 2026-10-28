@@ -1,0 +1,49 @@
+.tickerWrapper {
+  width: 100%;
+  overflow: hidden;
+  background: var(--color-surface, #FBFBF5);
+  border-top: 1px solid var(--color-border, #E3E1DE);
+  border-bottom: 1px solid var(--color-border, #E3E1DE);
+  padding: 18px 0;
+  user-select: none;
+}
+
+.tickerTrack {
+  display: flex;
+  width: max-content;
+  animation: tickerScroll 30s linear infinite;
+}
+
+.tickerWrapper:hover .tickerTrack {
+  animation-play-state: paused;
+}
+
+.tickerItem {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 24px;
+}
+
+.brandName {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  color: var(--color-on-surface, #1C1917);
+  white-space: nowrap;
+}
+
+.sparkle {
+  color: var(--color-muted, #78716C);
+  font-size: 11px;
+}
+
+@keyframes tickerScroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

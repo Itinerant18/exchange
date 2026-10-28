@@ -41,16 +41,18 @@ export function DisputesPage() {
             </select>
           </div>
           <div className="form-row"><label className="label">Description</label><textarea className="input" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required /></div>
-          <button className="btn" type="submit">Open</button>
+          <button className="btn btn-primary" type="submit" style={{ marginTop: '0.75rem' }}>Open</button>
         </form>
       </div>
-      <table className="table">
-        <thead><tr><th>ID</th><th>Type</th><th>Status</th></tr></thead>
-        <tbody>
-          {rows.map((d) => <tr key={d.id}><td><code>{d.id.slice(0, 8)}</code></td><td>{d.type}</td><td>{d.status}</td></tr>)}
-          {rows.length === 0 && <tr><td colSpan={3} className="muted">No disputes.</td></tr>}
-        </tbody>
-      </table>
+      <div className="table-container">
+        <table className="table">
+          <thead><tr><th>ID</th><th>Type</th><th>Status</th></tr></thead>
+          <tbody>
+            {rows.map((d) => <tr key={d.id}><td><code>{d.id.slice(0, 8)}</code></td><td>{d.type}</td><td>{d.status}</td></tr>)}
+            {rows.length === 0 && <tr><td colSpan={3} className="muted">No disputes.</td></tr>}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

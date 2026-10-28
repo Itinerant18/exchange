@@ -34,29 +34,33 @@ export function AdminPage() {
       {err && <p className="error">{err}</p>}
       <div className="card" style={{ marginBottom: '1rem' }}>
         <h2>Settings</h2>
-        <table className="table">
-          <thead><tr><th>Key</th><th>Value</th><th>Approved</th><th></th></tr></thead>
-          <tbody>
-            {settings.map((s) => (
-              <tr key={s.key}>
-                <td><code>{s.key}</code></td>
-                <td>{JSON.stringify(s.value)}</td>
-                <td>{String(s.is_approved ?? s.isApproved)}</td>
-                <td><button className="btn secondary" onClick={() => toggle(s.key, s.is_approved ?? s.isApproved)}>Toggle approval</button></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="table-container">
+          <table className="table">
+            <thead><tr><th>Key</th><th>Value</th><th>Approved</th><th></th></tr></thead>
+            <tbody>
+              {settings.map((s) => (
+                <tr key={s.key}>
+                  <td><code>{s.key}</code></td>
+                  <td>{JSON.stringify(s.value)}</td>
+                  <td>{String(s.is_approved ?? s.isApproved)}</td>
+                  <td><button className="btn btn-secondary" style={{ minHeight: '34px', padding: '0 0.85rem' }} onClick={() => toggle(s.key, s.is_approved ?? s.isApproved)}>Toggle approval</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
       <div className="card" style={{ marginBottom: '1rem' }}>
         <h2>Disputes</h2>
-        <table className="table">
-          <thead><tr><th>ID</th><th>Type</th><th>Status</th></tr></thead>
-          <tbody>
-            {disputes.map((d) => <tr key={d.id}><td><code>{d.id.slice(0, 8)}</code></td><td>{d.type}</td><td>{d.status}</td></tr>)}
-            {disputes.length === 0 && <tr><td colSpan={3} className="muted">No disputes.</td></tr>}
-          </tbody>
-        </table>
+        <div className="table-container">
+          <table className="table">
+            <thead><tr><th>ID</th><th>Type</th><th>Status</th></tr></thead>
+            <tbody>
+              {disputes.map((d) => <tr key={d.id}><td><code>{d.id.slice(0, 8)}</code></td><td>{d.type}</td><td>{d.status}</td></tr>)}
+              {disputes.length === 0 && <tr><td colSpan={3} className="muted">No disputes.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </div>
       {recon && (
         <div className="card">

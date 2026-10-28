@@ -1,116 +1,135 @@
 :root {
-  color-scheme: light;
+  color-scheme: dark light;
 
-  /* ── Editorial Canvas & Surfaces ── */
-  --color-canvas: #faf9f6;
-  --color-canvas-editorial: #faf9f6;
-  --color-canvas-alt: #f4f2ec;
-  --color-surface: #ffffff;
-  --color-surface-pure: #ffffff;
-  --color-surface-raised: #ffffff;
-  --color-overlay: rgba(22, 21, 20, 0.6);
+  /* ── Canvas & Surfaces (Deep Burgundy & Light Surface) ── */
+  --color-canvas: #570020;
+  --color-canvas-editorial: #570020;
+  --color-canvas-alt: #29000B;
+  --color-surface: #F8F8F8;
+  --color-surface-pure: #FFFFFF;
+  --color-surface-raised: #F9F9F9;
+  --color-overlay: rgba(0, 0, 0, 0.6);
 
-  /* ── High-Contrast Editorial Inks ── */
-  --color-ink: #161514;
-  --color-ink-primary: #161514;
-  --color-ink-soft: #47433f;
-  --color-ink-secondary: #5c5752;
-  --color-muted: #8c8680;
-  --color-faint: #b5aaa0;
-  --color-ink-strike: #a8a29e;
+  /* ── High-Contrast Inks on Dark Canvas ── */
+  --color-ink: #FFFFFF;
+  --color-ink-primary: #FFFFFF;
+  --color-ink-soft: #CCCCCC;
+  --color-ink-secondary: #999999;
+  --color-muted: #6F6B67;
+  --color-faint: #555555;
+  --color-ink-strike: #777777;
+
+  /* ── High-Contrast Inks on Light Surfaces ── */
+  --color-on-surface: #2E010D;
+  --color-on-surface-soft: #420022;
+  --color-on-surface-muted: #6F6B67;
 
   /* ── Lines, Borders & Dividers ── */
-  --color-line: rgba(22, 21, 20, 0.08);
-  --color-line-subtle: rgba(22, 21, 20, 0.06);
-  --color-line-strong: rgba(22, 21, 20, 0.20);
-  --color-border-focus: #161514;
+  --color-hairline: #660227;
+  --color-line: rgba(255, 255, 255, 0.12);
+  --color-line-subtle: rgba(255, 255, 255, 0.06);
+  --color-line-strong: rgba(255, 255, 255, 0.22);
+  --color-border-focus: #FFFFFF;
 
-  /* ── Circular Luxury Accents ── */
-  --color-accent: #17382b;              /* Signature Forest / Couture Green */
-  --color-accent-deep: #0f241c;
-  --color-accent-soft: #eaf1ed;
-  --color-accent-line: rgba(23, 56, 43, 0.25);
+  /* ── Interactive & Brand Accent Roles ── */
+  --color-primary: #FFFFFF;
+  --color-on-primary: #420022;
+  --color-accent: #FFFFFF;
+  --color-accent-deep: #E0E0E0;
+  --color-accent-soft: rgba(255, 255, 255, 0.12);
+  --color-accent-line: rgba(255, 255, 255, 0.25);
 
-  --color-terracotta: #b85c38;
-  --color-terracotta-soft: #f7ebe4;
+  /* ── Decorative Accents ── */
+  --color-accent-1: #4051D5;
+  --color-accent-2: #BA473B;
+  --color-accent-3: #D1DBFF;
+  --color-terracotta: #BA473B;
+  --color-terracotta-soft: #F5E4E2;
+  --color-gold: #D1DBFF;
+  --color-gold-soft: #ECEEFF;
+  --color-olive: #4051D5;
+  --color-olive-soft: #E4E8FF;
+  --color-slate: #420022;
+  --color-slate-soft: #F5E0E8;
 
-  --color-gold: #c5a059;                /* Champagne Gold / VIP */
-  --color-gold-soft: #fbf6ec;
-
-  --color-olive: #4f5d3e;
-  --color-olive-soft: #ebefe6;
-
-  --color-slate: #3d4a5c;
-  --color-slate-soft: #e6eaf0;
-
+  /* ── Semantic Status Roles ── */
   --color-success: #17382b;
   --color-success-soft: #eaf1ed;
   --color-warning: #c4883a;
   --color-warning-soft: #fbf0dd;
-  --color-danger: #8b263e;              /* Bordeaux / Urgent Alert */
-  --color-danger-soft: #faebef;
+  --color-danger: #BA473B;
+  --color-danger-soft: #FBE8E6;
 
   /* ── Typography Stack ── */
-  --font-display: 'Canela', 'Didot', 'Playfair Display', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
-  --font-body: 'GT America', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Martina', 'Playfair Display', 'Didot', 'Palatino Linotype', Georgia, serif;
+  --font-body: 'GT-America-Standard', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-extended: 'GT-America-Extended', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 
   /* ── Type Scale ── */
   --text-2xs: 0.6875rem;
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
-  --text-base: 1rem;
+  --text-base: 0.875rem;
   --text-lg: 1.125rem;
   --text-xl: 1.25rem;
   --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
+  --text-3xl: 1.75rem;
   --text-4xl: 2.25rem;
-  --text-5xl: 3rem;
-  --text-hero: clamp(2.75rem, 6vw, 5rem);
+  --text-5xl: 2.75rem;
+  --text-hero: clamp(2.25rem, 5vw, 2.75rem);
 
-  /* ── Spacing Scale ── */
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --space-10: 2.5rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  --space-20: 5rem;
-  --space-24: 6rem;
+  /* ── Spacing Scale (Base 8px) ── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 36px;
+  --space-12: 40px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
 
-  /* ── Architectural Radii (Restrained & Sharp) ── */
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
-  --radius-lg: 8px;
-  --radius-xl: 12px;
+  /* ── Architectural Radii (Pill-Forward) ── */
+  --radius-none: 0px;
+  --radius-xs: 12px;
+  --radius-sm: 24px;
+  --radius-md: 24px;
+  --radius-lg: 40px;
+  --radius-xl: 40px;
   --radius-full: 9999px;
 
   /* ── Aspect Ratios ── */
   --aspect-product: 3 / 4;
   --aspect-hero: 16 / 9;
 
-  /* ── Soft Diffusion Shadows ── */
-  --shadow-xs: 0 1px 2px rgba(22, 21, 20, 0.04);
-  --shadow-sm: 0 2px 6px rgba(22, 21, 20, 0.04), 0 1px 2px rgba(22, 21, 20, 0.02);
-  --shadow-md: 0 6px 18px rgba(22, 21, 20, 0.06), 0 2px 6px rgba(22, 21, 20, 0.03);
-  --shadow-lg: 0 16px 36px rgba(22, 21, 20, 0.08), 0 4px 12px rgba(22, 21, 20, 0.04);
-  --shadow-card: 0 2px 8px rgba(22, 21, 20, 0.04), 0 8px 24px rgba(22, 21, 20, 0.02);
-  --shadow-hover: 0 12px 32px rgba(22, 21, 20, 0.09);
-  --shadow-modal: 0 24px 60px rgba(22, 21, 20, 0.16);
+  /* ── Elevation & Shadows ── */
+  --shadow-xs: none;
+  --shadow-sm: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
+  --shadow-md: rgba(0, 0, 0, 0.3) 0px 0px 4px 0px;
+  --shadow-lg: none;
+  --shadow-card: none;
+  --shadow-hover: none;
+  --shadow-modal: rgba(0, 0, 0, 0.3) 0px 0px 4px 0px;
 
   /* ── Layout Constraints ── */
-  --content-width: 82rem;
-  --container-padding: var(--space-6);
+  --content-width: 90rem;
+  --container-padding: var(--space-4);
+
+  /* ── Layering / Z-Index ── */
+  --z-base: 1;
+  --z-card: 5;
+  --z-dropdown: 14;
+  --z-sticky: 250;
+  --z-modal: 9011;
 
   /* ── Motion & Transitions ── */
   --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
   --duration-fast: 150ms;
-  --duration-base: 250ms;
-  --duration-slow: 400ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
 }

@@ -1,10 +1,10 @@
-/* ── Auth pages layout ── */
+/* ── Auth Pages Layout ── */
 .page {
   min-height: calc(100vh - 8rem);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-8) var(--container-padding);
+  padding: var(--space-8) var(--space-4);
   background: var(--color-canvas);
 }
 
@@ -13,53 +13,55 @@
   grid-template-columns: 1fr 1fr;
   width: 100%;
   max-width: 80rem;
-  min-height: 48rem;
+  min-height: 44rem;
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
   overflow: hidden;
 }
 
 .formSection {
-  padding: var(--space-12) var(--space-10);
+  padding: var(--space-10) var(--space-8);
   display: flex;
   flex-direction: column;
+  background: var(--color-surface);
 }
 
 .formHeader {
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-6);
 }
 
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: var(--space-2);
   text-decoration: none;
-  color: var(--color-ink);
+  color: var(--color-on-surface);
   font-family: var(--font-display);
   font-size: var(--text-lg);
-  font-weight: 500;
+  font-weight: 300;
   letter-spacing: -0.02em;
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-6);
 }
 
 .logo svg {
-  color: var(--color-accent);
+  color: var(--color-on-surface);
 }
 
 .title {
   font-family: var(--font-display);
-  font-size: var(--text-3xl);
-  font-weight: 500;
-  letter-spacing: -0.03em;
-  color: var(--color-ink);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.84px;
+  color: var(--color-on-surface);
   margin-bottom: var(--space-2);
 }
 
 .subtitle {
-  font-size: var(--text-base);
-  color: var(--color-muted);
+  font-size: 14px;
+  font-weight: 300;
+  color: var(--color-on-surface-muted);
   margin: 0;
 }
 
@@ -67,7 +69,7 @@
 .form {
   display: flex;
   flex-direction: column;
-  gap: var(--space-5);
+  gap: var(--space-4);
   flex: 1;
 }
 
@@ -84,27 +86,40 @@
 }
 
 .forgotLink {
-  font-size: var(--text-sm);
-  color: var(--color-accent);
-  text-decoration: none;
-  font-weight: 500;
+  font-size: 13px;
+  color: var(--color-on-primary);
+  text-decoration: underline;
+  font-weight: 400;
 }
 
 .forgotLink:hover {
-  text-decoration: underline;
+  opacity: 0.8;
 }
 
 .optional {
-  color: var(--color-muted);
-  font-weight: 400;
+  color: var(--color-on-surface-muted);
+  font-weight: 300;
 }
 
 .submitBtn {
   margin-top: var(--space-2);
   width: 100%;
+  min-height: 44px;
   justify-content: center;
-  padding-block: 0.75rem;
-  font-size: var(--text-base);
+  padding: 0 var(--space-4);
+  font-family: var(--font-extended);
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 0.14px;
+  text-transform: capitalize;
+  background: var(--color-on-primary);
+  color: #FFFFFF;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-hairline);
+}
+
+.submitBtn:hover {
+  opacity: 0.85;
 }
 
 .spinner {
@@ -122,91 +137,93 @@
 }
 
 .terms {
-  font-size: var(--text-xs);
-  color: var(--color-muted);
+  font-size: 12px;
+  color: var(--color-on-surface-muted);
   text-align: center;
   margin: 0;
   line-height: 1.5;
 }
 
 .redirectNote {
-  font-size: var(--text-sm);
-  color: var(--color-muted);
+  font-size: 13px;
+  color: var(--color-on-surface-muted);
   text-align: center;
   margin: 0;
   padding-top: var(--space-4);
 }
 
 .redirectNote .link {
-  color: var(--color-accent);
+  color: var(--color-on-primary);
   font-weight: 500;
-  text-decoration: none;
-}
-
-.redirectNote .link:hover {
   text-decoration: underline;
 }
 
-/* ── Panel section (right side) ── */
+.redirectNote .link:hover {
+  opacity: 0.8;
+}
+
+/* ── Panel section (Right side - Burgundy Canvas) ── */
 .panelSection {
   position: relative;
-  background: var(--color-canvas-alt);
+  background: var(--color-canvas);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: var(--space-10);
+  border-left: 1px solid var(--color-hairline);
 }
 
 .panelBg {
   position: absolute;
   inset: 0;
-  background:
-    radial-gradient(ellipse 60% 50% at 30% 20%, rgba(184, 92, 56, 0.08), transparent 70%),
-    radial-gradient(ellipse 50% 40% at 70% 80%, rgba(107, 122, 79, 0.06), transparent 70%);
+  background: var(--color-canvas);
 }
 
 .panelPattern {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(var(--color-line) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px);
   background-size: 20px 20px;
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 .panelContent {
   position: relative;
   z-index: 1;
-  max-width: 20rem;
+  max-width: 22rem;
   text-align: center;
 }
 
 .panelIllustration {
-  color: var(--color-accent);
-  opacity: 0.6;
-  margin-bottom: var(--space-8);
+  color: #FFFFFF;
+  opacity: 0.8;
+  margin-bottom: var(--space-6);
 }
 
 .panelTitle {
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  color: var(--color-ink);
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -0.84px;
+  color: #FFFFFF;
   margin-bottom: var(--space-3);
 }
 
 .panelDesc {
-  font-size: var(--text-base);
-  color: var(--color-ink-soft);
-  line-height: 1.7;
-  margin-bottom: var(--space-8);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 300;
+  color: #CCCCCC;
+  line-height: 1.6;
+  margin-bottom: var(--space-6);
 }
 
 .panelBenefits {
   list-style: none;
   text-align: left;
   margin-bottom: var(--space-6);
+  padding: 0;
 }
 
 .panelBenefits li {
@@ -214,49 +231,50 @@
   align-items: center;
   gap: var(--space-3);
   padding-block: var(--space-2);
-  font-size: var(--text-sm);
-  color: var(--color-ink-soft);
+  font-size: 13px;
+  color: #FFFFFF;
 }
 
 .benefitNum {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-accent);
+  font-family: var(--font-extended);
+  font-size: 11px;
+  color: #FFFFFF;
   font-weight: 600;
   min-width: 1.5rem;
 }
 
 .panelFoot {
-  font-size: var(--text-xs);
-  color: var(--color-muted);
+  font-family: var(--font-extended);
+  font-size: 11px;
+  color: #999999;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   margin: 0;
 }
 
 /* ── Panel-specific styles ── */
-/* Login page */
 .panelSection.loginPanel {
-  background: var(--color-canvas-alt);
+  background: var(--color-canvas);
 }
 
 .quote {
-  margin: 0 0 var(--space-8);
+  margin: 0 0 var(--space-6);
 }
 
 .quoteText {
   font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 400;
+  font-size: 20px;
+  font-weight: 300;
   font-style: italic;
-  line-height: 1.5;
-  color: var(--color-ink);
+  line-height: 1.4;
+  color: #FFFFFF;
   margin-bottom: var(--space-3);
 }
 
 .quoteAuthor {
-  font-size: var(--text-xs);
-  color: var(--color-muted);
+  font-family: var(--font-extended);
+  font-size: 11px;
+  color: #999999;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0;
@@ -265,7 +283,8 @@
 .panelList {
   list-style: none;
   text-align: left;
-  margin-bottom: var(--space-8);
+  margin-bottom: var(--space-6);
+  padding: 0;
 }
 
 .panelList li {
@@ -273,21 +292,28 @@
   align-items: center;
   gap: var(--space-3);
   padding-block: var(--space-2);
-  font-size: var(--text-sm);
-  color: var(--color-ink-soft);
+  font-size: 13px;
+  color: #FFFFFF;
 }
 
 .listCheck {
-  width: 16px;
-  height: 16px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  background: var(--color-success);
+  background: #FFFFFF;
   flex-shrink: 0;
 }
 
 .panelCta {
   width: 100%;
+  min-height: 44px;
   justify-content: center;
+  background: var(--color-on-primary);
+  color: #FFFFFF;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-full);
+  font-family: var(--font-extended);
+  font-size: 14px;
 }
 
 /* ── Responsive ── */
@@ -295,7 +321,7 @@
   .pageInner {
     grid-template-columns: 1fr;
     min-height: auto;
-    border-radius: 0;
+    border-radius: var(--radius-xs);
   }
 
   .formSection {
@@ -317,10 +343,10 @@
   }
 
   .formHeader {
-    margin-bottom: var(--space-6);
+    margin-bottom: var(--space-4);
   }
 
   .title {
-    font-size: var(--text-2xl);
+    font-size: 24px;
   }
 }

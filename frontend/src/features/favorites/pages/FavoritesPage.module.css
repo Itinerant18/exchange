@@ -1,0 +1,166 @@
+.favoritesPage {
+  max-width: var(--page-max-width, 1400px);
+  margin: 0 auto;
+  padding: var(--space-8, 2rem) var(--page-pad, 1.5rem);
+  min-height: 70vh;
+}
+
+.header {
+  margin-bottom: var(--space-8, 2rem);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-6, 1.5rem);
+}
+
+.eyebrow {
+  display: block;
+  font-family: var(--font-extended);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: var(--space-2, 0.5rem);
+}
+
+.titleRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.title {
+  font-family: var(--font-display, 'Martina Plantijn', serif);
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 400;
+  margin: 0;
+  color: var(--color-on-surface);
+}
+
+.count {
+  font-size: 14px;
+  color: var(--color-on-surface-muted);
+  font-weight: 400;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-3, 0.75rem);
+  margin-top: var(--space-4, 1rem);
+}
+
+.tab {
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-editorial);
+}
+
+.tabActive {
+  background: var(--color-on-surface);
+  color: var(--color-surface);
+  border-color: var(--color-on-surface);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4, 1rem);
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6, 1.5rem);
+  }
+}
+
+@media (min-width: 1100px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-6, 1.5rem);
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: 80px 20px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.emptyIcon {
+  margin-bottom: var(--space-4, 1rem);
+  color: var(--color-muted);
+}
+
+.emptyTitle {
+  font-family: var(--font-display, 'Martina Plantijn', serif);
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: var(--space-2, 0.5rem);
+  color: var(--color-on-surface);
+}
+
+.emptyText {
+  font-size: 14px;
+  color: var(--color-on-surface-muted);
+  line-height: 1.6;
+  margin-bottom: var(--space-6, 1.5rem);
+}
+
+.browseBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 999px;
+  background: var(--color-on-surface);
+  color: var(--color-surface);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity var(--duration-fast) var(--ease-editorial);
+}
+
+.browseBtn:hover {
+  opacity: 0.85;
+}
+
+.shortlistsSection {
+  margin-top: var(--space-6, 1.5rem);
+}
+
+.createShortlistForm {
+  display: flex;
+  gap: 8px;
+  margin-bottom: var(--space-6, 1.5rem);
+  max-width: 500px;
+}
+
+.shortlistInput {
+  flex: 1;
+  padding: 10px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: 13px;
+  background: var(--color-surface);
+  outline: none;
+}
+
+.createBtn {
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: var(--color-on-surface);
+  color: var(--color-surface);
+  font-size: 13px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}

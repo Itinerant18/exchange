@@ -2,14 +2,15 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { listingsApi } from '../../../api/listingsApi.js';
 import { ListingCard } from '../../../components/rental/ListingCard.jsx';
+import { FilterModal } from '../../../components/rental/FilterModal.jsx';
 import styles from './ListingsPage.module.css';
 
 const OCCASIONS = [
   { label: 'All Occasions', value: '' },
-  { label: 'Wedding Guest', value: 'wedding' },
-  { label: 'Cocktail & Party', value: 'cocktail' },
-  { label: 'Black Tie Gala', value: 'blacktie' },
-  { label: 'Vacation & Resort', value: 'vacation' },
+  { label: 'Wedding Guest', value: 'WeddingGuest' },
+  { label: 'Cocktail & Party', value: 'Cocktail' },
+  { label: 'Black Tie Gala', value: 'BlackTie' },
+  { label: 'Vacation & Resort', value: 'Vacation' },
 ];
 
 export function ListingsPage() {
@@ -19,20 +20,39 @@ export function ListingsPage() {
   const [error, setError] = useState('');
 
   const q = searchParams.get('q') || '';
-  const occasion = searchParams.get('occasion') || '';
   const filterType = searchParams.get('type') || 'all'; // 'all', 'rental', 'sale'
   const page = Number(searchParams.get('page')) || 1;
 
+  // Facet selections, e.g. { occasion: ['Cocktail'], length: ['Midi'] }.
+  // Each dimension is a comma-separated URL param shared with the backend.
+  const [selectedFacets, setSelectedFacets] = useState({});
+
   const [searchInput, setSearchInput] = useState(q);
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [facetCounts, setFacetCounts] = useState({});
+
+  // Hydrate facet selections from the URL once on mount.
+  useEffect(() => {
+    const initial = {};
+    for (const [key, value] of searchParams.entries()) {
+      if (!['q', 'type', 'page'].includes(key) && value) {
+        initial[key] = value.split(',').filter(Boolean);
+      }
+    }
+    setSelectedFacets(initial);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const activeFacetCount = Object.values(selectedFacets).reduce((sum, values) => sum + values.length, 0);
 
   const loadListings = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const params = { page, limit: 12 };
+      const params = { page, limit: 12, attributes: selectedFacets };
       if (q) params.q = q;
-      if (filterType === 'rental') params.isRental = true;
-      if (filterType === 'sale') params.isSale = true;
+      if (filterType === 'rental') params.mode = 'rent';
+      if (filterType === 'sale') params.mode = 'sale';
 
       const res = await listingsApi.getListings(params);
       const data = Array.isArray(res) ? res : (res?.data ?? []);
@@ -43,11 +63,22 @@ export function ListingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, q, filterType]);
+  }, [page, q, filterType, selectedFacets]);
 
   useEffect(() => {
     loadListings();
   }, [loadListings]);
+
+  // Facet value counts refresh with the base context (not the facet filters).
+  useEffect(() => {
+    const params = {};
+    if (q) params.q = q;
+    if (filterType === 'rent') params.mode = 'rent';
+    if (filterType === 'sale') params.mode = 'sale';
+    listingsApi.getFacets(params)
+      .then((res) => setFacetCounts(res?.data ?? res ?? {}))
+      .catch(() => setFacetCounts({}));
+  }, [q, filterType]);
 
   function handleSearchSubmit(e) {
     e.preventDefault();
@@ -69,14 +100,49 @@ export function ListingsPage() {
   }
 
   function handleOccasionChange(occ) {
+    const next = occ ? { occasion: [occ] } : {};
+    setSelectedFacets(next);
+    syncFacetParams(next);
+  }
+
+  /** Mirror facet state into URL params (comma-separated per dimension). */
+  function syncFacetParams(next) {
     const newParams = new URLSearchParams(searchParams);
-    if (occ) {
-      newParams.set('occasion', occ);
-    } else {
-      newParams.delete('occasion');
+    for (const key of Array.from(newParams.keys())) {
+      if (!['q', 'type', 'page'].includes(key)) newParams.delete(key);
+    }
+    for (const [key, values] of Object.entries(next)) {
+      if (values.length > 0) newParams.set(key, values.join(','));
     }
     newParams.set('page', '1');
     setSearchParams(newParams);
+  }
+
+  function handleToggleFacetValue(facetKey, value) {
+    setSelectedFacets((current) => {
+      const values = current[facetKey] ?? [];
+      const nextValues = values.includes(value)
+        ? values.filter((v) => v !== value)
+        : [...values, value];
+      const next = { ...current, [facetKey]: nextValues };
+      if (nextValues.length === 0) delete next[facetKey];
+      syncFacetParams(next);
+      return next;
+    });
+  }
+
+  function handleClearFacet(facetKey) {
+    setSelectedFacets((current) => {
+      const next = { ...current };
+      delete next[facetKey];
+      syncFacetParams(next);
+      return next;
+    });
+  }
+
+  function handleClearAllFacets() {
+    setSelectedFacets({});
+    syncFacetParams({});
   }
 
   return (
@@ -143,17 +209,27 @@ export function ListingsPage() {
             <button
               key={occ.value}
               type="button"
-              className={`${styles.occasionPill} ${occasion === occ.value ? styles.occasionPillActive : ''}`}
+              className={`${styles.occasionPill} ${(selectedFacets.occasion ?? []).join(',') === occ.value ? styles.occasionPillActive : ''}`}
               onClick={() => handleOccasionChange(occ.value)}
+              disabled={occ.value === '' && (selectedFacets.occasion ?? []).length === 0}
             >
               {occ.label}
             </button>
           ))}
         </div>
 
-        <Link to="/listings/new" className={styles.createListingBtn}>
-          + List an Outfit
-        </Link>
+        <div className={styles.controlsActions}>
+          <button
+            type="button"
+            className={styles.filterModalBtn}
+            onClick={() => setFilterModalOpen(true)}
+          >
+            Filters{activeFacetCount > 0 ? ` (${activeFacetCount})` : ''}
+          </button>
+          <Link to="/listings/new" className={styles.createListingBtn}>
+            + List an Outfit
+          </Link>
+        </div>
       </div>
 
       {/* ── Results Count & Error ── */}
@@ -165,8 +241,23 @@ export function ListingsPage() {
 
       <div className={styles.resultsMeta}>
         <span>Showing {items.length} designer {items.length === 1 ? 'style' : 'styles'}</span>
-        {occasion && <span className={styles.activeFilterTag}>Occasion: {occasion}</span>}
+        {Object.entries(selectedFacets).map(([key, values]) => (
+          <span key={key} className={styles.activeFilterTag}>
+            {key}: {values.join(', ')}
+          </span>
+        ))}
       </div>
+
+      <FilterModal
+        open={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        selected={selectedFacets}
+        onToggleValue={handleToggleFacetValue}
+        onClearFacet={handleClearFacet}
+        onClearAll={handleClearAllFacets}
+        facetCounts={facetCounts}
+        activeCount={activeFacetCount}
+      />
 
       {/* ── 3:4 Aspect Ratio Product Cards Grid ── */}
       {loading ? (
@@ -192,7 +283,7 @@ export function ListingsPage() {
           <p className={styles.emptyDesc}>
             We couldn't find any outfits currently matching your search or filters. Try adjusting your selections or check back soon.
           </p>
-          {(q || occasion || filterType !== 'all') && (
+          {(q || activeFacetCount > 0 || filterType !== 'all') && (
             <button
               type="button"
               className={styles.clearFiltersBtn}

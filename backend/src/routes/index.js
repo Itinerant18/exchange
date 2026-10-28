@@ -19,6 +19,7 @@ import { paymentsRouter, paymentsAdminRouter } from '../modules/payments/payment
 import { depositsRouter, depositsAdminRouter } from '../modules/deposits/deposits.routes.js';
 import { refundsRouter, refundsAdminRouter } from '../modules/refunds/refunds.routes.js';
 import { reviewsRouter, reviewsAdminRouter } from '../modules/reviews/reviews.routes.js';
+import { favoritesRouter } from '../modules/favorites/favorites.routes.js';
 import { kycRouter, kycAdminRouter } from '../modules/kyc/kyc.routes.js';
 import { adminRouter } from '../modules/admin/admin.routes.js';
 
@@ -120,6 +121,9 @@ router.use('/refunds', refundsRouter);
 // Reviews: public lists/detail, member create, admin moderation
 router.use('/reviews', reviewsRouter);
 router.use('/admin/reviews', reviewsAdminRouter);
+
+// Favorites: saved listings & shortlists ("Hearts")
+router.use('/favorites', favoritesRouter);
 
 // KYC: self-service attempts + admin review queue
 router.use('/kyc', kycRouter);

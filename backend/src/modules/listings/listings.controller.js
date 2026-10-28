@@ -4,6 +4,8 @@ import { paginationMeta, sendData } from '../../utils/http.js';
 import { expectAmount, expectEnum, isUuid } from '../../utils/validators.js';
 import { parsePagination } from '../../utils/http.js';
 import * as service from './listings.service.js';
+import * as reviewsListingService from '../reviews/reviews.service.js';
+import { parseFacetFilters } from './listingAttributes.js';
 
 const CONDITIONS = ['new', 'like_new', 'good', 'fair', 'poor'];
 const SORT_KEYS = ['newest', 'price_asc', 'price_desc'];
@@ -53,6 +55,7 @@ function parseListFilters(query) {
     }
     filters.sortKey = sortKey;
   }
+  filters.attributes = parseFacetFilters(query, AppError);
   return filters;
 }
 
@@ -67,11 +70,41 @@ export async function listPublic(req, res, next) {
   }
 }
 
+export async function listUnits(req, res, next) {
+  try {
+    assertListingId(req.params.id);
+    sendData(res, await service.listAvailableUnits(req.params.id));
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listFacets(req, res, next) {
+  try {
+    const filters = parseListFilters(req.query ?? {});
+    const facets = await service.listFacetCounts(filters);
+    sendData(res, facets);
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function getDetail(req, res, next) {
   try {
     assertListingId(req.params.id);
     const listing = await service.getPublicListing(req.authUser ?? null, req.params.id);
     sendData(res, listing);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listReviews(req, res, next) {
+  try {
+    assertListingId(req.params.id);
+    const pagination = parsePagination(req.query, { defaultLimit: 10, maxLimit: 50 });
+    const { rows, total, fitStats } = await reviewsListingService.listReviewsForListing(req.params.id, pagination);
+    sendData(res, rows, { meta: { ...paginationMeta(pagination, total), fitStats } });
   } catch (error) {
     next(error);
   }

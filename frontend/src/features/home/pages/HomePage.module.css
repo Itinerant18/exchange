@@ -3,15 +3,11 @@
   flex-direction: column;
 }
 
-/* ── Hero ── */
+/* ── Hero (Rent The Runway Full-Coverage Frame) ── */
 .hero {
   position: relative;
-  background-color: var(--color-canvas);
-  background-image: 
-    radial-gradient(ellipse at 80% 20%, rgba(23, 56, 43, 0.05), transparent 50%),
-    radial-gradient(ellipse at 15% 85%, rgba(197, 160, 89, 0.08), transparent 45%);
-  padding: var(--space-16) var(--space-6) var(--space-20);
-  border-bottom: 1px solid var(--color-line);
+  background-color: #FFFFFF;
+  padding: var(--space-2) 0 var(--space-6);
 }
 
 .heroContent {
@@ -26,84 +22,91 @@
 .heroBadge {
   display: inline-flex;
   align-items: center;
-  padding: 0.35rem 0.85rem;
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  padding: 0.35rem 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: #FFFFFF;
+  font-family: var(--font-extended);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
   border-radius: var(--radius-full);
   margin-bottom: var(--space-4);
+  border: 1px solid var(--color-hairline);
 }
 
 .heroTitle {
   font-family: var(--font-display);
-  font-size: var(--text-hero);
-  font-weight: 500;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
-  color: var(--color-ink);
+  font-size: clamp(2.25rem, 5vw, 2.75rem);
+  font-weight: 300;
+  line-height: 1.0;
+  letter-spacing: -1.32px;
+  color: #FFFFFF;
   margin: 0 0 var(--space-4);
   max-width: 820px;
 }
 
 .heroSubtitle {
-  font-size: var(--text-base);
-  line-height: 1.6;
-  color: var(--color-ink-secondary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.4;
+  color: #999999;
   max-width: 620px;
-  margin: 0 0 var(--space-8);
+  margin: 0 0 var(--space-6);
 }
 
 .heroCtas {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  margin-bottom: var(--space-12);
+  margin-bottom: var(--space-10);
 }
 
 .primaryCta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.85rem 1.85rem;
-  background: var(--color-accent);
-  color: #ffffff;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border-radius: var(--radius-xs);
+  min-height: 44px;
+  padding: 0 2rem;
+  background: var(--color-on-primary);
+  color: #FFFFFF;
+  font-family: var(--font-extended);
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 0.14px;
+  text-transform: capitalize;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-hairline);
   text-decoration: none;
-  transition: all var(--duration-fast) var(--ease-editorial);
+  transition: opacity var(--duration-fast) var(--ease-editorial);
 }
 
 .primaryCta:hover {
-  background: var(--color-accent-deep);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-md);
+  opacity: 0.85;
+  box-shadow: none;
 }
 
 .secondaryCta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.85rem 1.85rem;
-  background: var(--color-surface);
-  color: var(--color-ink);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  border: 1px solid var(--color-line-strong);
-  border-radius: var(--radius-xs);
+  min-height: 44px;
+  padding: 0 2rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  font-family: var(--font-extended);
+  font-size: 14px;
+  font-weight: 300;
+  letter-spacing: 0.14px;
+  text-transform: capitalize;
+  border: none;
+  border-radius: var(--radius-full);
   text-decoration: none;
-  transition: all var(--duration-fast) var(--ease-editorial);
+  transition: background var(--duration-fast) var(--ease-editorial);
 }
 
 .secondaryCta:hover {
-  background: var(--color-canvas-alt);
-  border-color: var(--color-border-focus);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .heroMetrics {
@@ -113,7 +116,7 @@
   max-width: 800px;
   width: 100%;
   padding-top: var(--space-8);
-  border-top: 1px solid var(--color-line);
+  border-top: 1px solid var(--color-hairline);
 }
 
 .metric {
@@ -124,14 +127,15 @@
 
 .metricValue {
   font-family: var(--font-display);
-  font-size: var(--text-xl);
-  font-weight: 600;
-  color: var(--color-accent);
+  font-size: 28px;
+  font-weight: 300;
+  color: #FFFFFF;
 }
 
 .metricLabel {
-  font-size: var(--text-2xs);
-  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: #999999;
   line-height: 1.4;
 }
 
@@ -150,53 +154,58 @@
 
 .sectionEyebrow {
   display: block;
-  font-size: var(--text-2xs);
-  font-weight: 700;
+  font-family: var(--font-extended);
+  font-size: 12px;
+  font-weight: 500;
   letter-spacing: 0.16em;
-  color: var(--color-accent);
+  color: #FFFFFF;
   margin-bottom: var(--space-1);
+  text-transform: uppercase;
 }
 
 .sectionHeading {
   font-family: var(--font-display);
-  font-size: var(--text-3xl);
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  color: var(--color-ink);
+  font-size: 36px;
+  font-weight: 300;
+  letter-spacing: -1.08px;
+  color: #FFFFFF;
   margin: 0;
 }
 
 .sectionDesc {
-  font-size: var(--text-sm);
-  color: var(--color-muted);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 300;
+  color: #999999;
   margin-top: var(--space-1);
 }
 
 .viewAllLink {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--color-accent);
-  text-decoration: none;
+  font-family: var(--font-extended);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12px;
+  color: #FFFFFF;
+  text-decoration: underline;
+  text-underline-offset: 4px;
 }
 
 .viewAllLink:hover {
-  text-decoration: underline;
+  opacity: 0.8;
 }
 
 /* ── Occasions Grid ── */
 .occasionsSection {
   max-width: var(--content-width);
   margin: 0 auto;
-  padding: var(--space-16) var(--space-6);
+  padding: var(--space-12) var(--space-4);
   width: 100%;
 }
 
 .occasionGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-6);
+  gap: var(--space-4);
 }
 
 .occasionCard {
@@ -204,20 +213,23 @@
   display: flex;
   flex-direction: column;
   text-decoration: none;
-  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  border-radius: 24px 24px 0 0;
+  border: 1px solid transparent;
   overflow: hidden;
-  box-shadow: var(--shadow-card);
-  transition: transform var(--duration-base) var(--ease-editorial);
+  box-shadow: none;
+  transition: border-color var(--duration-base) var(--ease-editorial);
 }
 
 .occasionCard:hover {
-  transform: translateY(-4px);
+  border-color: #DDDDDD;
+  transform: none;
 }
 
 .occasionImgWrapper {
   width: 100%;
   aspect-ratio: 3 / 4;
-  background: var(--color-canvas-alt);
+  background: #EAEAEA;
   overflow: hidden;
 }
 
@@ -229,11 +241,11 @@
 }
 
 .occasionCard:hover .occasionImg {
-  transform: scale(1.06);
+  transform: scale(1.04);
 }
 
 .occasionOverlay {
-  padding: var(--space-4) var(--space-3);
+  padding: var(--space-4);
   background: var(--color-surface);
   display: flex;
   flex-direction: column;
@@ -242,21 +254,21 @@
 
 .occasionTitle {
   font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: 500;
-  color: var(--color-ink);
+  font-size: 20px;
+  font-weight: 300;
+  color: var(--color-on-surface);
 }
 
 .occasionSub {
-  font-size: var(--text-2xs);
-  color: var(--color-muted);
+  font-size: 12px;
+  color: var(--color-on-surface-muted);
 }
 
-/* ── How It Works ── */
+/* ── How It Works (Surface-Alt Burgundy Band) ── */
 .howItWorks {
   background: var(--color-canvas-alt);
-  padding: var(--space-16) var(--space-6);
-  border-block: 1px solid var(--color-line);
+  padding: var(--space-12) var(--space-4);
+  border-block: 1px solid var(--color-hairline);
 }
 
 .stepsGrid {
@@ -264,7 +276,7 @@
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-8);
+  gap: var(--space-6);
 }
 
 .stepCard {
@@ -275,38 +287,38 @@
 
 .stepNum {
   font-family: var(--font-display);
-  font-size: var(--text-2xl);
-  font-weight: 600;
-  color: var(--color-accent);
+  font-size: 28px;
+  font-weight: 300;
+  color: #FFFFFF;
 }
 
 .stepTitle {
   margin: 0;
   font-family: var(--font-body);
-  font-size: var(--text-base);
-  font-weight: 700;
-  color: var(--color-ink);
+  font-size: 16px;
+  font-weight: 500;
+  color: #FFFFFF;
 }
 
 .stepText {
   margin: 0;
-  font-size: var(--text-xs);
-  line-height: 1.6;
-  color: var(--color-ink-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+  color: #999999;
 }
 
 /* ── Trending Section ── */
 .trendingSection {
   max-width: var(--content-width);
   margin: 0 auto;
-  padding: var(--space-16) var(--space-6) var(--space-24);
+  padding: var(--space-12) var(--space-4) var(--space-16);
   width: 100%;
 }
 
 .listingsGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-6);
+  gap: var(--space-4);
 }
 
 /* ── Responsive ── */
@@ -350,4 +362,94 @@
   .primaryCta, .secondaryCta {
     width: 100%;
   }
+}
+
+.exploreAllLink {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-on-surface, #1C1917);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: opacity 0.2s ease;
+}
+
+.exploreAllLink:hover {
+  opacity: 0.7;
+}
+
+.bottomCtaSection {
+  background: #1C1917;
+  color: #FFFFFF;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.bottomCtaContainer {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.ctaEyebrow {
+  display: block;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #999999;
+  margin-bottom: 8px;
+}
+
+.ctaHeading {
+  font-family: var(--font-display, 'Martina Plantijn', serif);
+  font-size: clamp(28px, 4vw, 42px);
+  font-weight: 400;
+  color: #FFFFFF;
+  margin: 0 0 16px;
+}
+
+.ctaText {
+  font-size: 15px;
+  color: #CCCCCC;
+  line-height: 1.65;
+  margin: 0 0 32px;
+}
+
+.ctaButtonGroup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.primaryCtaBtn {
+  padding: 14px 28px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  color: #000000;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.primaryCtaBtn:hover {
+  opacity: 0.9;
+}
+
+.secondaryCtaBtn {
+  padding: 14px 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #FFFFFF;
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.secondaryCtaBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
 }

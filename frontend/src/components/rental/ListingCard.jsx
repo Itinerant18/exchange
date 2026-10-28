@@ -1,10 +1,13 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { formatPaiseToRupees } from '../../utils/formatters.js';
+import { useFavorites } from '../../context/FavoritesContext.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 import styles from './ListingCard.module.css';
 
 export function ListingCard({ listing }) {
-  const [isLiked, setIsLiked] = useState(false);
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { isAuthed } = useAuth();
+  const navigate = useNavigate();
 
   if (!listing) return null;
 
@@ -13,11 +16,9 @@ export function ListingCard({ listing }) {
     title,
     rentalPricePaise,
     salePricePaise,
-    depositPaise,
     replacementValuePaise,
     isRental,
     isSale,
-    condition,
     city,
     images = [],
     brand,
@@ -25,6 +26,21 @@ export function ListingCard({ listing }) {
   } = listing;
 
   const primaryImage = images.find((img) => img.isPrimary)?.objectKey || images[0]?.objectKey;
+  const isLiked = isFavorite(id);
+
+  async function handleHeartClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!isAuthed) {
+      navigate('/login');
+      return;
+    }
+    try {
+      await toggleFavorite(id);
+    } catch {
+      // Handled in context
+    }
+  }
 
   return (
     <article className={styles.card}>
@@ -59,10 +75,7 @@ export function ListingCard({ listing }) {
         <button
           type="button"
           className={`${styles.wishlistBtn} ${isLiked ? styles.wishlistBtnActive : ''}`}
-          onClick={(e) => {
-            e.preventDefault();
-            setIsLiked(!isLiked);
-          }}
+          onClick={handleHeartClick}
           aria-label={isLiked ? 'Remove from wishlist' : 'Save to wishlist'}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -100,12 +113,12 @@ export function ListingCard({ listing }) {
             </div>
           )}
 
-          {isSale && !isRental && salePricePaise && (
+          {isSale && salePricePaise && (
             <div className={styles.rentalPriceBlock}>
-              <span className={styles.rentalPrice}>
-                {formatPaiseToRupees(salePricePaise)}
+              <span className={isRental ? styles.saleSubPrice : styles.rentalPrice}>
+                {isRental ? `or Buy ${formatPaiseToRupees(salePricePaise)}` : formatPaiseToRupees(salePricePaise)}
               </span>
-              <span className={styles.rentalPeriod}>buy</span>
+              {!isRental && <span className={styles.rentalPeriod}>buy</span>}
             </div>
           )}
 

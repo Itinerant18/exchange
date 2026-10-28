@@ -1,0 +1,40 @@
+.container {
+  display: inline-flex;
+  padding: 4px;
+  gap: 4px;
+  border: 1px solid var(--border-color, #e6e3de);
+  border-radius: 999px;
+  background: var(--surface-soft, #f7f5f1);
+}
+
+.modeBtn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 7px 16px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-muted, #6b665f);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.modeBtn:hover {
+  color: var(--text-strong, #1c1a17);
+}
+
+.modeBtnActive {
+  background: var(--text-strong, #1c1a17);
+  color: #fff;
+}
+
+.modeBtnActive:hover {
+  color: #fff;
+}
+
+.modeBtn:focus-visible {
+  outline: 2px solid var(--accent, #2e010d);
+  outline-offset: 2px;
+}

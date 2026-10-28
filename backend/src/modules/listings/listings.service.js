@@ -10,6 +10,7 @@ import {
 } from '../../utils/validators.js';
 import { translatePgError } from '../../utils/pgErrorMapper.js';
 import * as repository from './listings.repository.js';
+import { validateListingAttributes, parseFacetFilters } from './listingAttributes.js';
 
 const CONDITIONS = ['new', 'like_new', 'good', 'fair', 'poor'];
 const OWNER_STATUSES = ['active', 'inactive'];
@@ -46,10 +47,28 @@ export async function getPublicListing(user, listingId) {
       isRental: listing.isRental, isSale: listing.isSale,
       city: listing.city, deliveryAvailable: listing.deliveryAvailable, deliveryRadiusKm: listing.deliveryRadiusKm,
       ownerId: listing.ownerId, createdAt: listing.createdAt, images: listing.images,
-      availableUnits: listing.inventory.available,
+      availableUnits: listing.inventory.available, attributes: listing.attributes,
     };
   }
   return listing;
+}
+
+/** Facet key -> [{ value, count }] for the discovery FilterModal. */
+export async function listFacetCounts(query) {
+  const attributes = parseFacetFilters(query, AppError);
+  return repository.listFacetCounts({ ...query, attributes });
+}
+
+/** Available inventory unit ids for one listing — powers buy-now mode. */
+export async function listAvailableUnits(listingId) {
+  const listing = await repository.findListingById(listingId);
+  if (!listing) {
+    throw new AppError('Listing not found.', { statusCode: 404, code: 'LISTING_NOT_FOUND' });
+  }
+  const unitIds = listing.listing_status === 'active'
+    ? await repository.findAvailableUnitIds(listingId)
+    : [];
+  return { unitIds };
 }
 
 export async function listMyListings(user, query, pagination) {
@@ -91,6 +110,7 @@ export async function createListing(user, context, body) {
   const replacementValuePaise = body.replacementValuePaise === undefined || body.replacementValuePaise === null
     ? null
     : expectAmount(body.replacementValuePaise, 'replacementValuePaise');
+  const attributes = validateListingAttributes(body.attributes, AppError);
 
   assertOfferModeConsistency({ isRental, isSale, rentalPricePaise, salePricePaise, depositPaise });
 
@@ -112,6 +132,7 @@ export async function createListing(user, context, body) {
         replacement_value_paise: replacementValuePaise,
         is_rental: isRental,
         is_sale: isSale,
+        attributes,
         listing_status: 'active',
       });
       await writeAuditLog(client, { ...context, action: 'LISTING_CREATED', entityType: 'listing', entityId: created.id, newValue: { title } });
@@ -233,7 +254,9 @@ export async function updateListing(user, context, listingId, body) {
     is_rental: merged.is_rental,
     is_sale: merged.is_sale,
     listing_status: merged.status,
+    attributes: body.attributes === undefined ? undefined : validateListingAttributes(body.attributes, AppError),
   };
+  if (body.attributes === undefined) delete fields.attributes;
   // CASE-gated columns must be explicitly present for changes to apply.
   if (body.title === undefined) delete fields.title;
   if (body.description === undefined) delete fields.description;

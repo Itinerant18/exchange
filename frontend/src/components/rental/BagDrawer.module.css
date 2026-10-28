@@ -1,0 +1,350 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  justify-content: flex-end;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.drawer {
+  width: min(420px, 100vw);
+  height: 100vh;
+  background: var(--color-canvas, #FFFFFF);
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-6) var(--space-5);
+  box-shadow: -8px 0 40px rgba(0, 0, 0, 0.18);
+  animation: slideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow-y: auto;
+}
+
+/* ── Header ── */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-5);
+}
+
+.title {
+  font-family: var(--font-serif, 'Playfair Display', serif);
+  font-size: 1.5rem;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: var(--color-text, #111111);
+  padding: var(--space-1);
+  line-height: 1;
+}
+
+.closeBtn:hover {
+  opacity: 0.6;
+}
+
+.error {
+  background: #FDECEA;
+  border: 1px solid #F5C6CB;
+  color: #C0392B;
+  padding: var(--space-3);
+  border-radius: 4px;
+  font-size: 0.85rem;
+  margin-bottom: var(--space-4);
+}
+
+/* ── Item ── */
+.item {
+  display: flex;
+  gap: var(--space-4);
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-hairline, #E5E5E5);
+  margin-bottom: var(--space-5);
+}
+
+.itemImage {
+  width: 80px;
+  height: 110px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.itemBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.itemBrand {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #888888;
+}
+
+.itemTitle {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-text, #111111);
+}
+
+.itemMeta {
+  font-size: 0.85rem;
+  color: #666666;
+}
+
+/* ── Delivery ZIP Section ── */
+.zipSection {
+  background: #F9F9F9;
+  border: 1px solid #E5E5E5;
+  border-radius: 6px;
+  padding: var(--space-3) var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.zipHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-2);
+}
+
+.zipTitle {
+  font-size: 0.76rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #555555;
+}
+
+.zipChangeBtn {
+  background: none;
+  border: none;
+  color: var(--color-canvas, #570020);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.zipInputRow {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.zipInput {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #CCCCCC;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  background: #FFFFFF;
+  color: #111111;
+}
+
+.zipInput:focus {
+  outline: none;
+  border-color: var(--color-canvas, #570020);
+}
+
+.zipBtn {
+  background: #111111;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 4px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.zipBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.zipResult {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.zipCheckRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: 0.82rem;
+  color: #1B5E20;
+}
+
+.zipIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  background: #1B5E20;
+  color: #FFFFFF;
+  border-radius: 50%;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.zipText {
+  color: #2E7D32;
+  font-size: 0.82rem;
+}
+
+.zipSub {
+  font-size: 0.74rem;
+  color: #777777;
+  margin: 0;
+  padding-left: 24px;
+}
+
+/* ── Pricing ── */
+.pricing {
+  padding-bottom: var(--space-5);
+  border-bottom: 1px solid var(--color-hairline, #E5E5E5);
+  margin-bottom: var(--space-5);
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #444444;
+  margin-bottom: var(--space-2);
+}
+
+.totalRow {
+  font-size: 1rem;
+  color: var(--color-text, #111111);
+  padding-top: var(--space-2);
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--color-hairline, #E5E5E5);
+}
+
+.deliveryNote {
+  margin-top: var(--space-3);
+  font-size: 0.78rem;
+  color: #888888;
+  font-style: italic;
+  line-height: 1.5;
+}
+
+/* ── Membership Upsell ── */
+.upsell {
+  background: #F4ECF7;
+  border: 1px solid #D5B4E0;
+  padding: var(--space-4);
+  border-radius: 6px;
+  margin-bottom: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  text-align: left;
+}
+
+.upsell strong {
+  font-size: 0.92rem;
+  color: #6A1B9A;
+}
+
+.upsell span {
+  font-size: 0.82rem;
+  color: #7A3388;
+  line-height: 1.5;
+}
+
+.upsellBtn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: var(--space-1);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #6A1B9A;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.upsellBtn:hover {
+  opacity: 0.75;
+}
+
+/* ── Hold Note ── */
+.holdNote {
+  font-size: 0.78rem;
+  color: #7C9648;
+  background: #F0F6E5;
+  border-radius: 4px;
+  padding: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-5);
+  text-align: center;
+}
+
+/* ── Actions ── */
+.actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.continueBtn {
+  background: none;
+  border: 1px solid var(--color-hairline, #DDDDDD);
+  padding: 12px 20px;
+  border-radius: 4px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--color-text, #111111);
+  cursor: pointer;
+}
+
+.continueBtn:hover {
+  background: #FAFAFA;
+}
+
+.confirmBtn {
+  background: #111111;
+  color: #FFFFFF;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.confirmBtn:hover:not(:disabled) {
+  background: #333333;
+}
+
+.confirmBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}

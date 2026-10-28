@@ -4,6 +4,7 @@ const BOOKING_COLUMNS = `
     rb.id, rb.renter_user_id, rb.rental_listing_id, rb.status, rb.start_date, rb.end_date,
     rb.subtotal_amount_paise, rb.deposit_amount_paise, rb.total_amount_paise,
     rb.deposit_paid, rb.actual_return_date, rb.created_at, rb.updated_at,
+    rb.damage_waiver_selected, rb.damage_waiver_fee_paise, rb.backup_size,
     rb.transport_mode, rb.outbound_distance_km, rb.return_distance_km,
     rb.transport_rate_paise_per_km, rb.outbound_transport_amount_paise, rb.return_transport_amount_paise,
     rb.overdue_days, rb.late_fee_amount_paise,
@@ -15,15 +16,19 @@ export async function insertBooking(client, fields) {
     `INSERT INTO public.rental_bookings
         (renter_user_id, rental_listing_id, status, start_date, end_date,
          subtotal_amount_paise, deposit_amount_paise, total_amount_paise, deposit_paid,
+         damage_waiver_selected, damage_waiver_fee_paise, backup_size,
          transport_mode, outbound_distance_km, return_distance_km,
          transport_rate_paise_per_km, outbound_transport_amount_paise, return_transport_amount_paise)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
      RETURNING id, status, created_at`,
     [
       fields.renter_user_id, fields.rental_listing_id, fields.status,
       fields.start_date, fields.end_date,
       fields.subtotal_amount_paise, fields.deposit_amount_paise,
       fields.total_amount_paise, fields.deposit_paid,
+      fields.damage_waiver_selected ?? false,
+      fields.damage_waiver_fee_paise ?? 0,
+      fields.backup_size ?? null,
       fields.transport_mode ?? 'none',
       fields.outbound_distance_km ?? null,
       fields.return_distance_km ?? null,
@@ -39,12 +44,13 @@ export async function insertBookingItem(client, fields) {
   const { rows } = await client.query(
     `INSERT INTO public.rental_booking_items
         (rental_booking_id, inventory_item_id, item_status, start_date, end_date,
-         daily_rate_paise, line_total_paise)
-     VALUES ($1, $2, $3, $4, $5, $6, $7)
+         daily_rate_paise, line_total_paise, is_backup_size)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING id`,
     [
       fields.rental_booking_id, fields.inventory_item_id, fields.item_status,
       fields.start_date, fields.end_date, fields.daily_rate_paise, fields.line_total_paise,
+      fields.is_backup_size === true,
     ],
   );
   return rows[0];
@@ -63,10 +69,10 @@ export async function findBookingById(bookingId, client = pool) {
 
 export async function findBookingItems(bookingId, client = pool) {
   const { rows } = await client.query(
-    `SELECT id, inventory_item_id, item_status, start_date, end_date, daily_rate_paise, line_total_paise
+    `SELECT id, inventory_item_id, item_status, start_date, end_date, daily_rate_paise, line_total_paise, is_backup_size
      FROM public.rental_booking_items
      WHERE rental_booking_id = $1
-     ORDER BY start_date ASC, id ASC`,
+     ORDER BY is_backup_size ASC, start_date ASC, id ASC`,
     [bookingId],
   );
   return rows;
@@ -159,9 +165,9 @@ export async function setDepositPaid(client, bookingId, depositPaid) {
 }
 
 /** Applies an approved extension: new end date + refreshed money snapshot. */
-export async function applyBookingExtension(client, bookingId, { newEndDate, dailyRatePaise, additionalDays, currentSubtotal, depositAmountPaise }) {
+export async function applyBookingExtension(client, bookingId, { newEndDate, dailyRatePaise, additionalDays, currentSubtotal, depositAmountPaise, damageWaiverFeePaise }) {
   const newSubtotal = currentSubtotal + additionalDays * dailyRatePaise;
-  const newTotal = newSubtotal + depositAmountPaise;
+  const newTotal = newSubtotal + depositAmountPaise + (damageWaiverFeePaise ?? 0);
   const { rows } = await client.query(
     `UPDATE public.rental_bookings
      SET end_date = $2,
@@ -312,6 +318,11 @@ export function mapBookingRow(row) {
     totalAmountPaise: Number(row.total_amount_paise),
     depositPaid: row.deposit_paid,
     actualReturnDate: row.actual_return_date ?? null,
+    damageWaiver: {
+      selected: row.damage_waiver_selected ?? false,
+      feePaise: Number(row.damage_waiver_fee_paise ?? 0),
+    },
+    backupSize: row.backup_size ?? null,
     transport: {
       mode: row.transport_mode,
       outboundDistanceKm: outboundSelected && row.outbound_distance_km !== null ? Number(row.outbound_distance_km) : null,

@@ -1,11 +1,16 @@
 import { useState } from 'react';
 import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useBag } from '../../context/BagContext.jsx';
+import { useFavorites } from '../../context/FavoritesContext.jsx';
 import { appConfig } from '../../config/appConfig.js';
+import { BagDrawer } from '../rental/BagDrawer.jsx';
 import styles from './AppLayout.module.css';
 
 export function AppLayout() {
   const { isAuthed, user, logout, isAdmin } = useAuth();
+  const { draft, openBag } = useBag();
+  const { favoriteIds } = useFavorites();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const year = new Date().getFullYear();
@@ -85,6 +90,7 @@ export function AppLayout() {
 
           {/* Action Utilities (Search, Closet, Profile) */}
           <div className={styles.headerActions}>
+            {/* Search */}
             <Link to="/listings" className={styles.searchLink} title="Search catalog">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" />
@@ -92,6 +98,32 @@ export function AppLayout() {
               </svg>
               <span className={styles.searchLabel}>Search</span>
             </Link>
+
+            {/* Saved Hearts (Wishlist) */}
+            <Link to="/favorites" className={styles.searchLink} title="Saved Looks">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill={favoriteIds.size > 0 ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+              {favoriteIds.size > 0 && <span className={styles.badgeCount}>{favoriteIds.size}</span>}
+              <span className={styles.searchLabel}>Hearts</span>
+            </Link>
+
+            {/* Slide-out Bag Trigger */}
+            <button
+              type="button"
+              className={styles.bagTriggerBtn}
+              onClick={openBag}
+              aria-label="View rental bag"
+              title="View rental bag"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+              {draft && <span className={styles.bagIndicatorDot} />}
+              <span className={styles.searchLabel}>Bag</span>
+            </button>
 
             {isAuthed ? (
               <div className={styles.userSection}>
@@ -184,6 +216,9 @@ export function AppLayout() {
           <p>© {year} {appConfig.name}. All rights reserved.</p>
         </div>
       </footer>
+
+      {/* ── Global Slide-Out Rental Bag (RTR CEBagComponent analogue) ── */}
+      <BagDrawer />
     </div>
   );
 }
