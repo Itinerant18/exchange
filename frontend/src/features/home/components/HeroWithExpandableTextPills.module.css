@@ -1,0 +1,245 @@
+/* ── Rent The Runway HeroWithExpandableTextPills Architecture ── */
+
+.section {
+  position: relative;
+  background-color: #FAF8F5;
+  padding: var(--space-16) var(--space-6);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: var(--space-12);
+  align-items: center;
+}
+
+.leftCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-extended);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-canvas);
+  margin-bottom: var(--space-3);
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: clamp(2.25rem, 4vw, 3.5rem);
+  font-weight: 300;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+  color: #111111;
+  margin: 0 0 var(--space-4);
+}
+
+.subheading {
+  font-family: var(--font-body);
+  font-size: clamp(14px, 1.4vw, 17px);
+  font-weight: 300;
+  line-height: 1.5;
+  color: #555555;
+  margin: 0 0 var(--space-8);
+  max-width: 580px;
+}
+
+/* ── Interactive Pills Accordion ── */
+.pillsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.pillItem {
+  background: #FFFFFF;
+  border-radius: 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 1.25rem 1.5rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.pillItem:hover {
+  border-color: rgba(87, 0, 32, 0.3);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+
+.pillItemActive {
+  border-color: var(--color-canvas);
+  background: #FFFFFF;
+  box-shadow: 0 8px 24px -6px rgba(87, 0, 32, 0.12);
+}
+
+.pillHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.pillTag {
+  font-family: var(--font-extended);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--color-canvas);
+  background: rgba(87, 0, 32, 0.08);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.pillTitle {
+  flex: 1;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #1C1C1C;
+  margin: 0;
+}
+
+.pillArrow {
+  font-family: var(--font-extended);
+  font-size: 1.1rem;
+  color: var(--color-canvas);
+  font-weight: bold;
+}
+
+.pillBody {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  animation: fadeIn 0.3s ease;
+}
+
+.pillText {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  color: #555555;
+  margin: 0;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ctaWrapper {
+  display: flex;
+}
+
+.ctaButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 2rem;
+  background-color: var(--color-canvas);
+  color: #FFFFFF;
+  font-family: var(--font-extended);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  text-decoration: none;
+  box-shadow: 0 8px 20px -6px rgba(87, 0, 32, 0.35);
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.ctaButton:hover {
+  transform: translateY(-1px);
+  opacity: 0.92;
+}
+
+/* ── Right Column: Image Card ── */
+.rightCol {
+  position: relative;
+}
+
+.imageCard {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 20px 48px -12px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.featureImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.imageCard:hover .featureImage {
+  transform: scale(1.03);
+}
+
+.imageOverlay {
+  position: absolute;
+  bottom: 0;
+  inset-inline: 0;
+  padding: var(--space-8) var(--space-6) var(--space-6);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.4) 65%, transparent 100%);
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.overlayPill {
+  display: inline-block;
+  align-self: flex-start;
+  font-family: var(--font-extended);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  padding: 3px 10px;
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(8px);
+  border-radius: 999px;
+  text-transform: uppercase;
+}
+
+.overlayHeading {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  font-weight: 400;
+  margin: var(--space-1) 0;
+  color: #FFFFFF;
+}
+
+.overlayPricing {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #ECEEFF;
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .imageCard {
+    max-height: 480px;
+  }
+}

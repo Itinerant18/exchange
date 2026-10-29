@@ -1,0 +1,278 @@
+/* ── Rent The Runway MoleculeComparisonTable Architecture ── */
+
+.section {
+  position: relative;
+  background-color: #FFFFFF;
+  padding: var(--space-16) var(--space-6);
+  border-top: 1px solid var(--color-hairline);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.header {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto var(--space-12);
+}
+
+.eyebrow {
+  display: inline-block;
+  font-family: var(--font-extended);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-canvas);
+  margin-bottom: var(--space-3);
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 3.8vw, 3.25rem);
+  font-weight: 300;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  color: #111111;
+  margin: 0 0 var(--space-4);
+}
+
+.subheading {
+  font-family: var(--font-body);
+  font-size: clamp(14px, 1.4vw, 17px);
+  font-weight: 300;
+  line-height: 1.5;
+  color: #555555;
+  margin: 0;
+}
+
+/* ── Table Structure ── */
+.tableWrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 36px -12px rgba(0, 0, 0, 0.06);
+  margin-bottom: var(--space-10);
+  background: #FFFFFF;
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  text-align: left;
+}
+
+.table th,
+.table td {
+  padding: 1.25rem 1.75rem;
+  vertical-align: middle;
+}
+
+.table thead th {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  background-color: #FAFAFA;
+}
+
+.featureColHeader {
+  width: 32%;
+  font-family: var(--font-extended);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #777777;
+}
+
+.buyingColHeader {
+  width: 34%;
+}
+
+.rentingColHeader {
+  width: 34%;
+  background-color: #F6F4F0 !important;
+  border-left: 2px solid var(--color-canvas);
+}
+
+.headerCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.headerCardRenting {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+}
+
+.badgePopular {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 2px 8px;
+  background-color: var(--color-canvas);
+  color: #FFFFFF;
+  font-family: var(--font-extended);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  margin-bottom: 2px;
+}
+
+.colTitle {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333333;
+}
+
+.colTitleRenting {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--color-canvas);
+}
+
+.colSubtext {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: #888888;
+}
+
+.colSubtextRenting {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: #555555;
+  font-weight: 500;
+}
+
+/* ── Rows ── */
+.table tbody tr {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #FAFAFA;
+}
+
+.highlightRow {
+  background-color: #FAF8F5;
+}
+
+.featureCell {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 14px;
+  color: #222222;
+}
+
+.featureName {
+  display: block;
+}
+
+.buyingCell {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #777777;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.crossIcon {
+  color: #A33A3A;
+  font-weight: bold;
+  margin-right: 8px;
+  display: inline-block;
+}
+
+.rentingCell {
+  font-family: var(--font-body);
+  font-size: 14px;
+  background-color: #FCFBF9;
+  border-left: 2px solid var(--color-canvas);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.checkIcon {
+  color: #17382B;
+  font-weight: bold;
+  font-size: 15px;
+  margin-right: 8px;
+  display: inline-block;
+}
+
+.rentingText {
+  color: #111111;
+  font-weight: 600;
+}
+
+.cellText {
+  color: #666666;
+}
+
+/* ── Bottom CTA Row ── */
+.ctaRow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: center;
+}
+
+.primaryBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 2.25rem;
+  background-color: var(--color-canvas);
+  color: #FFFFFF;
+  font-family: var(--font-extended);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  text-decoration: none;
+  box-shadow: 0 8px 20px -6px rgba(87, 0, 32, 0.35);
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+}
+
+.primaryBtn:hover {
+  transform: translateY(-1px);
+  opacity: 0.92;
+  box-shadow: 0 12px 24px -6px rgba(87, 0, 32, 0.45);
+}
+
+.ctaGuarantee {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: #666666;
+}
+
+@media (max-width: 768px) {
+  .table th,
+  .table td {
+    padding: 1rem 0.85rem;
+    font-size: 12px;
+  }
+  
+  .featureColHeader {
+    width: 30%;
+  }
+  
+  .colTitle, .colTitleRenting {
+    font-size: 1rem;
+  }
+  
+  .rentingText {
+    font-size: 12px;
+  }
+}

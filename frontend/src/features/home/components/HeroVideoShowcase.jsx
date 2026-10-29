@@ -25,9 +25,9 @@ export const HERO_REELS = [
     secondaryCtaText: 'Rent For Daily Wear',
     secondaryCtaLink: '/listings?sale=true',
     promoLabel: 'Rent with Subscription',
-    promoPrice: '$99',
+    promoPrice: '₹2,499',
     promoPeriod: 'first month',
-    promoSubtext: '$164/mo after'
+    promoSubtext: '₹4,999/mo after'
   },
   {
     id: 'black-tie',
