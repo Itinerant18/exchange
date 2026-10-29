@@ -134,6 +134,11 @@ export function BagDrawer() {
             <span className={styles.itemMeta}>
               Size {summary.size}{summary.backupSize ? ` + free backup ${summary.backupSize}` : ''}
             </span>
+            {summary.fittingSpecs && (summary.fittingSpecs.bust !== 'Default' || summary.fittingSpecs.waist !== 'Default' || summary.fittingSpecs.length !== 'Standard') && (
+              <span className={styles.itemMeta} style={{ color: 'var(--color-canvas, #570020)', fontWeight: 500 }}>
+                ✦ Custom Basting: Bust {summary.fittingSpecs.bust}, Waist {summary.fittingSpecs.waist}, Length {summary.fittingSpecs.length}
+              </span>
+            )}
             <span className={styles.itemMeta}>
               {formatDate(payload.startDate)} → {formatDate(payload.endDate)}
             </span>

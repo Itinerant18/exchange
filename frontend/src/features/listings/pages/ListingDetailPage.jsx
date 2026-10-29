@@ -13,6 +13,8 @@ import { FitInsights } from '../../../components/rental/FitInsights.jsx';
 import { CustomerReviews } from '../../../components/rental/CustomerReviews.jsx';
 import { DamageWaiverBadge } from '../../../components/rental/DamageWaiverBadge.jsx';
 import { ModeSwitcher } from '../../../components/rental/ModeSwitcher.jsx';
+import { CoutureFittingEngine } from '../../../components/rental/CoutureFittingEngine.jsx';
+import { PincodeTransitCalculator } from '../../../components/rental/PincodeTransitCalculator.jsx';
 import styles from './ListingDetailPage.module.css';
 
 export function ListingDetailPage() {
@@ -31,6 +33,7 @@ export function ListingDetailPage() {
   const [deliveryDate, setDeliveryDate] = useState('');
   const [primarySize, setPrimarySize] = useState('');
   const [backupSize, setBackupSize] = useState('');
+  const [fittingSpecs, setFittingSpecs] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Slide-out bag (RTR CEBagComponent analogue): booking is started here and
@@ -134,8 +137,9 @@ export function ListingDetailPage() {
       endDate: returnDate,
       transportMode: 'none',
       durationDays: rentalDuration,
-      // Free backup-size preference (second size rides along at $0).
+      // Free backup-size preference (second size rides along at ₹0).
       backupSize: backupSize || undefined,
+      fittingSpecs: fittingSpecs || undefined,
       // Opt-in damage care waiver.
       damageWaiver,
     };
@@ -151,6 +155,7 @@ export function ListingDetailPage() {
       image: displayImages[0] || undefined,
       size: primarySize || listingSize,
       backupSize: backupSize || undefined,
+      fittingSpecs: fittingSpecs || undefined,
       durationDays: rentalDuration,
       subtotalPaise: pricing.subtotal + pricing.waiverFee,
       depositPaise: pricing.deposit,
@@ -461,6 +466,19 @@ export function ListingDetailPage() {
               backupSize={backupSize}
               onBackupSizeChange={setBackupSize}
             />
+
+            {/* ── Couture In-House Basting & Alteration Engine ── */}
+            {mode === 'rent' && (
+              <CoutureFittingEngine onFittingChange={setFittingSpecs} />
+            )}
+
+            {/* ── Indian Pincode Transit & Delivery Estimator ── */}
+            {mode === 'rent' && (
+              <PincodeTransitCalculator
+                deliveryDate={deliveryDate}
+                returnDate={returnDate}
+              />
+            )}
 
             {mode === 'buy' ? (
               <>

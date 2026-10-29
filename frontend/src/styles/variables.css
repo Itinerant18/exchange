@@ -47,6 +47,9 @@
   --color-terracotta-soft: #F5E4E2;
   --color-gold: #D1DBFF;
   --color-gold-soft: #ECEEFF;
+  --color-gold-zari: #C8A251;
+  --color-gold-zari-light: #F4E7C3;
+  --gradient-gold-zari: linear-gradient(135deg, #C8A251 0%, #E8D39B 50%, #A67D28 100%);
   --color-olive: #4051D5;
   --color-olive-soft: #E4E8FF;
   --color-slate: #420022;
@@ -111,9 +114,16 @@
   --shadow-sm: rgba(0, 0, 0, 0.1) 0px 4px 6px -1px, rgba(0, 0, 0, 0.1) 0px 2px 4px -2px;
   --shadow-md: rgba(0, 0, 0, 0.3) 0px 0px 4px 0px;
   --shadow-lg: none;
-  --shadow-card: none;
-  --shadow-hover: none;
-  --shadow-modal: rgba(0, 0, 0, 0.3) 0px 0px 4px 0px;
+  --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.04);
+  --shadow-luxury-card: 0 12px 32px -8px rgba(0, 0, 0, 0.08);
+  --shadow-luxury-float: 0 20px 48px -12px rgba(87, 0, 32, 0.22);
+  --shadow-hover: 0 8px 24px -4px rgba(0, 0, 0, 0.1);
+  --shadow-modal: 0 24px 64px -16px rgba(0, 0, 0, 0.35);
+
+  /* ── Letter-Spacing / Kerning ── */
+  --tracking-editorial: -0.025em;
+  --tracking-wide: 0.12em;
+  --tracking-display: -0.035em;
 
   /* ── Layout Constraints ── */
   --content-width: 90rem;
