@@ -1,17 +1,18 @@
 .tickerWrapper {
   width: 100%;
   overflow: hidden;
-  background: var(--color-surface, #FBFBF5);
-  border-top: 1px solid var(--color-border, #E3E1DE);
-  border-bottom: 1px solid var(--color-border, #E3E1DE);
-  padding: 18px 0;
+  background: var(--color-surface, #F8F8F8);
+  border-top: 1px solid rgba(87, 0, 32, 0.1);
+  border-bottom: 1px solid rgba(87, 0, 32, 0.1);
+  padding: 16px 0;
   user-select: none;
 }
 
 .tickerTrack {
   display: flex;
+  align-items: center;
   width: max-content;
-  animation: tickerScroll 30s linear infinite;
+  animation: tickerScroll 36s linear infinite;
 }
 
 .tickerWrapper:hover .tickerTrack {
@@ -21,22 +22,42 @@
 .tickerItem {
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 0 24px;
+  gap: 28px;
+  padding: 0 28px;
+  flex-shrink: 0;
 }
 
-.brandName {
+.brandLogo {
+  height: 26px;
+  max-width: 140px;
+  object-fit: contain;
+  /* Filter to convert white logos/transparent to crisp charcoal luxury ink */
+  filter: brightness(0.15) contrast(1.2);
+  opacity: 0.82;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.brandLogo:hover {
+  opacity: 1;
+  transform: scale(1.05);
+}
+
+.typographicBadge {
   font-family: var(--font-extended, sans-serif);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.16em;
-  color: var(--color-on-surface, #1C1917);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-canvas, #570020);
+  background: rgba(87, 0, 32, 0.06);
+  padding: 4px 10px;
+  border-radius: 999px;
   white-space: nowrap;
 }
 
 .sparkle {
-  color: var(--color-muted, #78716C);
-  font-size: 11px;
+  color: var(--color-gold-zari, #C8A251);
+  font-size: 12px;
 }
 
 @keyframes tickerScroll {

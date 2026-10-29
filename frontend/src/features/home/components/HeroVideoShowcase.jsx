@@ -18,8 +18,8 @@ export const HERO_REELS = [
     badge: 'THE CIRCULAR DESIGNER CLOSET',
     headline: 'One Closet, Endless Possibilities',
     subheadline: 'No matter the occasion, always have something new to wear. Over 750+ luxury designers on rotation.',
-    videoSrc: 'https://cdn.rtrcdn.com/assets/imgs/OrganicHP_Hero_Desktop_081826.mp4', // Live RTR Master Video
-    posterImage: 'https://cdn.rtrcdn.com/assets/imgs/OrganicHP_Hero_Poster_Desktop_081826.jpg',
+    videoSrc: '/videos/hero-runway.mp4', // Local Instant High-Fashion Runway Video
+    posterImage: '/videos/hero-runway-poster.jpg',
     primaryCtaText: 'Rent For Events',
     primaryCtaLink: '/listings?rental=true',
     secondaryCtaText: 'Rent For Daily Wear',
