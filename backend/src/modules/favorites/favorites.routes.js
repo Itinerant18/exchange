@@ -13,6 +13,7 @@ favoritesRouter.get('/ids', controller.getFavoriteIds);
 // Shortlists / Moodboards (MUST BE REGISTERED BEFORE :listingId)
 favoritesRouter.get('/shortlists', controller.getShortlists);
 favoritesRouter.post('/shortlists', controller.createShortlist);
+favoritesRouter.get('/shortlists/:shortlistId/items', controller.getShortlistItems);
 favoritesRouter.post('/shortlists/:shortlistId/items/:listingId', controller.addShortlistItem);
 favoritesRouter.delete('/shortlists/:shortlistId/items/:listingId', controller.removeShortlistItem);
 

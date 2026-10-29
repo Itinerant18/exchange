@@ -22,6 +22,7 @@ import { reviewsRouter, reviewsAdminRouter } from '../modules/reviews/reviews.ro
 import { favoritesRouter } from '../modules/favorites/favorites.routes.js';
 import { kycRouter, kycAdminRouter } from '../modules/kyc/kyc.routes.js';
 import { adminRouter } from '../modules/admin/admin.routes.js';
+import { uploadsRouter } from './uploads.routes.js';
 
 const router = Router();
 
@@ -84,6 +85,9 @@ router.use('/admin/categories', categoryAdminReadRouter);
 // Listings: public catalog, owner management (incl. images)
 router.use('/listings', listingsRouter);
 router.use('/listings', listingOwnerRouter);
+
+// Uploads: direct image attachments
+router.use('/uploads', uploadsRouter);
 
 // Inventory items: owner-only management (guards inside)
 router.use('/inventory', inventoryRouter);

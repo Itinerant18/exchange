@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useBag } from '../../context/BagContext.jsx';
 import { rentalsApi } from '../../api/rentalsApi.js';
@@ -18,6 +18,9 @@ export function BagDrawer() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [transportMode, setTransportMode] = useState('both'); // 'both' | 'none'
+  const [deliveryQuote, setDeliveryQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
   const [zipCode, setZipCode] = useState(() => {
     try {
       return localStorage.getItem('exchange_delivery_zip') || '';
@@ -33,6 +36,32 @@ export function BagDrawer() {
     }
   });
 
+  const fetchDeliveryQuote = useCallback(async (mode) => {
+    if (mode === 'none') {
+      setDeliveryQuote(null);
+      return;
+    }
+    setQuoteLoading(true);
+    try {
+      const res = await rentalsApi.getDeliveryQuote({
+        transportMode: mode,
+        outboundDistanceKm: 15,
+        returnDistanceKm: 15,
+      });
+      setDeliveryQuote(res?.data ?? res);
+    } catch {
+      // Fallback
+    } finally {
+      setQuoteLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && transportMode !== 'none') {
+      fetchDeliveryQuote(transportMode);
+    }
+  }, [isOpen, transportMode, fetchDeliveryQuote]);
+
   function handleCheckZip(e) {
     if (e) e.preventDefault();
     if (zipCode.trim().length >= 4) {
@@ -42,6 +71,9 @@ export function BagDrawer() {
         // localStorage unavailable
       }
       setZipConfirmed(true);
+      if (transportMode !== 'none') {
+        fetchDeliveryQuote(transportMode);
+      }
     }
   }
 
@@ -55,7 +87,13 @@ export function BagDrawer() {
 
     setSubmitting(true);
     try {
-      const res = await rentalsApi.createBooking(draft.payload);
+      const bookingPayload = {
+        ...draft.payload,
+        transportMode,
+        outboundDistanceKm: transportMode === 'both' ? 15 : undefined,
+        returnDistanceKm: transportMode === 'both' ? 15 : undefined,
+      };
+      const res = await rentalsApi.createBooking(bookingPayload);
       clearBag();
       navigate(`/bookings/${res.id}`);
     } catch (err) {
@@ -149,30 +187,84 @@ export function BagDrawer() {
           )}
         </div>
 
-        {/* ── Pricing ── */}
-        <div className={styles.pricing}>
-          <div className={styles.row}>
-            <span>Rental ({payload.durationDays ?? summary.durationDays} days)</span>
-            <span>{formatPaiseToRupees(summary.subtotalPaise)}</span>
+        {/* ── Transit Method ── */}
+        <div style={{ marginBottom: '1rem', border: '1px solid #E5E5E5', borderRadius: '6px', padding: '0.75rem', background: '#FAFAFA' }}>
+          <div style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#555555', marginBottom: '0.5rem' }}>
+            Fulfilment & Transit Method
           </div>
-          {payload.damageWaiver && (
-            <div className={styles.row}>
-              <span>Damage Care</span>
-              <span>{formatPaiseToRupees(1250)}</span>
-            </div>
-          )}
-          <div className={styles.row}>
-            <span>Refundable Security Deposit (preview)</span>
-            <span>{formatPaiseToRupees(summary.depositPaise)}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+              <input
+                type="radio"
+                name="transportMode"
+                value="both"
+                checked={transportMode === 'both'}
+                onChange={() => setTransportMode('both')}
+              />
+              <span>
+                <strong>Round-Trip White Glove Courier</strong>
+                {deliveryQuote && (
+                  <span style={{ color: '#2E7D32', marginLeft: '0.5rem', fontWeight: 600 }}>
+                    +{formatPaiseToRupees(deliveryQuote.totalAmountPaise)}
+                  </span>
+                )}
+                {quoteLoading && <span style={{ color: '#888', marginLeft: '0.5rem' }}>(Calculating…)</span>}
+              </span>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+              <input
+                type="radio"
+                name="transportMode"
+                value="none"
+                checked={transportMode === 'none'}
+                onChange={() => setTransportMode('none')}
+              />
+              <span>
+                <strong>Self Pickup & Return</strong>
+                <span style={{ color: '#666', marginLeft: '0.5rem' }}>(Free from garment owner)</span>
+              </span>
+            </label>
           </div>
-          <div className={`${styles.row} ${styles.totalRow}`}>
-            <strong>Total</strong>
-            <strong>{formatPaiseToRupees(summary.totalPaise)}</strong>
-          </div>
-          <p className={styles.deliveryNote}>
-            Delivered before your event · Return by 12:00 PM on {formatDate(payload.endDate)}
-          </p>
         </div>
+
+        {/* ── Pricing ── */}
+        {(() => {
+          const courierPaise = transportMode === 'both' && deliveryQuote ? deliveryQuote.totalAmountPaise : 0;
+          const grandTotalPaise = summary.totalPaise + courierPaise;
+          return (
+            <div className={styles.pricing}>
+              <div className={styles.row}>
+                <span>Rental ({payload.durationDays ?? summary.durationDays} days)</span>
+                <span>{formatPaiseToRupees(summary.subtotalPaise)}</span>
+              </div>
+              {payload.damageWaiver && (
+                <div className={styles.row}>
+                  <span>Damage Care</span>
+                  <span>{formatPaiseToRupees(1250)}</span>
+                </div>
+              )}
+              <div className={styles.row}>
+                <span>Refundable Security Deposit (preview)</span>
+                <span>{formatPaiseToRupees(summary.depositPaise)}</span>
+              </div>
+              {transportMode === 'both' && deliveryQuote && (
+                <div className={styles.row}>
+                  <span>Round-Trip Courier Service</span>
+                  <span>{formatPaiseToRupees(courierPaise)}</span>
+                </div>
+              )}
+              <div className={`${styles.row} ${styles.totalRow}`}>
+                <strong>Total</strong>
+                <strong>{formatPaiseToRupees(grandTotalPaise)}</strong>
+              </div>
+              <p className={styles.deliveryNote}>
+                {transportMode === 'both'
+                  ? `Delivered before your event · Return pickup by 12:00 PM on ${formatDate(payload.endDate)}`
+                  : `Self-pickup scheduled before event · Return by 12:00 PM on ${formatDate(payload.endDate)}`}
+              </p>
+            </div>
+          );
+        })()}
 
         {/* ── Membership Upsell Banner ── */}
         <div className={styles.upsell}>
@@ -201,14 +293,20 @@ export function BagDrawer() {
           <button type="button" className={styles.continueBtn} onClick={closeBag}>
             Continue Browsing
           </button>
-          <button
-            type="button"
-            className={styles.confirmBtn}
-            onClick={handleConfirm}
-            disabled={submitting}
-          >
-            {submitting ? 'Reserving…' : `Reserve Look — ${formatPaiseToRupees(summary.totalPaise)}`}
-          </button>
+          {(() => {
+            const courierPaise = transportMode === 'both' && deliveryQuote ? deliveryQuote.totalAmountPaise : 0;
+            const grandTotalPaise = summary.totalPaise + courierPaise;
+            return (
+              <button
+                type="button"
+                className={styles.confirmBtn}
+                onClick={handleConfirm}
+                disabled={submitting}
+              >
+                {submitting ? 'Reserving…' : `Reserve Look — ${formatPaiseToRupees(grandTotalPaise)}`}
+              </button>
+            );
+          })()}
         </div>
       </aside>
     </div>

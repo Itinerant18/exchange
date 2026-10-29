@@ -73,3 +73,12 @@ export async function removeShortlistItem(req, res, next) {
     next(error);
   }
 }
+
+export async function getShortlistItems(req, res, next) {
+  try {
+    const items = await service.getShortlistItems(req.authUser, req.params.shortlistId);
+    sendData(res, items);
+  } catch (error) {
+    next(error);
+  }
+}

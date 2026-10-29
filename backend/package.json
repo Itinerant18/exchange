@@ -12,7 +12,8 @@
     "start": "node src/server.js",
     "db:migrate": "node database/migrate.js",
     "admin:grant": "node database/factories/grant-admin.js",
-    "test": "node --env-file=.env --env-file-if-exists=.env.test --test"
+    "test": "node --env-file=.env --env-file-if-exists=.env.test --test",
+    "test:inmemory": "node --env-file=.env --test tests/integration/routing-auth-inmemory.test.mjs tests/integration/m2-provider-workflows-adversarial.test.mjs tests/unit/milestone2.service-validation.test.mjs tests/integration/m3-e2e-verification.test.mjs tests/integration/m3-challenger-lifecycle-adversarial.test.mjs"
   },
   "dependencies": {
     "cors": "^2.8.6",

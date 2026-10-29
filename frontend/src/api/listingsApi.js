@@ -60,8 +60,9 @@ export const listingsApi = {
     return api.get(endpoints.listings.byId(id));
   },
 
-  async getAvailability(id) {
-    return api.get(endpoints.rentals.availability(id));
+  async getAvailability(id, dates = {}) {
+    const searchParams = new URLSearchParams({ listingId: id, ...dates });
+    return api.get(`${endpoints.rentals.availability}?${searchParams.toString()}`);
   },
 
   async createListing(payload) {
@@ -76,15 +77,50 @@ export const listingsApi = {
     return api.delete(endpoints.listings.delete(id));
   },
 
-  async uploadImage(id, formData) {
-    // Note: multipart fetch handled directly
-    const res = await fetch(`${endpoints.listings.images(id)}`, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('exchnage.accessToken')}`,
-      },
+  async uploadMediaFile(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          const res = await api.post(endpoints.uploads, {
+            fileData: reader.result,
+            fileName: file.name,
+            mimeType: file.type || (file.name.match(/\.(mp4|webm|mov|ogg)$/i) ? 'video/mp4' : 'image/jpeg'),
+          });
+          resolve(res);
+        } catch (err) {
+          reject(err);
+        }
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
     });
-    return res.json();
+  },
+
+  async uploadImageFile(file) {
+    return this.uploadMediaFile(file);
+  },
+
+  /** Attach uploaded media metadata to an existing listing */
+  async addListingImage(id, { objectKey, mimeType, sizeBytes, isPrimary = false }) {
+    return api.post(endpoints.listings.images(id), { objectKey, mimeType, sizeBytes, isPrimary });
+  },
+
+  async uploadImage(id, fileOrData) {
+    if (typeof FormData !== 'undefined' && fileOrData instanceof FormData) {
+      return api.post(endpoints.listings.images(id), fileOrData);
+    }
+
+    if (typeof File !== 'undefined' && (fileOrData instanceof File || fileOrData instanceof Blob)) {
+      const upload = await this.uploadMediaFile(fileOrData);
+      const data = upload?.data || upload;
+      return this.addListingImage(id, {
+        objectKey: data.url || data.fileName,
+        mimeType: data.mimeType || 'image/jpeg',
+        sizeBytes: data.sizeBytes || fileOrData.size || 250000,
+      });
+    }
+
+    return api.post(endpoints.listings.images(id), fileOrData);
   },
 };

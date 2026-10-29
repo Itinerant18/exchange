@@ -1,19 +1,24 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { apiRequest } from '../../../services/apiClient.js';
+import { rentalsApi } from '../../../api/rentalsApi.js';
 import styles from './BookingsPage.module.css';
 
 export function MyBookingsPage() {
+  const [role, setRole] = useState('renter'); // 'renter' | 'provider'
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    apiRequest('/rentals/bookings?role=renter')
-      .then((d) => setRows(Array.isArray(d) ? d : (d?.data ?? []))) // eslint-disable-line prefer-nullish-coalescing
+    setLoading(true);
+    rentalsApi.getMyBookings({ role })
+      .then((res) => {
+        const data = Array.isArray(res) ? res : (res?.data ?? []);
+        setRows(data);
+      })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, []);
+  }, [role]);
 
   function formatDate(dateStr) {
     if (!dateStr) return '—';
@@ -41,14 +46,33 @@ export function MyBookingsPage() {
     <div className={styles.page}>
       <div className={styles.pageHeader}>
         <div>
-          <h1 className={styles.pageTitle}>My rentals</h1>
+          <h1 className={styles.pageTitle}>{role === 'renter' ? 'My rentals' : 'Garment rental bookings'}</h1>
           <p className={styles.pageSubtitle}>
-            View and manage your rental bookings.
+            {role === 'renter'
+              ? 'View and manage your active and upcoming rentals.'
+              : 'View and manage incoming rental orders for your listed designer pieces.'}
           </p>
         </div>
         <Link to="/listings" className="btn btn-primary">
           Browse listings
         </Link>
+      </div>
+
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border, #e2e8f0)', paddingBottom: '0.75rem' }}>
+        <button
+          type="button"
+          className={`btn ${role === 'renter' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => setRole('renter')}
+        >
+          My Rentals (As Renter)
+        </button>
+        <button
+          type="button"
+          className={`btn ${role === 'provider' ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={() => setRole('provider')}
+        >
+          Incoming Orders (As Garment Owner)
+        </button>
       </div>
 
       {error && (
@@ -96,7 +120,9 @@ export function MyBookingsPage() {
                 <div>
                   <dt className={styles.detailLabel}>Deposit</dt>
                   <dd className={styles.detailValue}>
-                    {booking.depositPaise ? formatPrice(booking.depositPaise) : '—'}
+                    {(booking.depositAmountPaise ?? booking.depositPaise ?? booking.deposit_amount_paise ?? booking.deposit_paise)
+                      ? formatPrice(booking.depositAmountPaise ?? booking.depositPaise ?? booking.deposit_amount_paise ?? booking.deposit_paise)
+                      : '—'}
                   </dd>
                 </div>
                 <div>
@@ -128,12 +154,19 @@ export function MyBookingsPage() {
               <path d="M24 10c2-2 4-2 6 0s4 2 6 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </div>
-          <h3 className={styles.emptyTitle}>No bookings yet</h3>
+          <h3 className={styles.emptyTitle}>
+            {role === 'renter' ? 'No bookings yet' : 'No incoming rental orders'}
+          </h3>
           <p className={styles.emptyDesc}>
-            You haven\'t made any rental bookings. Browse listings to find something to rent.
+            {role === 'renter'
+              ? "You haven't made any rental bookings. Browse listings to find something to rent."
+              : "No incoming rental bookings yet. When clients reserve your atelier pieces, they will appear here."}
           </p>
-          <Link to="/listings" className="btn btn-primary">
-            Browse listings
+          <Link
+            to={role === 'renter' ? '/listings' : '/listings/new'}
+            className="btn btn-primary"
+          >
+            {role === 'renter' ? 'Browse listings' : 'List a garment'}
           </Link>
         </div>
       )}

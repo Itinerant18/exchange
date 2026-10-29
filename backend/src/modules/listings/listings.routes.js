@@ -16,6 +16,8 @@ listingsRouter.get('/facets', controller.listFacets);
 // 'Our Runway' reviews for a single listing (Phase 2) — registered before /:id
 // so Express does not have to disambiguate trailing segments.
 listingsRouter.get('/:id/reviews', controller.listReviews);
+// Owner-scoped listings list registered before /:id so /mine is never captured as an id.
+listingsRouter.get('/mine', authenticate, controller.listMine);
 listingsRouter.get('/:id', controller.getDetail);
 
 // Owner-scoped listing management. Guards registered before handlers.

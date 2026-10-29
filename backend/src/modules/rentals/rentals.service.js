@@ -425,7 +425,7 @@ export async function rejectRentalBooking(user, context, bookingId, reason) {
       code: 'BOOKING_REJECT_NOT_ALLOWED',
     });
   }
-  await cancelRentalBooking(user, context, bookingId, `Rejected by provider${reason ? `: ${reason}` : ''}`);
+  await cancelRentalBooking(user, context, bookingId, `Rejected by provider${reason ? `: ${reason}` : ''}`, { allowProvider: true });
   return { id: bookingId, status: 'cancelled' };
 }
 
@@ -435,7 +435,7 @@ export async function rejectRentalBooking(user, context, bookingId, reason) {
  * booking. Succeeded COD payments automatically create pending refund records
  * so the money trail stays complete.
  */
-export async function cancelRentalBooking(user, context, bookingId, reason) {
+export async function cancelRentalBooking(user, context, bookingId, reason, options = {}) {
   const booking = await repository.findBookingById(bookingId);
   if (!booking) {
     throw new AppError('Booking not found.', { statusCode: 404, code: 'BOOKING_NOT_FOUND' });
@@ -444,7 +444,8 @@ export async function cancelRentalBooking(user, context, bookingId, reason) {
 
   const cancellableByRenter = viewer.isRenter && (booking.status === 'pending' || booking.status === 'confirmed');
   const cancellableByAdmin = user.isAdmin && (booking.status === 'pending' || booking.status === 'confirmed' || booking.status === 'active');
-  if (!cancellableByRenter && !cancellableByAdmin) {
+  const cancellableByProviderReject = Boolean(options?.allowProvider) && viewer.isProvider && booking.status === 'pending';
+  if (!cancellableByRenter && !cancellableByAdmin && !cancellableByProviderReject) {
     throw new AppError(`A booking in status ${booking.status} cannot be cancelled by this caller.`, {
       statusCode: 409,
       code: 'BOOKING_CANCEL_NOT_ALLOWED',
@@ -521,7 +522,13 @@ export async function startRentalBooking(user, context, bookingId) {
   if (!booking) {
     throw new AppError('Booking not found.', { statusCode: 404, code: 'BOOKING_NOT_FOUND' });
   }
-  assertViewer(booking, user);
+  const viewer = assertViewer(booking, user);
+  if (!viewer.isProvider && !user.isAdmin) {
+    throw new AppError('Only the provider (listing owner) or an administrator can start a rental.', {
+      statusCode: 403,
+      code: 'FORBIDDEN',
+    });
+  }
   if (booking.status !== 'confirmed') {
     throw new AppError('Only a confirmed booking can be started (handed over).', {
       statusCode: 409,

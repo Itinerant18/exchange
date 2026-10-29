@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import { join } from 'node:path';
+import { existsSync, mkdirSync } from 'node:fs';
 import { corsOptions } from './config/cors.js';
 import { env } from './config/env.js';
 import { errorHandler } from './middleware/errorHandler.js';
@@ -17,11 +19,22 @@ export function createApp() {
   app.disable('x-powered-by');
   app.set('json escape', true);
 
+  // Serve uploaded garment photos
+  const uploadsDir = join(process.cwd(), 'uploads');
+  if (!existsSync(uploadsDir)) {
+    try {
+      mkdirSync(uploadsDir, { recursive: true });
+    } catch {
+      // Handled silently
+    }
+  }
+  app.use('/uploads', express.static(uploadsDir));
+
   app.use(requestId);
   app.use(securityHeaders);
   app.use(cors(corsOptions));
   app.use(createRateLimiter({ windowMs: 5 * 60 * 1000, max: 600, keyPrefix: 'global' }));
-  app.use(express.json({ limit: '1mb' }));
+  app.use(express.json({ limit: '80mb' }));
 
   // Minimal cookie parsing for the refresh-token HttpOnly cookie.
   app.use((req, _res, next) => {

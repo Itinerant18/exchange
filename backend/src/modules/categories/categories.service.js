@@ -17,8 +17,11 @@ export async function listAdminCategories() {
   return repository.listAdminCategories();
 }
 
-export async function getPublicCategory(categoryId) {
-  const category = await repository.findCategoryById(categoryId);
+export async function getPublicCategory(identifier) {
+  const isId = isUuid(identifier);
+  const category = isId
+    ? await repository.findCategoryById(identifier)
+    : await repository.findCategoryBySlug(identifier);
   if (!category || !category.isActive) {
     throw new AppError('Category not found.', { statusCode: 404, code: 'CATEGORY_NOT_FOUND' });
   }

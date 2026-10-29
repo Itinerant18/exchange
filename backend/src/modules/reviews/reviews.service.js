@@ -10,12 +10,12 @@ const FIT_RATINGS = ['RUNS_SMALL', 'TRUE_TO_SIZE', 'RUNS_LARGE'];
 
 // ---------------------------------------------------------------------- read
 
-export async function getPublicReview(user, reviewId) {
+export async function getPublicReview(user = null, reviewId) {
   const review = await repository.findReviewById(reviewId);
   if (!review) {
     throw new AppError('Review not found.', { statusCode: 404, code: 'REVIEW_NOT_FOUND' });
   }
-  const isPrivileged = user !== null && (review.reviewer_user_id === user.id
+  const isPrivileged = Boolean(user) && (review.reviewer_user_id === user.id
     || review.reviewee_user_id === user.id
     || user.isAdmin === true);
   if (review.status !== 'published' && !isPrivileged) {

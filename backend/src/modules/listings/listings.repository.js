@@ -10,11 +10,25 @@ const LISTING_COLUMNS = `
     c.name AS category_name, c.slug AS category_slug, c.is_active AS category_is_active`;
 
 function insertValues(fields) {
-  return [fields.owner_type, fields.owner_user_id, fields.category_id, fields.title,
-    fields.description ?? null, fields.condition, fields.size ?? null, fields.colour ?? null,
-    fields.brand ?? null, fields.rental_price_paise ?? null, fields.sale_price_paise ?? null,
-    fields.deposit_paise ?? null, fields.replacement_value_paise ?? null,
-    fields.is_rental, fields.is_sale];
+  return [
+    fields.owner_type,
+    fields.owner_user_id,
+    fields.category_id,
+    fields.title,
+    fields.description ?? null,
+    fields.condition,
+    fields.size ?? null,
+    fields.colour ?? null,
+    fields.brand ?? null,
+    fields.rental_price_paise ?? null,
+    fields.sale_price_paise ?? null,
+    fields.deposit_paise ?? null,
+    fields.replacement_value_paise ?? null,
+    fields.is_rental,
+    fields.is_sale,
+    fields.city ?? null,
+    fields.delivery_available ?? false,
+  ];
 }
 
 export async function insertListing(client, fields) {
@@ -22,12 +36,15 @@ export async function insertListing(client, fields) {
     `INSERT INTO public.listings
         (owner_type, owner_user_id, category_id, title, description, condition, size, colour, brand,
          rental_price_paise, sale_price_paise, deposit_paise, replacement_value_paise,
-         is_rental, is_sale, attributes, listing_status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
-             $16::jsonb, COALESCE($17::varchar, 'active'))
+         is_rental, is_sale, city, delivery_available, attributes, listing_status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17,
+             $18::jsonb, COALESCE($19::varchar, 'active'))
      RETURNING id`,
-    [...insertValues(fields), fields.attributes ? JSON.stringify(fields.attributes) : '{}',
-      fields.listing_status ?? null],
+    [
+      ...insertValues(fields),
+      fields.attributes ? JSON.stringify(fields.attributes) : '{}',
+      fields.listing_status ?? null,
+    ],
   );
   return rows[0];
 }
@@ -143,7 +160,23 @@ export async function listPublicListings({ categoryId, condition, mode, minPrice
     : 'ORDER BY l.created_at DESC';
 
   const whereSql = conditions.join(' AND ');
-  const listQuery = `SELECT ${LISTING_COLUMNS} FROM public.listings l
+  const listQuery = `SELECT ${LISTING_COLUMNS},
+     COALESCE(
+       (
+         SELECT json_agg(
+           json_build_object(
+             'id', img.id,
+             'objectKey', img.object_key,
+             'mimeType', img.mime_type,
+             'isPrimary', img.is_primary
+           ) ORDER BY img.is_primary DESC, img.created_at ASC
+         )
+         FROM public.listing_images img
+         WHERE img.listing_id = l.id
+       ),
+       '[]'::json
+     ) AS images
+     FROM public.listings l
      JOIN public.categories c ON c.id = l.category_id
      WHERE ${whereSql}
      ${orderBy}
@@ -184,28 +217,40 @@ export async function listFacetCounts(filters, knownFacetCountsFilter = null) {
     baseConditions.push(`l.title ILIKE $${baseParams.length}`);
   }
 
-  // Other-facet attribute filters use JSONB containment so a value count
-  // respects the remaining constraints without re-parsing per-key params.
-  if (filters?.attributes) {
-    for (const [key, values] of Object.entries(filters.attributes)) {
-      baseParams.push(JSON.stringify({ [key]: values }));
-      baseConditions.push(`l.attributes @> $${baseParams.length}::jsonb`);
-    }
-  }
-
   const facetsToCount = knownFacetCountsFilter?.facets ?? FACET_KEYS;
-  const baseWhereSql = baseConditions.join(' AND ');
-  const baseParamsCount = baseParams.length;
 
   const queries = facetsToCount.map((key) => {
     const params = [...baseParams];
-    const keyIdx = params.push(key);
+    const conditions = [...baseConditions];
+
+    // Respect filters on OTHER facets when calculating this facet's counts
+    if (filters?.attributes) {
+      for (const [attrKey, values] of Object.entries(filters.attributes)) {
+        if (attrKey !== key && Array.isArray(values) && values.length > 0) {
+          params.push(attrKey);
+          const kIdx = params.length;
+          params.push(values);
+          const vIdx = params.length;
+          conditions.push(`(l.attributes ? $${kIdx} AND l.attributes->$${kIdx} ?| $${vIdx}::text[])`);
+        }
+      }
+    }
+
+    const whereSql = conditions.join(' AND ');
+    params.push(key);
+    const keyIdx = params.length;
+
     const sql = `SELECT $${keyIdx}::text AS facet, v.value AS value, count(*)::int AS total
        FROM public.listings l
        JOIN public.categories c ON c.id = l.category_id
-       CROSS JOIN LATERAL jsonb_array_elements_text(l.attributes->$${keyIdx}::text) AS v(value)
-       WHERE ${baseWhereSql}
-         AND NOT l.attributes @> $${baseParamsCount + 1}::jsonb
+       CROSS JOIN LATERAL jsonb_array_elements_text(
+         CASE
+           WHEN jsonb_typeof(l.attributes->$${keyIdx}) = 'array'
+           THEN l.attributes->$${keyIdx}
+           ELSE '[]'::jsonb
+         END
+       ) AS v(value)
+       WHERE ${whereSql}
        GROUP BY v.value
        ORDER BY total DESC`;
     return { key, params, sql };
@@ -213,7 +258,7 @@ export async function listFacetCounts(filters, knownFacetCountsFilter = null) {
 
   const facets = {};
   const results = await Promise.all(
-    queries.map(({ key, params, sql }) => pool.query(sql, params)),
+    queries.map(({ params, sql }) => pool.query(sql, params)),
   );
   results.forEach((result, index) => {
     const key = facetsToCount[index];
@@ -236,7 +281,23 @@ export async function listOwnerListings(ownerUserId, { status }, { limit, offset
 
   const [listResult, countResult] = await Promise.all([
     pool.query(
-      `SELECT ${LISTING_COLUMNS} FROM public.listings l
+      `SELECT ${LISTING_COLUMNS},
+       COALESCE(
+         (
+           SELECT json_agg(
+             json_build_object(
+               'id', img.id,
+               'objectKey', img.object_key,
+               'mimeType', img.mime_type,
+               'isPrimary', img.is_primary
+             ) ORDER BY img.is_primary DESC, img.created_at ASC
+           )
+           FROM public.listing_images img
+           WHERE img.listing_id = l.id
+         ),
+         '[]'::json
+       ) AS images
+       FROM public.listings l
        JOIN public.categories c ON c.id = l.category_id
        WHERE ${whereSql}
        ORDER BY l.created_at DESC
@@ -378,6 +439,7 @@ export function mapListingRow(row) {
     deliveryAvailable: row.delivery_available ?? false,
     deliveryRadiusKm: row.delivery_radius_km !== null && row.delivery_radius_km !== undefined ? Number(row.delivery_radius_km) : null,
     attributes: row.attributes ?? {},
+    images: Array.isArray(row.images) ? row.images : [],
     categoryActive: row.category_is_active === undefined ? null : row.category_is_active,
     createdAt: row.created_at,
     updatedAt: row.updated_at,

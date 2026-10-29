@@ -222,7 +222,23 @@ export function ListingDetailPage() {
     ownerId,
   } = listing || {};
 
-  const displayImages = images.map((img) => img.objectKey).filter(Boolean);
+  const displayMedia = images
+    .map((img) => {
+      if (typeof img === 'string') {
+        const isVideo = Boolean(img.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i));
+        return { url: img, isVideo, mimeType: isVideo ? 'video/mp4' : 'image/jpeg' };
+      }
+      const url = img?.objectKey;
+      if (!url) return null;
+      const isVideo = Boolean(img.mimeType?.startsWith('video/') || url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i));
+      return {
+        url,
+        isVideo,
+        mimeType: img.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg'),
+        isPrimary: img.isPrimary,
+      };
+    })
+    .filter(Boolean);
 
   const estimatedRetail = replacementValuePaise;
 
@@ -250,12 +266,25 @@ export function ListingDetailPage() {
         <div className={styles.visualCol}>
           <div className={styles.gallery}>
             <div className={styles.mainImageFrame}>
-              {displayImages.length > 0 ? (
-                <img
-                  src={displayImages[activeImageIndex]}
-                  alt={title}
-                  className={styles.mainImage}
-                />
+              {displayMedia.length > 0 ? (
+                displayMedia[activeImageIndex]?.isVideo ? (
+                  <video
+                    key={displayMedia[activeImageIndex].url}
+                    src={displayMedia[activeImageIndex].url}
+                    controls
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    className={styles.mainVideo}
+                  />
+                ) : (
+                  <img
+                    src={displayMedia[activeImageIndex]?.url}
+                    alt={title}
+                    className={styles.mainImage}
+                  />
+                )
               ) : (
                 <div className={styles.noImagePlaceholder}>
                   <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
@@ -266,16 +295,24 @@ export function ListingDetailPage() {
               )}
             </div>
 
-            {displayImages.length > 1 && (
+            {displayMedia.length > 1 && (
               <div className={styles.thumbnails}>
-                {displayImages.map((src, idx) => (
+                {displayMedia.map((media, idx) => (
                   <button
                     key={idx}
                     type="button"
                     className={`${styles.thumbBtn} ${activeImageIndex === idx ? styles.thumbBtnActive : ''}`}
                     onClick={() => setActiveImageIndex(idx)}
+                    aria-label={`View ${media.isVideo ? 'video' : 'photo'} ${idx + 1}`}
                   >
-                    <img src={src} alt={`Thumbnail ${idx + 1}`} className={styles.thumbImg} />
+                    {media.isVideo ? (
+                      <div className={styles.thumbVideoFrame}>
+                        <video src={media.url} className={styles.thumbVideo} muted preload="metadata" />
+                        <span className={styles.videoPlayBadge}>▶</span>
+                      </div>
+                    ) : (
+                      <img src={media.url} alt={`Thumbnail ${idx + 1}`} className={styles.thumbImg} />
+                    )}
                   </button>
                 ))}
               </div>

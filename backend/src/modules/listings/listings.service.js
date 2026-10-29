@@ -14,7 +14,17 @@ import { validateListingAttributes, parseFacetFilters } from './listingAttribute
 
 const CONDITIONS = ['new', 'like_new', 'good', 'fair', 'poor'];
 const OWNER_STATUSES = ['active', 'inactive'];
-const IMAGE_MIME_TYPES = ['image/png', 'image/jpeg', 'image/webp', 'image/avif'];
+const ALLOWED_MEDIA_MIME_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/jpg',
+  'image/webp',
+  'image/avif',
+  'video/mp4',
+  'video/webm',
+  'video/quicktime',
+  'video/ogg',
+];
 
 // ---------------------------------------------------------------------- read
 
@@ -132,9 +142,71 @@ export async function createListing(user, context, body) {
         replacement_value_paise: replacementValuePaise,
         is_rental: isRental,
         is_sale: isSale,
+        city: body.city ?? null,
+        delivery_available: Boolean(body.deliveryAvailable),
         attributes,
         listing_status: 'active',
       });
+
+      // ── Attach product media (multiple photos & videos) if supplied in creation payload ──
+      const mediaList = Array.isArray(body.media) && body.media.length > 0
+        ? body.media
+        : (Array.isArray(body.images) && body.images.length > 0
+            ? body.images
+            : (body.imageUrl || body.image ? [{ objectKey: body.imageUrl || body.image, isPrimary: true }] : []));
+
+      if (mediaList.length > 0) {
+        const hasExplicitPrimary = mediaList.some((m) => m && (m.isPrimary === true || m.is_primary === true));
+        let primaryAssigned = false;
+
+        for (let i = 0; i < mediaList.length; i++) {
+          const item = mediaList[i];
+          if (!item) continue;
+          const rawKey = typeof item === 'string' ? item : (item.objectKey || item.url || item.key || '');
+          const objectKey = String(rawKey).trim();
+          if (!objectKey) continue;
+
+          const isVideo = objectKey.match(/\.(mp4|webm|mov|ogv|ogg)(\?.*)?$/i) || (typeof item === 'object' && item.mimeType?.startsWith('video/'));
+          const defaultMime = isVideo ? 'video/mp4' : 'image/jpeg';
+          const mimeType = (typeof item === 'object' && item.mimeType) ? item.mimeType : defaultMime;
+          const sizeBytes = (typeof item === 'object' && item.sizeBytes) ? Number(item.sizeBytes) : (isVideo ? 12000000 : 250000);
+
+          let isPrimary = false;
+          if (hasExplicitPrimary) {
+            isPrimary = !primaryAssigned && (item.isPrimary === true || item.is_primary === true);
+          } else {
+            // First item (or first non-video) becomes primary cover
+            isPrimary = !primaryAssigned && (i === 0 || !isVideo);
+          }
+          if (isPrimary) primaryAssigned = true;
+
+          try {
+            await repository.insertListingImage(client, {
+              listingId: created.id,
+              objectKey,
+              mimeType,
+              sizeBytes,
+              isPrimary,
+            });
+          } catch {
+            // Non-fatal if duplicate key, but ensure listing creation persists
+          }
+        }
+      }
+
+      // ── Create initial physical inventory unit so garment is bookable (when requested or when media is attached) ──
+      if (body.initialInventory === true || (Array.isArray(body.media) && body.media.length > 0)) {
+        try {
+          await client.query(
+            `INSERT INTO public.inventory_items (listing_id, owner_type, owner_user_id, operational_status)
+             VALUES ($1, 'SELLER', $2, 'AVAILABLE')`,
+            [created.id, user.id],
+          );
+        } catch {
+          // Safe fallback if inventory_items already handles triggers
+        }
+      }
+
       await writeAuditLog(client, { ...context, action: 'LISTING_CREATED', entityType: 'listing', entityId: created.id, newValue: { title } });
       return created.id;
     });
@@ -337,12 +409,14 @@ export async function addListingImage(user, listingId, body) {
 
   const objectKey = expectString(body.objectKey, 'objectKey', { min: 4, max: 500 });
   const mimeType = String(body.mimeType ?? '').trim().toLowerCase();
-  if (!IMAGE_MIME_TYPES.includes(mimeType)) {
-    throw new AppError(`mimeType must be one of: ${IMAGE_MIME_TYPES.join(', ')}.`, { statusCode: 400 });
+  if (!ALLOWED_MEDIA_MIME_TYPES.includes(mimeType)) {
+    throw new AppError(`mimeType must be one of: ${ALLOWED_MEDIA_MIME_TYPES.join(', ')}.`, { statusCode: 400 });
   }
+  const isVideo = mimeType.startsWith('video/');
+  const maxBytes = isVideo ? 100 * 1024 * 1024 : 25 * 1024 * 1024;
   const sizeBytes = Number(body.sizeBytes);
-  if (!Number.isSafeInteger(sizeBytes) || sizeBytes <= 0 || sizeBytes > 25 * 1024 * 1024) {
-    throw new AppError('sizeBytes must be the actual file size (1 byte to 25 MiB).', { statusCode: 400 });
+  if (!Number.isSafeInteger(sizeBytes) || sizeBytes <= 0 || sizeBytes > maxBytes) {
+    throw new AppError(`sizeBytes must be the actual file size (1 byte to ${isVideo ? '100' : '25'} MiB).`, { statusCode: 400 });
   }
 
   const result = await withTransaction(async (client) => {

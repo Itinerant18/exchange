@@ -19,4 +19,8 @@ export const ordersApi = {
   async createOrder(payload) {
     return api.post(endpoints.orders.create, payload);
   },
+
+  async cancelOrder(id, reason = 'Buyer requested cancellation') {
+    return api.post(endpoints.orders.cancel(id), { reason });
+  },
 };

@@ -55,10 +55,21 @@ categoriesRouter.get('/', async (req, res, next) => {
   }
 });
 
+categoriesRouter.get('/tree', async (req, res, next) => {
+  try {
+    res.status(200).json({ data: await service.listPublicCategories() });
+  } catch (error) {
+    next(error);
+  }
+});
+
 categoriesRouter.get('/:id', async (req, res, next) => {
   try {
-    assertId(req.params.id);
-    res.status(200).json({ data: await service.getPublicCategory(req.params.id) });
+    const param = req.params.id;
+    if (!isUuid(param) && !/^[a-z0-9-_]{1,120}$/i.test(param)) {
+      throw new AppError('The identifier is not valid.', { statusCode: 400, code: 'INVALID_ID' });
+    }
+    res.status(200).json({ data: await service.getPublicCategory(param) });
   } catch (error) {
     next(error);
   }

@@ -46,20 +46,8 @@ reviewsRouter.get('/', async (req, res, next) => {
   }
 });
 
-reviewsRouter.get('/:id', async (req, res, next) => {
-  try {
-    assertReviewId(req.params.id);
-    sendData(res, await service.getPublicReview(req.authUser, req.params.id));
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Authenticated reviewer actions (guards registered before handlers).
-const reviewMemberActions = Router();
-reviewMemberActions.use(authenticate);
-
-reviewMemberActions.post('/', async (req, res, next) => {
+// Authenticated reviewer actions (registered before /:id so /mine is never captured as an id).
+reviewsRouter.post('/', authenticate, async (req, res, next) => {
   try {
     const review = await service.createReview(req.authUser, auditContext(req), assertObject(req.body ?? {}));
     res.status(201).json({ data: review });
@@ -68,7 +56,7 @@ reviewMemberActions.post('/', async (req, res, next) => {
   }
 });
 
-reviewMemberActions.get('/mine', async (req, res, next) => {
+reviewsRouter.get('/mine', authenticate, async (req, res, next) => {
   try {
     const pagination = parsePagination(req.query, { defaultLimit: 20, maxLimit: 50 });
     const { rows, total } = await service.listMyWritten(req.authUser, pagination);
@@ -78,7 +66,7 @@ reviewMemberActions.get('/mine', async (req, res, next) => {
   }
 });
 
-reviewMemberActions.delete('/:id', async (req, res, next) => {
+reviewsRouter.delete('/:id', authenticate, async (req, res, next) => {
   try {
     assertReviewId(req.params.id);
     await service.deleteReview(req.authUser, req.params.id);
@@ -88,7 +76,15 @@ reviewMemberActions.delete('/:id', async (req, res, next) => {
   }
 });
 
-reviewsRouter.use(reviewMemberActions);
+// Public review detail read (unauthenticated allowed for published reviews).
+reviewsRouter.get('/:id', async (req, res, next) => {
+  try {
+    assertReviewId(req.params.id);
+    sendData(res, await service.getPublicReview(req.authUser ?? null, req.params.id));
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Admin moderation
 reviewsAdminRouter.use(authenticate, requireRole('admin'));

@@ -35,8 +35,15 @@ function parseListFilters(query) {
   if (query.condition !== undefined) {
     filters.condition = expectEnum(query.condition, 'condition', CONDITIONS).toLowerCase();
   }
-  if (query.mode !== undefined) {
-    const mode = String(query.mode).toLowerCase();
+  const rawMode = query.mode !== undefined
+    ? query.mode
+    : (query.type === 'rental' || query.type === 'rent' || query.rental === 'true' || query.isRental === 'true'
+        ? 'rent'
+        : (query.type === 'sale' || query.sale === 'true' || query.isSale === 'true' ? 'sale' : undefined));
+
+  if (rawMode !== undefined) {
+    let mode = String(rawMode).toLowerCase();
+    if (mode === 'rental') mode = 'rent';
     if (mode !== 'rent' && mode !== 'sale') {
       throw new AppError('mode must be "rent" or "sale".', { statusCode: 400 });
     }

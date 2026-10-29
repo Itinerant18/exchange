@@ -14,6 +14,7 @@ export const favoritesApi = {
 
   getShortlists: () => apiRequest('/favorites/shortlists'),
   createShortlist: (data) => apiRequest('/favorites/shortlists', { method: 'POST', body: data }),
+  getShortlistItems: (shortlistId) => apiRequest(`/favorites/shortlists/${shortlistId}/items`),
   addToShortlist: (shortlistId, listingId) =>
     apiRequest(`/favorites/shortlists/${shortlistId}/items/${listingId}`, { method: 'POST' }),
   removeFromShortlist: (shortlistId, listingId) =>

@@ -164,3 +164,179 @@
   border: none;
   cursor: pointer;
 }
+
+.shortlistGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.shortlistCard {
+  background: #FFF;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+}
+
+.shortlistCard:hover {
+  transform: translateY(-2px);
+  border-color: #111;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+
+.shortlistCardTitle {
+  font-family: var(--font-display, 'Martina Plantijn', serif);
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem 0;
+  color: #111;
+}
+
+.shortlistCardCount {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+.shortlistDetailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #EEE;
+}
+
+.backBtn {
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: #555;
+  font-weight: 600;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.backBtn:hover {
+  color: #000;
+}
+
+.cardContainer {
+  display: flex;
+  flex-direction: column;
+}
+
+.addToShortlistBtn {
+  margin-top: 0.5rem;
+  background: #FAFAFA;
+  border: 1px solid #E5E5E5;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #444;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.addToShortlistBtn:hover {
+  background: #111;
+  color: #FFF;
+  border-color: #111;
+}
+
+.removeFromShortlistBtn {
+  margin-top: 0.5rem;
+  background: #FFF5F5;
+  border: 1px solid #FED7D7;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #C53030;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.removeFromShortlistBtn:hover {
+  background: #FEB2B2;
+}
+
+/* Modal styles for shortlist assignment */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalBox {
+  background: #FFF;
+  border-radius: 8px;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.modalHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.modalTitle {
+  font-family: var(--font-display, 'Martina Plantijn', serif);
+  font-size: 1.25rem;
+  margin: 0;
+}
+
+.closeIcon {
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #777;
+}
+
+.shortlistSelectList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+.shortlistSelectItem {
+  padding: 0.75rem 1rem;
+  border: 1px solid #EEE;
+  border-radius: 6px;
+  background: #FDFDFD;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.15s ease;
+}
+
+.shortlistSelectItem:hover {
+  background: #111;
+  color: #FFF;
+  border-color: #111;
+}
+

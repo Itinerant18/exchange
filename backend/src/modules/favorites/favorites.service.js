@@ -59,3 +59,10 @@ export async function removeItemFromShortlist(user, shortlistId, listingId) {
   }
   return { success: true };
 }
+
+export async function getShortlistItems(user, shortlistId) {
+  if (!isUuid(shortlistId)) {
+    throw new AppError('Invalid identifier provided.', { statusCode: 400, code: 'INVALID_ID' });
+  }
+  return repository.listShortlistItems(user.id, shortlistId);
+}

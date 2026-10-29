@@ -26,6 +26,7 @@ export function ListingCard({ listing }) {
   } = listing;
 
   const primaryImage = images.find((img) => img.isPrimary)?.objectKey || images[0]?.objectKey;
+  const hasVideo = images.some((img) => img.mimeType?.startsWith('video/') || img.objectKey?.match(/\.(mp4|webm|mov|ogg)$/i));
   const isLiked = isFavorite(id);
 
   async function handleHeartClick(e) {
@@ -69,6 +70,7 @@ export function ListingCard({ listing }) {
         <div className={styles.badgeGroup}>
           {isRental && <span className={styles.badgeRental}>Rent</span>}
           {isSale && <span className={styles.badgeSale}>Pre-Loved</span>}
+          {hasVideo && <span className={styles.badgeVideo}>▶ Video</span>}
         </div>
 
         {/* Wishlist Action */}

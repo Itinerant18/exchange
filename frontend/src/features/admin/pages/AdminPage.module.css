@@ -1,0 +1,330 @@
+.adminContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 4rem;
+  font-family: var(--font-sans, system-ui, -apple-system, sans-serif);
+}
+
+.header {
+  margin-bottom: 2rem;
+}
+
+.eyebrow {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #666;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.title {
+  font-family: var(--font-serif, 'Playfair Display', Georgia, serif);
+  font-size: 2.25rem;
+  font-weight: 500;
+  margin: 0 0 0.5rem;
+  color: #111;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.tabsBar {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid #E5E5E5;
+  padding-bottom: 0.75rem;
+  margin-bottom: 2rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tabBtn {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #555;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.tabBtn:hover {
+  color: #111;
+  background: #F3F4F6;
+}
+
+.tabBtnActive {
+  background: #111 !important;
+  color: #FFF !important;
+  font-weight: 600;
+}
+
+.badgePill {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  margin-left: 0.35rem;
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.tabBtnActive .badgePill {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Card */
+.card {
+  background: #FFF;
+  border: 1px solid #E5E5E5;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  margin-bottom: 2rem;
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.cardTitle {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.35rem;
+  font-weight: 500;
+  margin: 0;
+  color: #111;
+}
+
+.cardSubtitle {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0.25rem 0 0;
+}
+
+/* Metrics Grid */
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.metricCard {
+  background: #FAFAFA;
+  border: 1px solid #EBEBEB;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.metricLabel {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.metricValue {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #111;
+  line-height: 1.2;
+}
+
+.metricSub {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.35rem;
+}
+
+/* Filters bar */
+.filterBar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+
+.searchInput {
+  padding: 0.5rem 0.85rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  min-width: 260px;
+  flex: 1;
+}
+
+.selectInput {
+  padding: 0.5rem 0.85rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  background: #FFF;
+}
+
+/* Tables */
+.tableWrapper {
+  overflow-x: auto;
+  border: 1px solid #E5E7EB;
+  border-radius: 6px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.table th {
+  background: #F9FAFB;
+  padding: 0.75rem 1rem;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #E5E7EB;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #F3F4F6;
+  color: #1F2937;
+  vertical-align: middle;
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.table tr:hover td {
+  background: #FAFAFA;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.badgeSuccess {
+  background: #DCFCE7;
+  color: #166534;
+}
+
+.badgeWarning {
+  background: #FEF3C7;
+  color: #92400E;
+}
+
+.badgeDanger {
+  background: #FEE2E2;
+  color: #991B1B;
+}
+
+.badgeNeutral {
+  background: #F3F4F6;
+  color: #4B5563;
+}
+
+.badgePrimary {
+  background: #E0E7FF;
+  color: #3730A3;
+}
+
+.badgeAdmin {
+  background: #F3E8FF;
+  color: #6B21A8;
+}
+
+/* Actions */
+.actionBtn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 4px;
+  border: 1px solid #D1D5DB;
+  background: #FFF;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-right: 0.35rem;
+}
+
+.actionBtn:hover {
+  background: #F9FAFB;
+  border-color: #9CA3AF;
+}
+
+.actionBtnPrimary {
+  background: #111;
+  color: #FFF;
+  border-color: #111;
+}
+
+.actionBtnPrimary:hover {
+  background: #333;
+  color: #FFF;
+}
+
+.actionBtnDanger {
+  background: #FEF2F2;
+  color: #991B1B;
+  border-color: #FECACA;
+}
+
+.actionBtnDanger:hover {
+  background: #FEE2E2;
+}
+
+/* Modal */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modalContent {
+  background: #FFF;
+  border-radius: 8px;
+  max-width: 520px;
+  width: 100%;
+  padding: 1.75rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.modalTitle {
+  font-family: var(--font-serif, Georgia, serif);
+  font-size: 1.35rem;
+  margin: 0 0 0.5rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}

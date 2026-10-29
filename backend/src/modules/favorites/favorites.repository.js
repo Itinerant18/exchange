@@ -162,3 +162,52 @@ export async function removeShortlistItem(userId, shortlistId, listingId) {
   );
   return true;
 }
+
+export async function listShortlistItems(userId, shortlistId) {
+  const sql = `
+    SELECT l.id, l.title, l.description, l.condition, l.size, l.colour, l.brand,
+           l.rental_price_paise, l.sale_price_paise, l.deposit_paise,
+           l.is_rental, l.is_sale, l.listing_status, l.attributes,
+           c.name AS category_name, c.slug AS category_slug,
+           si.created_at AS added_at,
+           COALESCE(
+             json_agg(
+               json_build_object(
+                 'id', li.id,
+                 'objectKey', li.object_key,
+                 'isPrimary', li.is_primary
+               ) ORDER BY li.is_primary DESC
+             ) FILTER (WHERE li.id IS NOT NULL), '[]'
+           ) AS images
+    FROM public.shortlist_items si
+    JOIN public.shortlists s ON s.id = si.shortlist_id
+    JOIN public.listings l ON l.id = si.listing_id
+    JOIN public.categories c ON c.id = l.category_id
+    LEFT JOIN public.listing_images li ON li.listing_id = l.id
+    WHERE s.id = $1 AND s.user_id = $2 AND l.listing_status = 'active'
+    GROUP BY l.id, c.id, si.created_at
+    ORDER BY si.created_at DESC
+  `;
+  const { rows } = await pool.query(sql, [shortlistId, userId]);
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    condition: row.condition,
+    size: row.size,
+    colour: row.colour,
+    brand: row.brand,
+    rentalPricePaise: row.rental_price_paise !== null ? Number(row.rental_price_paise) : null,
+    salePricePaise: row.sale_price_paise !== null ? Number(row.sale_price_paise) : null,
+    depositPaise: row.deposit_paise !== null ? Number(row.deposit_paise) : null,
+    isRental: row.is_rental,
+    isSale: row.is_sale,
+    listingStatus: row.listing_status,
+    attributes: row.attributes ?? {},
+    categoryName: row.category_name,
+    categorySlug: row.category_slug,
+    addedAt: row.added_at,
+    images: row.images,
+  }));
+}
+

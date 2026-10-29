@@ -38,6 +38,14 @@ export async function findCategoryById(categoryId) {
   return rows[0] ? mapCategoryRow(rows[0]) : null;
 }
 
+export async function findCategoryBySlug(slug) {
+  const { rows } = await pool.query(
+    `SELECT ${CATEGORY_COLUMNS} FROM public.categories WHERE slug = $1 LIMIT 1`,
+    [slug],
+  );
+  return rows[0] ? mapCategoryRow(rows[0]) : null;
+}
+
 export async function insertCategory(fields, client) {
   const { rows } = await client.query(
     `INSERT INTO public.categories (parent_id, name, slug, description, image_url, display_order, is_active)

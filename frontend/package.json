@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --import ./tests/register-loader.mjs --test tests/apiClient.adversarial.test.mjs tests/milestone2.adversarial.test.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",

@@ -30,6 +30,10 @@ export function BookingDetailPage() {
   const [actionBusy, setActionBusy] = useState(false);
   const [actionSuccess, setActionSuccess] = useState('');
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [extensionModalOpen, setExtensionModalOpen] = useState(false);
+  const [extensionDate, setExtensionDate] = useState('');
+  const [extensionReason, setExtensionReason] = useState('');
+  const [lateFeeQuote, setLateFeeQuote] = useState(null);
 
   useEffect(() => {
     if (!id) return;
@@ -40,6 +44,9 @@ export function BookingDetailPage() {
       .then((res) => {
         const data = res?.data ?? res;
         setBooking(data);
+        if (data?.lateFee?.overdueDays > 0) {
+          rentalsApi.getLateFeeQuote(id).then(setLateFeeQuote).catch(() => null);
+        }
       })
       .catch((err) => {
         setError(err.message || 'Failed to load booking details');
@@ -48,6 +55,82 @@ export function BookingDetailPage() {
         setLoading(false);
       });
   }, [id]);
+
+  async function handleAccept() {
+    setActionBusy(true);
+    setError('');
+    setActionSuccess('');
+    try {
+      await rentalsApi.acceptBooking(id);
+      setActionSuccess('Booking confirmed! Garment reserved for the renter.');
+      const updated = await rentalsApi.getBookingById(id);
+      setBooking(updated?.data ?? updated);
+    } catch (err) {
+      setError(err.message || 'Failed to accept booking');
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function handleReject() {
+    const reason = window.prompt('Please enter the reason for declining this rental request:');
+    if (reason === null) return;
+    setActionBusy(true);
+    setError('');
+    setActionSuccess('');
+    try {
+      await rentalsApi.rejectBooking(id, reason.trim() || undefined);
+      setActionSuccess('Rental request declined.');
+      const updated = await rentalsApi.getBookingById(id);
+      setBooking(updated?.data ?? updated);
+    } catch (err) {
+      setError(err.message || 'Failed to decline booking');
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function handleStart() {
+    if (!window.confirm('Confirm that the garment has been handed over or dispatched for courier pickup?')) return;
+    setActionBusy(true);
+    setError('');
+    setActionSuccess('');
+    try {
+      await rentalsApi.startBooking(id);
+      setActionSuccess('Rental period active! Garment is in transit or in the renter\'s possession.');
+      const updated = await rentalsApi.getBookingById(id);
+      setBooking(updated?.data ?? updated);
+    } catch (err) {
+      setError(err.message || 'Failed to start rental');
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function handleSubmitExtension(e) {
+    e.preventDefault();
+    if (!extensionDate) {
+      setError('Please select a new requested return date.');
+      return;
+    }
+    setActionBusy(true);
+    setError('');
+    setActionSuccess('');
+    try {
+      await rentalsApi.requestExtension(id, {
+        newEndDate: extensionDate,
+        reason: extensionReason.trim() || 'Rental extension requested via portal',
+      });
+      setActionSuccess('Extension request submitted! Our concierge will arbitrate availability.');
+      setExtensionModalOpen(false);
+      const updated = await rentalsApi.getBookingById(id);
+      setBooking(updated?.data ?? updated);
+    } catch (err) {
+      setError(err.message || 'Failed to submit extension request');
+    } finally {
+      setActionBusy(false);
+    }
+  }
 
   async function handleCancel() {
     if (!window.confirm('Are you sure you want to cancel this booking?')) return;
@@ -120,9 +203,21 @@ export function BookingDetailPage() {
     );
   }
 
+  const isRenter = booking.renterUserId === user?.id || booking.renter_user_id === user?.id;
+  const isExplicitProvider = Boolean(
+    (booking.listingOwnerId && booking.listingOwnerId === user?.id) ||
+    (booking.listing_owner_id && booking.listing_owner_id === user?.id)
+  );
+  const isProvider = isExplicitProvider || Boolean(user?.isAdmin) || (Boolean(user?.id) && !isRenter);
   const statusMeta = STATUS_CONFIG[booking.status] || { label: booking.status, phase: 'badge-neutral' };
-  const canCancel = ['created', 'pending', 'confirmed'].includes(booking.status);
-  const canReturn = ['active', 'running'].includes(booking.status);
+  const canCancel = (isRenter || Boolean(user?.isAdmin)) && ['created', 'pending', 'confirmed'].includes(booking.status);
+  const canProviderAccept = isProvider && booking.status === 'pending';
+  const canProviderReject = isProvider && booking.status === 'pending';
+  const canProviderStart = isProvider && booking.status === 'confirmed';
+  const canProviderReturn = isProvider && ['active', 'running'].includes(booking.status);
+  const canRequestExtension = ['confirmed', 'active', 'running'].includes(booking.status);
+  const isRenterActive = isRenter && ['active', 'running'].includes(booking.status);
+  const hasActions = canCancel || canProviderAccept || canProviderReject || canProviderStart || canProviderReturn || canRequestExtension;
 
   return (
     <div className={styles.page}>
@@ -191,7 +286,11 @@ export function BookingDetailPage() {
               )}
               <div>
                 <dt>Security Deposit</dt>
-                <dd>{booking.depositPaise ? formatPaiseToRupees(booking.depositPaise) : '₹0'}</dd>
+                <dd>
+                  {(booking.depositAmountPaise ?? booking.depositPaise ?? booking.deposit_amount_paise ?? booking.deposit_paise)
+                    ? formatPaiseToRupees(booking.depositAmountPaise ?? booking.depositPaise ?? booking.deposit_amount_paise ?? booking.deposit_paise)
+                    : '₹0'}
+                </dd>
               </div>
               <div className={styles.totalRow}>
                 <dt className={styles.totalValue}>Total Paid</dt>
@@ -217,19 +316,86 @@ export function BookingDetailPage() {
             </section>
           )}
 
-          {/* ── Actions ── */}
-          {(canCancel || canReturn) && (
+          {/* ── Overdue & Late Fee Advisory ── */}
+          {booking.lateFee?.overdueDays > 0 && (
+            <section className={styles.section} style={{ borderLeft: '3px solid var(--color-danger, #e53e3e)' }}>
+              <h2 className={styles.sectionTitle} style={{ color: 'var(--color-danger, #e53e3e)' }}>
+                Rental Overdue ({booking.lateFee.overdueDays} {booking.lateFee.overdueDays === 1 ? 'day' : 'days'})
+              </h2>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-on-surface-muted)', margin: '0 0 var(--space-2) 0' }}>
+                This garment was due on {formatDate(booking.endDate)}. Please return the outfit immediately in the prepaid garment bag to prevent late fees.
+              </p>
+              {lateFeeQuote && (
+                <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600 }}>
+                  Estimated late-fee accrual: {formatPaiseToRupees(lateFeeQuote.quotePaise || lateFeeQuote.lateFeePaise || 0)}
+                </p>
+              )}
+            </section>
+          )}
+
+          {/* ── Return Instructions for Renter ── */}
+          {isRenterActive && (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Return Instructions</h2>
+              <p style={{ fontSize: 'var(--text-sm)', color: 'var(--color-on-surface-muted)', margin: '0 0 var(--space-3) 0' }}>
+                Your designer rental is active! Pack both garments (including the backup size) into the prepaid garment return bag by <strong>{formatDate(booking.endDate || booking.end_date)}</strong> for scheduled courier pickup. No dry cleaning needed.
+              </p>
+            </section>
+          )}
+
+          {/* ── Lifecycle & Management Actions ── */}
+          {hasActions && (
             <section className={styles.section}>
               <h2 className={styles.sectionTitle}>Booking Actions</h2>
-              <div style={{ display: 'flex', gap: 'var(--space-3)' }}>
-                {canReturn && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
+                {canProviderAccept && (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={actionBusy}
+                    onClick={handleAccept}
+                  >
+                    {actionBusy ? 'Accepting…' : '✓ Accept Rental Request'}
+                  </button>
+                )}
+                {canProviderReject && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={actionBusy}
+                    onClick={handleReject}
+                  >
+                    {actionBusy ? 'Declining…' : '✕ Decline Request'}
+                  </button>
+                )}
+                {canProviderStart && (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={actionBusy}
+                    onClick={handleStart}
+                  >
+                    {actionBusy ? 'Starting…' : '📦 Hand Over / Dispatch Garment'}
+                  </button>
+                )}
+                {canProviderReturn && (
                   <button
                     type="button"
                     className="btn btn-primary"
                     disabled={actionBusy}
                     onClick={handleReturn}
                   >
-                    {actionBusy ? 'Processing Return…' : 'Initiate Garment Return'}
+                    {actionBusy ? 'Processing Return…' : 'Record Return & Inspection'}
+                  </button>
+                )}
+                {canRequestExtension && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    disabled={actionBusy}
+                    onClick={() => setExtensionModalOpen(true)}
+                  >
+                    Extend Rental Dates
                   </button>
                 )}
                 {canCancel && (
@@ -244,6 +410,82 @@ export function BookingDetailPage() {
                 )}
               </div>
             </section>
+          )}
+
+          {/* ── Extension Request Modal ── */}
+          {extensionModalOpen && (
+            <div
+              style={{
+                position: 'fixed',
+                inset: 0,
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                zIndex: 1000,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '1rem',
+              }}
+              onClick={() => setExtensionModalOpen(false)}
+            >
+              <div
+                style={{
+                  background: 'var(--color-surface, #fff)',
+                  borderRadius: '8px',
+                  padding: '2rem',
+                  maxWidth: '480px',
+                  width: '100%',
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <h3 style={{ marginTop: 0 }}>Request Rental Extension</h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--color-muted)' }}>
+                  Need more time with your designer piece? Request a new return date. Our atelier will verify availability and confirm.
+                </p>
+                <form onSubmit={handleSubmitExtension}>
+                  <div style={{ marginBottom: '1rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                      New Return Date *
+                    </label>
+                    <input
+                      type="date"
+                      className="input"
+                      value={extensionDate}
+                      min={booking.endDate || booking.end_date}
+                      onChange={(e) => setExtensionDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                      Reason for Extension
+                    </label>
+                    <textarea
+                      className="input"
+                      rows={3}
+                      placeholder="e.g. Wedding events extended, second reception day added..."
+                      value={extensionReason}
+                      onChange={(e) => setExtensionReason(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setExtensionModalOpen(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={actionBusy}
+                    >
+                      {actionBusy ? 'Submitting…' : 'Submit Extension'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           )}
 
           {/* ── Our Runway Customer Review Section ── */}

@@ -111,6 +111,21 @@
   border-radius: var(--radius-full);
 }
 
+.badgeVideo {
+  display: inline-block;
+  padding: 0.25rem 0.65rem;
+  background: rgba(0, 0, 0, 0.75);
+  color: #FFFFFF;
+  font-family: var(--font-extended);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-radius: var(--radius-full);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
 .wishlistBtn {
   position: absolute;
   top: var(--space-3);

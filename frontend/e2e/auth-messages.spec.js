@@ -54,7 +54,7 @@ test.describe('auth error messages', () => {
   });
 
   test('register shows email already registered message for duplicate email', async ({ page }) => {
-    const email = 'e2e-register-dup@example.com';
+    const email = `e2e-register-dup-${Date.now()}@example.com`;
 
     await test.step('create the account via API first', async () => {
       const created = await backendCall('/auth/register', {

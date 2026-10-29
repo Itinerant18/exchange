@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { listingsApi } from '../../../api/listingsApi.js';
+import { listingsApi, FACET_KEYS } from '../../../api/listingsApi.js';
 import { ListingCard } from '../../../components/rental/ListingCard.jsx';
 import { FilterModal } from '../../../components/rental/FilterModal.jsx';
 import styles from './ListingsPage.module.css';
@@ -20,30 +20,31 @@ export function ListingsPage() {
   const [error, setError] = useState('');
 
   const q = searchParams.get('q') || '';
-  const filterType = searchParams.get('type') || 'all'; // 'all', 'rental', 'sale'
+  const rawType = searchParams.get('type')
+    || (searchParams.get('rental') === 'true' || searchParams.get('mode') === 'rent' ? 'rental' : '')
+    || (searchParams.get('sale') === 'true' || searchParams.get('mode') === 'sale' ? 'sale' : '')
+    || 'all';
+  const filterType = rawType === 'rent' ? 'rental' : rawType;
   const page = Number(searchParams.get('page')) || 1;
 
-  // Facet selections, e.g. { occasion: ['Cocktail'], length: ['Midi'] }.
-  // Each dimension is a comma-separated URL param shared with the backend.
-  const [selectedFacets, setSelectedFacets] = useState({});
+  // Derive facet selections directly from searchParams
+  const selectedFacets = useMemo(() => {
+    const initial = {};
+    for (const [key, value] of searchParams.entries()) {
+      if (FACET_KEYS.includes(key) && value) {
+        initial[key] = value.split(',').filter(Boolean);
+      }
+    }
+    return initial;
+  }, [searchParams]);
 
   const [searchInput, setSearchInput] = useState(q);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [facetCounts, setFacetCounts] = useState({});
 
-  // Hydrate facet selections from the URL once on mount.
-  useEffect(() => {
-    const initial = {};
-    for (const [key, value] of searchParams.entries()) {
-      if (!['q', 'type', 'page'].includes(key) && value) {
-        initial[key] = value.split(',').filter(Boolean);
-      }
-    }
-    setSelectedFacets(initial);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const activeFacetCount = Object.values(selectedFacets).reduce((sum, values) => sum + values.length, 0);
+  const activeFacetCount = useMemo(() => {
+    return Object.values(selectedFacets).reduce((sum, values) => sum + values.length, 0);
+  }, [selectedFacets]);
 
   const loadListings = useCallback(async () => {
     setLoading(true);
@@ -73,7 +74,7 @@ export function ListingsPage() {
   useEffect(() => {
     const params = {};
     if (q) params.q = q;
-    if (filterType === 'rent') params.mode = 'rent';
+    if (filterType === 'rental' || filterType === 'rent') params.mode = 'rent';
     if (filterType === 'sale') params.mode = 'sale';
     listingsApi.getFacets(params)
       .then((res) => setFacetCounts(res?.data ?? res ?? {}))
@@ -95,53 +96,50 @@ export function ListingsPage() {
   function handleTypeChange(type) {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('type', type);
+    newParams.delete('rental');
+    newParams.delete('sale');
+    newParams.delete('mode');
+    newParams.set('page', '1');
+    setSearchParams(newParams);
+  }
+
+  function syncFacetParams(next) {
+    const newParams = new URLSearchParams(searchParams);
+    for (const key of FACET_KEYS) {
+      newParams.delete(key);
+    }
+    for (const [key, values] of Object.entries(next)) {
+      if (FACET_KEYS.includes(key) && values.length > 0) {
+        newParams.set(key, values.join(','));
+      }
+    }
     newParams.set('page', '1');
     setSearchParams(newParams);
   }
 
   function handleOccasionChange(occ) {
-    const next = occ ? { occasion: [occ] } : {};
-    setSelectedFacets(next);
+    const next = occ ? { ...selectedFacets, occasion: [occ] } : { ...selectedFacets };
+    if (!occ) delete next.occasion;
     syncFacetParams(next);
   }
 
-  /** Mirror facet state into URL params (comma-separated per dimension). */
-  function syncFacetParams(next) {
-    const newParams = new URLSearchParams(searchParams);
-    for (const key of Array.from(newParams.keys())) {
-      if (!['q', 'type', 'page'].includes(key)) newParams.delete(key);
-    }
-    for (const [key, values] of Object.entries(next)) {
-      if (values.length > 0) newParams.set(key, values.join(','));
-    }
-    newParams.set('page', '1');
-    setSearchParams(newParams);
-  }
-
   function handleToggleFacetValue(facetKey, value) {
-    setSelectedFacets((current) => {
-      const values = current[facetKey] ?? [];
-      const nextValues = values.includes(value)
-        ? values.filter((v) => v !== value)
-        : [...values, value];
-      const next = { ...current, [facetKey]: nextValues };
-      if (nextValues.length === 0) delete next[facetKey];
-      syncFacetParams(next);
-      return next;
-    });
+    const current = selectedFacets[facetKey] ?? [];
+    const nextValues = current.includes(value)
+      ? current.filter((v) => v !== value)
+      : [...current, value];
+    const next = { ...selectedFacets, [facetKey]: nextValues };
+    if (nextValues.length === 0) delete next[facetKey];
+    syncFacetParams(next);
   }
 
   function handleClearFacet(facetKey) {
-    setSelectedFacets((current) => {
-      const next = { ...current };
-      delete next[facetKey];
-      syncFacetParams(next);
-      return next;
-    });
+    const next = { ...selectedFacets };
+    delete next[facetKey];
+    syncFacetParams(next);
   }
 
   function handleClearAllFacets() {
-    setSelectedFacets({});
     syncFacetParams({});
   }
 
