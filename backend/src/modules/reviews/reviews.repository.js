@@ -4,9 +4,9 @@ export async function insertReview(client, fields) {
   const { rows } = await client.query(
     `INSERT INTO public.reviews
         (reviewer_user_id, reviewee_user_id, qualifying_rental_booking_id, qualifying_order_id,
-         rating, comment, size_worn, reviewer_height_cm, reviewer_weight_kg, bust_size, body_type, fit_rating,
+         rating, comment, size_worn, reviewer_height_cm, reviewer_weight_kg, bust_size, body_type, fit_rating, photos,
          status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'published')
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'published')
      RETURNING id, status, created_at`,
     [
       fields.reviewer_user_id, fields.reviewee_user_id,
@@ -14,6 +14,7 @@ export async function insertReview(client, fields) {
       fields.rating, fields.comment ?? null,
       fields.size_worn ?? null, fields.reviewer_height_cm ?? null, fields.reviewer_weight_kg ?? null,
       fields.bust_size ?? null, fields.body_type ?? null, fields.fit_rating ?? null,
+      JSON.stringify(fields.photos ?? []),
     ],
   );
   return rows[0];
@@ -23,7 +24,7 @@ export async function findReviewById(reviewId) {
   const { rows } = await pool.query(
     `SELECT r.id, r.reviewer_user_id, r.reviewee_user_id,
             r.qualifying_rental_booking_id, r.qualifying_order_id,
-            r.rating, r.comment, r.status, r.created_at, r.updated_at,
+            r.rating, r.comment, r.status, r.photos, r.created_at, r.updated_at,
             ra.email AS reviewer_email, ee.email AS reviewee_email,
             COALESCE(rp.display_name, 'User') AS reviewer_display_name,
             COALESCE(ep.display_name, 'User') AS reviewee_display_name
@@ -106,7 +107,7 @@ export async function listPublishedReviewsForListing(listingId, { limit, offset 
       SELECT r.id, r.rating, r.comment, r.created_at,
               rp.display_name AS reviewer_display_name,
               r.size_worn, r.reviewer_height_cm, r.reviewer_weight_kg, r.bust_size,
-              r.body_type, r.fit_rating,
+              r.body_type, r.fit_rating, r.photos,
               rb.renter_user_id
        FROM public.reviews r
        JOIN public.rental_bookings rb ON rb.id = r.qualifying_rental_booking_id

@@ -394,3 +394,239 @@
   max-width: 400px;
   line-height: 1.5;
 }
+
+/* ── 'Our Runway' Customer Photo Gallery Reel ── */
+.photoReelSection {
+  background: #FFFFFF;
+  border: 1px solid rgba(87, 0, 32, 0.12);
+  border-radius: 20px;
+  padding: var(--space-4) var(--space-5);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.photoReelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.photoReelTitle {
+  font-family: var(--font-extended);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-canvas);
+}
+
+.photoReelSubtitle {
+  font-family: var(--font-body);
+  font-size: 12px;
+  color: #666666;
+}
+
+.photoReelTrack {
+  display: flex;
+  gap: var(--space-3);
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-behavior: smooth;
+}
+
+.photoReelTrack::-webkit-scrollbar {
+  height: 4px;
+}
+
+.photoReelTrack::-webkit-scrollbar-thumb {
+  background: rgba(87, 0, 32, 0.2);
+  border-radius: 999px;
+}
+
+.photoReelCard {
+  position: relative;
+  flex-shrink: 0;
+  width: 120px;
+  height: 160px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0;
+  background: #EAEAEA;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.photoReelCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px -4px rgba(87, 0, 32, 0.25);
+}
+
+.reelImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photoPill {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  right: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  color: #FFFFFF;
+  font-family: var(--font-extended);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 3px 6px;
+  border-radius: 999px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Review Card Photo Thumbnails ── */
+.cardPhotosRow {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.cardPhotoBtn {
+  width: 64px;
+  height: 85px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  padding: 0;
+  cursor: pointer;
+  background: #EAEAEA;
+  transition: transform 0.2s ease;
+}
+
+.cardPhotoBtn:hover {
+  transform: scale(1.05);
+}
+
+.cardPhotoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Lightbox Modal ── */
+.lightboxOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: var(--space-4);
+}
+
+.lightboxModal {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 20px;
+  overflow: hidden;
+  max-width: 820px;
+  width: 100%;
+  max-height: 90vh;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+}
+
+.lightboxCloseBtn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #FFFFFF;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lightboxContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+@media (max-width: 700px) {
+  .lightboxContent {
+    grid-template-columns: 1fr;
+  }
+}
+
+.lightboxImageWrap {
+  width: 100%;
+  background: #111111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-height: 80vh;
+}
+
+.lightboxImg {
+  width: 100%;
+  height: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+}
+
+.lightboxDetails {
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--space-3);
+  background: #FFFFFF;
+  color: #111111;
+}
+
+.lightboxHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.lightboxAuthor {
+  font-family: var(--font-extended);
+  font-size: 13px;
+  font-weight: 600;
+  color: #1C1C1C;
+}
+
+.lightboxSpecs {
+  font-family: var(--font-extended);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-canvas);
+  background: rgba(87, 0, 32, 0.06);
+  padding: 6px 12px;
+  border-radius: 8px;
+  margin: 0;
+}
+
+.lightboxComment {
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  color: #444444;
+  margin: 0;
+  font-style: italic;
+}

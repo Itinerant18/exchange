@@ -113,6 +113,9 @@ export async function createReview(user, context, body) {
   }
 
   try {
+    const rawPhotos = Array.isArray(body.photos) ? body.photos : [];
+    const photos = rawPhotos.filter((p) => typeof p === 'string' && p.trim().length > 0).slice(0, 5);
+
     const created = await withTransaction(async (client) => {
       const row = await repository.insertReview(client, {
         reviewer_user_id: user.id,
@@ -127,6 +130,7 @@ export async function createReview(user, context, body) {
         bust_size: bustSize,
         body_type: bodyType,
         fit_rating: fitRating,
+        photos,
       });
       await writeAuditLog(client, {
         ...context,
@@ -271,6 +275,7 @@ function mapPublicRow(row) {
     bustSize: row.bust_size ?? null,
     bodyType: row.body_type ?? null,
     fitRating: row.fit_rating ?? null,
+    photos: Array.isArray(row.photos) ? row.photos : typeof row.photos === 'string' ? JSON.parse(row.photos || '[]') : [],
     createdAt: row.created_at,
   };
 }
@@ -291,6 +296,7 @@ function mapReviewDetail(row) {
     bustSize: row.bust_size ?? null,
     bodyType: row.body_type ?? null,
     fitRating: row.fit_rating ?? null,
+    photos: Array.isArray(row.photos) ? row.photos : typeof row.photos === 'string' ? JSON.parse(row.photos || '[]') : [],
     qualifyingRentalBookingId: row.qualifying_rental_booking_id ?? null,
     qualifyingOrderId: row.qualifying_order_id ?? null,
     createdAt: row.created_at,

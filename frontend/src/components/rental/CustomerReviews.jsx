@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { reviewsApi } from '../../api/reviewsApi.js';
 import { formatDate } from '../../utils/formatters.js';
 import styles from './CustomerReviews.module.css';
@@ -28,6 +28,11 @@ export function CustomerReviews({ listingId, activeUserSize, listingTitle }) {
   const [fitStats, setFitStats] = useState(null);
   const [loading, setLoading] = useState(false);
   const [fitFilter, setFitFilter] = useState('all');
+  const [activePhotoModal, setActivePhotoModal] = useState(null);
+
+  const customerPhotos = useMemo(() => {
+    return reviews.flatMap((r) => (r.photos || []).map((url) => ({ url, review: r })));
+  }, [reviews]);
 
   useEffect(() => {
     if (!listingId) return;
@@ -118,6 +123,33 @@ export function CustomerReviews({ listingId, activeUserSize, listingTitle }) {
         </div>
       )}
 
+      {/* ── 'Our Runway' Customer Photo Gallery Reel ── */}
+      {customerPhotos.length > 0 && (
+        <div className={styles.photoReelSection}>
+          <div className={styles.photoReelHeader}>
+            <span className={styles.photoReelTitle}>Customer Photos ({customerPhotos.length})</span>
+            <span className={styles.photoReelSubtitle}>See real drape, length & fit on verified renters</span>
+          </div>
+          <div className={styles.photoReelTrack}>
+            {customerPhotos.map((item, idx) => (
+              <button
+                key={`${item.url}-${idx}`}
+                type="button"
+                className={styles.photoReelCard}
+                onClick={() => setActivePhotoModal(item)}
+                aria-label="View customer photo and body stats"
+              >
+                <img src={item.url} alt="Customer wearing outfit" className={styles.reelImage} loading="lazy" />
+                <div className={styles.photoPill}>
+                  {item.review.sizeWorn ? `Size ${item.review.sizeWorn}` : 'Rented'}
+                  {item.review.reviewerHeightCm ? ` • ${item.review.reviewerHeightCm} cm` : ''}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {loading ? (
         <p className={styles.loadingText}>Loading reviews from verified renters…</p>
       ) : visibleReviews.length > 0 ? (
@@ -147,6 +179,22 @@ export function CustomerReviews({ listingId, activeUserSize, listingTitle }) {
                 {review.comment && (
                   <p className={styles.bodyText}>{review.comment}</p>
                 )}
+
+                {/* Attached review photos */}
+                {review.photos && review.photos.length > 0 && (
+                  <div className={styles.cardPhotosRow}>
+                    {review.photos.map((src, pIdx) => (
+                      <button
+                        key={pIdx}
+                        type="button"
+                        className={styles.cardPhotoBtn}
+                        onClick={() => setActivePhotoModal({ url: src, review })}
+                      >
+                        <img src={src} alt="Renter event photo" className={styles.cardPhotoImg} />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </article>
           ))}
@@ -158,6 +206,47 @@ export function CustomerReviews({ listingId, activeUserSize, listingTitle }) {
           <p className={styles.emptySub}>
             Customer reviews with fit notes and styling photos are invited after returning your rental.
           </p>
+        </div>
+      )}
+
+      {/* ── Photo Lightbox Modal with Body Specs ── */}
+      {activePhotoModal && (
+        <div className={styles.lightboxOverlay} onClick={() => setActivePhotoModal(null)}>
+          <div className={styles.lightboxModal} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className={styles.lightboxCloseBtn}
+              onClick={() => setActivePhotoModal(null)}
+              aria-label="Close photo preview"
+            >
+              ✕
+            </button>
+            <div className={styles.lightboxContent}>
+              <div className={styles.lightboxImageWrap}>
+                <img src={activePhotoModal.url} alt="Customer fit photo" className={styles.lightboxImg} />
+              </div>
+              <div className={styles.lightboxDetails}>
+                <div className={styles.lightboxHeader}>
+                  <div className={styles.stars}>
+                    {'★'.repeat(activePhotoModal.review.rating)}
+                    {'☆'.repeat(5 - activePhotoModal.review.rating)}
+                  </div>
+                  <span className={styles.lightboxAuthor}>
+                    {activePhotoModal.review.reviewerDisplayName || 'Verified Renter'}
+                  </span>
+                </div>
+                {activePhotoModal.review.fitRating && (
+                  <span className={styles.fitBadge}>{FIT_LABELS[activePhotoModal.review.fitRating]}</span>
+                )}
+                {bodySpecLine(activePhotoModal.review) && (
+                  <p className={styles.lightboxSpecs}>{bodySpecLine(activePhotoModal.review)}</p>
+                )}
+                {activePhotoModal.review.comment && (
+                  <p className={styles.lightboxComment}>"{activePhotoModal.review.comment}"</p>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

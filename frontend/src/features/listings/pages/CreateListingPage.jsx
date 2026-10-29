@@ -843,6 +843,58 @@ export function CreateListingPage() {
                 </p>
               </div>
 
+              {/* Dedicated 9:16 Vertical Catwalk Runway Video Feature Banner */}
+              <div className={styles.runwayVideoFeatureCard}>
+                <div className={styles.runwayVideoLeft}>
+                  <div className={styles.catwalkIcon}>▶ 9:16</div>
+                  <div>
+                    <h3 className={styles.runwayVideoTitle}>
+                      5–10s Catwalk Runway Video <span className={styles.recommendedBadge}>Recommended (+3.8x Bookings)</span>
+                    </h3>
+                    <p className={styles.runwayVideoSubtitle}>
+                      Record a 5–10 second vertical smartphone video walking toward the camera and twirling to show garment silhouette, train length, and back embroidery.
+                    </p>
+                  </div>
+                </div>
+                <div className={styles.runwayVideoActions}>
+                  <label className={styles.uploadCatwalkBtn}>
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime"
+                      className={styles.hiddenFileInput}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleProcessFiles([file]);
+                        e.target.value = '';
+                      }}
+                    />
+                    <span>🎥 Upload Vertical Catwalk</span>
+                  </label>
+                  <button
+                    type="button"
+                    className={styles.sampleCatwalkBtn}
+                    onClick={() => {
+                      const videoItem = {
+                        id: `catwalk-sample-${Date.now()}`,
+                        url: '/videos/hero-runway.mp4',
+                        fileName: 'haute-couture-catwalk.mp4',
+                        fileSize: '5.1 MB',
+                        mimeType: 'video/mp4',
+                        mediaType: 'video',
+                        isPrimary: false,
+                      };
+                      setMediaItems((prev) => [...prev.filter((m) => m.mediaType !== 'video'), videoItem]);
+                      setForm((prev) => ({
+                        ...prev,
+                        media: [...(prev.media || []).filter((m) => m.mediaType !== 'video'), videoItem],
+                      }));
+                    }}
+                  >
+                    + Use Sample Runway Video
+                  </button>
+                </div>
+              </div>
+
               {/* Photo Source Mode Selector */}
               <div className={styles.photoModeNav}>
                 <button

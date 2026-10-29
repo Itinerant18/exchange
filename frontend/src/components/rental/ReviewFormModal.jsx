@@ -35,10 +35,39 @@ export function ReviewFormModal({
   const [bustSize, setBustSize] = useState('');
   const [bodyType, setBodyType] = useState('');
   const [comment, setComment] = useState('');
+  const [photos, setPhotos] = useState([]);
+  const [photoUrlInput, setPhotoUrlInput] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
+
+  function handlePhotoUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      setError('Photo must be under 10 MB.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (ev.target?.result) {
+        setPhotos((prev) => [...prev, ev.target.result].slice(0, 3));
+      }
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  }
+
+  function handleAddPhotoUrl() {
+    if (!photoUrlInput.trim()) return;
+    setPhotos((prev) => [...prev, photoUrlInput.trim()].slice(0, 3));
+    setPhotoUrlInput('');
+  }
+
+  function removePhoto(idx) {
+    setPhotos((prev) => prev.filter((_, i) => i !== idx));
+  }
 
   if (!isOpen) return null;
 
@@ -64,6 +93,7 @@ export function ReviewFormModal({
         bustSize: bustSize.trim() || null,
         bodyType: bodyType || null,
         comment: comment.trim() || null,
+        photos: photos.length > 0 ? photos : undefined,
       };
 
       await reviewsApi.createReview(payload);
@@ -258,13 +288,74 @@ export function ReviewFormModal({
               </label>
               <textarea
                 id="comment"
-                rows={4}
+                rows={3}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Where did you wear it? How was the fabric, comfort, and compliments? Any styling tips?"
                 className={styles.textarea}
                 maxLength={2000}
               />
+            </div>
+
+            {/* ── Event Photos (UGC Customer Fit Gallery) ── */}
+            <div className={styles.fieldGroup}>
+              <div className={styles.photosHeader}>
+                <label className={styles.label}>
+                  Event Styling Photos <span className={styles.optional}>(Optional)</span>
+                </label>
+                <span className={styles.photoCount}>{photos.length}/3 attached</span>
+              </div>
+              <p className={styles.photoHint}>
+                Upload real photos of you wearing the look at your wedding, gala, or party. Renters love seeing real-life drape and fit!
+              </p>
+
+              {/* Photo Previews */}
+              {photos.length > 0 && (
+                <div className={styles.photoPreviewGrid}>
+                  {photos.map((src, idx) => (
+                    <div key={idx} className={styles.photoThumbWrapper}>
+                      <img src={src} alt={`Upload ${idx + 1}`} className={styles.photoThumb} />
+                      <button
+                        type="button"
+                        className={styles.removePhotoBtn}
+                        onClick={() => removePhoto(idx)}
+                        aria-label="Remove photo"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {photos.length < 3 && (
+                <div className={styles.photoInputRow}>
+                  <label className={styles.uploadPhotoBtn}>
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={handlePhotoUpload}
+                      className={styles.hiddenFile}
+                    />
+                    <span>📷 Upload Event Photo</span>
+                  </label>
+                  <span className={styles.orDivider}>or</span>
+                  <input
+                    type="url"
+                    placeholder="Paste image URL (https://...)"
+                    value={photoUrlInput}
+                    onChange={(e) => setPhotoUrlInput(e.target.value)}
+                    className={styles.photoUrlInput}
+                  />
+                  <button
+                    type="button"
+                    className={styles.addUrlBtn}
+                    onClick={handleAddPhotoUrl}
+                  >
+                    Add
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className={styles.footer}>
