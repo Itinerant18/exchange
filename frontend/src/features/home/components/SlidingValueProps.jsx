@@ -10,20 +10,13 @@ const STEPS = [
   },
   {
     step: '02',
-    title: 'Custom Fitting & Basting',
-    desc: 'Enter your bust, waist, and heel height measurements. Master tailors apply reversible, non-destructive basting so your luxury ensemble falls flawlessly.',
-    image: '/animations/step-choose.gif',
-    imageAlt: 'Animation of atelier custom basting and fitting',
-  },
-  {
-    step: '03',
-    title: 'Flaunt with Festive Care',
-    desc: 'Celebrate worry-free with ₹299 Festive Care protection covering accidental food spills, seam tears, and loose embroidery with zero deposit hold.',
+    title: 'Arrives Fresh & Custom-Fitted',
+    desc: 'Your ensemble arrives steam-sanitized, 7-stage ozone sterilized, and custom-basted by master tailors to your measurements with ₹299 Festive Care protection included.',
     image: '/animations/step-wear.gif',
     imageAlt: 'Animation of celebrating in occasion wear',
   },
   {
-    step: '04',
+    step: '03',
     title: 'Doorstep Return, Zero Cleaning',
     desc: 'When your event concludes, place both sizes back in the prepaid return satchel and schedule a courier pickup. Zero dry cleaning or laundering required — we handle it all.',
     image: '/animations/step-return.gif',

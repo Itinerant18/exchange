@@ -156,9 +156,9 @@
   display: block;
   font-family: var(--font-extended);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.16em;
-  color: #FFFFFF;
+  color: var(--color-brand-burgundy, #570020);
   margin-bottom: var(--space-1);
   text-transform: uppercase;
 }
@@ -168,7 +168,7 @@
   font-size: 36px;
   font-weight: 300;
   letter-spacing: -1.08px;
-  color: #FFFFFF;
+  color: var(--color-ink-primary, #1A1A1A);
   margin: 0;
 }
 
@@ -176,16 +176,16 @@
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 300;
-  color: #999999;
+  color: var(--color-ink-secondary, #4D4B47);
   margin-top: var(--space-1);
 }
 
 .viewAllLink {
   font-family: var(--font-extended);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   letter-spacing: 0.12px;
-  color: #FFFFFF;
+  color: var(--color-brand-burgundy, #570020);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
@@ -454,19 +454,287 @@
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* ── Interactive Infographics Sections ── */
-.infographicSection {
-  max-width: var(--content-width);
-  margin: 0 auto;
+/* ── Luxury 4-Pillar Trust Ribbon ── */
+.trustBarSection {
+  background: var(--color-surface, #FFFFFF);
+  border-block: 1px solid rgba(87, 0, 32, 0.08);
   padding: var(--space-12) var(--space-4);
   width: 100%;
 }
 
-.infographicSectionAlt {
+.trustBarContainer {
+  max-width: var(--content-width);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+}
+
+@media (min-width: 640px) {
+  .trustBarContainer {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .trustBarContainer {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.trustPill {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.trustIcon {
+  color: var(--color-antique-zari-gold, #C8A251);
+  font-size: 16px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.trustTitle {
+  font-family: var(--font-display, serif);
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--color-brand-burgundy, #570020);
+  margin: 0 0 4px;
+}
+
+.trustDesc {
+  font-family: var(--font-body, sans-serif);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-ink-secondary, #4D4B47);
+  margin: 0;
+}
+
+.trustActionRow {
+  text-align: center;
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px dashed rgba(87, 0, 32, 0.12);
+}
+
+.trustModalLink {
+  background: none;
+  border: none;
+  color: var(--color-brand-burgundy, #570020);
+  font-family: var(--font-extended, sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.trustModalLink:hover {
+  opacity: 0.8;
+  color: var(--color-brand-burgundy-hover, #400017);
+}
+
+/* ── Circular Sustainability Impact Statement ── */
+.circularPledgeSection {
   background: var(--color-canvas-subtle, #F0EEEA);
-  padding: var(--space-12) var(--space-4);
+  border-block: 1px solid rgba(26, 26, 26, 0.08);
+  padding: var(--space-16) var(--space-4);
   width: 100%;
-  border-block: 1px solid var(--color-hairline, rgba(26, 26, 26, 0.08));
+  text-align: center;
+}
+
+.circularPledgeContainer {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.circularStatSummary {
+  font-family: var(--font-display, serif);
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 300;
+  line-height: 1.6;
+  color: var(--color-ink-primary, #1A1A1A);
+  margin: var(--space-4) 0 var(--space-6);
+}
+
+.circularStatSummary strong {
+  color: var(--color-brand-burgundy, #570020);
+  font-weight: 600;
+}
+
+.circularActions {
+  display: flex;
+  justify-content: center;
+}
+
+.editorialOutlineBtn {
+  background: transparent;
+  border: 1px solid var(--color-brand-burgundy, #570020);
+  color: var(--color-brand-burgundy, #570020);
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.editorialOutlineBtn:hover {
+  background: var(--color-brand-burgundy, #570020);
+  color: #FFFFFF;
+}
+
+/* ── High-Fashion Editorial Atelier Wardrobe Monetization Banner ── */
+.atelierBannerSection {
+  max-width: var(--content-width);
+  margin: var(--space-12) auto;
+  padding: 0 var(--space-4);
+  width: 100%;
+}
+
+.atelierBannerCard {
+  background: var(--color-brand-burgundy, #570020);
+  background-image: radial-gradient(circle at top right, rgba(200, 162, 81, 0.15), transparent 70%);
+  border-radius: 24px;
+  padding: clamp(36px, 5vw, 64px) clamp(24px, 5vw, 56px);
+  color: #FFFFFF;
+  box-shadow: 0 16px 40px rgba(87, 0, 32, 0.18);
+  border: 1px solid rgba(200, 162, 81, 0.25);
+}
+
+.atelierContent {
+  max-width: 680px;
+}
+
+.atelierEyebrow {
+  display: block;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-antique-zari-gold, #C8A251);
+  margin-bottom: 12px;
+}
+
+.atelierHeading {
+  font-family: var(--font-display, serif);
+  font-size: clamp(28px, 3.6vw, 42px);
+  font-weight: 300;
+  color: #FFFFFF;
+  line-height: 1.15;
+  margin: 0 0 16px;
+  letter-spacing: -0.5px;
+}
+
+.atelierText {
+  font-family: var(--font-body, sans-serif);
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0 0 28px;
+}
+
+.atelierButtonGroup {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.atelierPrimaryBtn {
+  background: var(--color-antique-zari-gold, #C8A251);
+  color: #1A1A1A;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.atelierPrimaryBtn:hover {
+  transform: translateY(-1px);
+  opacity: 0.95;
+}
+
+.atelierSecondaryBtn {
+  background: transparent;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.atelierSecondaryBtn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #FFFFFF;
+}
+
+/* ── Modal Overlays ── */
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 10, 12, 0.75);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.modalContent {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 24px;
+  max-width: 980px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+  padding: 32px 24px;
+}
+
+.modalCloseBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1A1A1A;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s ease;
+}
+
+.modalCloseBtn:hover {
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .infographicInner {

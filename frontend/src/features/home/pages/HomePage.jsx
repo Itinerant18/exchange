@@ -18,6 +18,9 @@ export function HomePage() {
   const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showHygieneModal, setShowHygieneModal] = useState(false);
+  const [showLenderModal, setShowLenderModal] = useState(false);
+  const [showEcoModal, setShowEcoModal] = useState(false);
 
   useEffect(() => {
     listingsApi.getListings({ limit: 8, isRental: true })
@@ -104,46 +107,93 @@ export function HomePage() {
       {/* ── 6. How It Works (RTR Sliding Value Proposition) ── */}
       <SlidingValueProps />
 
-      {/* ── 7. 7-Stage Sterilization Guarantee with Editorial Introduction ── */}
-      <section className={styles.infographicSection}>
-        <div className={styles.editorialIntro}>
-          <span className={styles.editorialEyebrow}>HOSPITAL-GRADE CLINICAL HYGIENE</span>
-          <h2 className={styles.editorialHeading}>The 7-Stage Hygiene &amp; Sterilization Guarantee</h2>
-          <p className={styles.editorialText}>
-            Every piece arrives in certified showroom condition. Backed by 365nm UV optical micro-scanning, high-pressure steam sanitization, and molecular ozone chamber deodorization. Safer, fresher, and cleaner than buying off-the-rack.
-          </p>
-        </div>
-        <SterilizationGuaranteeInfographic />
-      </section>
-
-      {/* ── 8. Circular Sustainability Impact Calculator ── */}
-      <section className={styles.infographicSectionAlt}>
-        <div className={styles.infographicInner}>
-          <div className={styles.editorialIntro}>
-            <span className={styles.editorialEyebrow}>CIRCULAR SUSTAINABILITY FOOTPRINT</span>
-            <h2 className={styles.editorialHeading}>Calculate Your Positive Environmental Impact</h2>
-            <p className={styles.editorialText}>
-              By choosing circular rental over single-wear manufacturing, you conserve thousands of liters of freshwater and prevent kilograms of CO2e emissions. Select a garment silhouette and see your verified eco-savings.
-            </p>
+      {/* ── 7. Luxury 4-Pillar Trust Ribbon (Replaces bulky in-place widgets) ── */}
+      <section className={styles.trustBarSection} aria-label="Luxury Rental Guarantees">
+        <div className={styles.trustBarContainer}>
+          <div className={styles.trustPill}>
+            <span className={styles.trustIcon}>✦</span>
+            <div>
+              <h3 className={styles.trustTitle}>7-Stage Ozone Sterilization</h3>
+              <p className={styles.trustDesc}>Hospital-grade sanitization &amp; sealed presentation before and after every rental.</p>
+            </div>
           </div>
-          <SustainabilityImpactCalculator defaultCategory="Lehenga" initialRentals={1} />
+          <div className={styles.trustPill}>
+            <span className={styles.trustIcon}>✦</span>
+            <div>
+              <h3 className={styles.trustTitle}>Complimentary 2nd Backup Size</h3>
+              <p className={styles.trustDesc}>Reserve a secondary size for ₹0 to guarantee a flawless, stress-free event fit.</p>
+            </div>
+          </div>
+          <div className={styles.trustPill}>
+            <span className={styles.trustIcon}>✦</span>
+            <div>
+              <h3 className={styles.trustTitle}>Reversible Couture Basting</h3>
+              <p className={styles.trustDesc}>Expert tailor alterations on lehenga waists and blouse side-margins.</p>
+            </div>
+          </div>
+          <div className={styles.trustPill}>
+            <span className={styles.trustIcon}>✦</span>
+            <div>
+              <h3 className={styles.trustTitle}>Zero-Deposit Verified Booking</h3>
+              <p className={styles.trustDesc}>Instant KYC check with zero high-value cash holds locked on your card.</p>
+            </div>
+          </div>
+        </div>
+        <div className={styles.trustActionRow}>
+          <button
+            type="button"
+            className={styles.trustModalLink}
+            onClick={() => setShowHygieneModal(true)}
+          >
+            Explore our 7-Stage Clinical Hygiene Protocol &amp; Inspection Standards →
+          </button>
         </div>
       </section>
 
-      {/* ── 9. Wardrobe Monetization Studio / Lender Passive Income Teaser ── */}
-      <section className={styles.infographicSection}>
-        <div className={styles.editorialIntro}>
-          <span className={styles.editorialEyebrow}>PASSIVE WARDROBE YIELD</span>
-          <h2 className={styles.editorialHeading}>Turn Your Atelier Closet Into Passive Income</h2>
-          <p className={styles.editorialText}>
-            Designer bridal lehengas and luxury couture shouldn’t spend 360 days a year in garment bags. Calculate your estimated annual yield while white-glove transit, dry cleaning, and deposit protection are completely handled.
+      {/* ── 8. Circular Sustainability Impact Statement ── */}
+      <section className={styles.circularPledgeSection} aria-label="Circular Luxury Sustainability">
+        <div className={styles.circularPledgeContainer}>
+          <span className={styles.editorialEyebrow}>CIRCULAR SUSTAINABILITY FOOTPRINT</span>
+          <h2 className={styles.editorialHeading}>The Environmental Power of Renting</h2>
+          <p className={styles.circularStatSummary}>
+            Choosing circular fashion over single-wear manufacturing conserves up to <strong>3,450 liters of freshwater</strong> and prevents <strong>28.4 kg of CO₂e</strong> per ensemble. Together, our community has diverted thousands of kilograms of designer luxury from landfills.
           </p>
+          <div className={styles.circularActions}>
+            <button
+              type="button"
+              className={styles.editorialOutlineBtn}
+              onClick={() => setShowEcoModal(true)}
+            >
+              Simulate Your Environmental Savings →
+            </button>
+          </div>
         </div>
-        <LenderIncomeCalculator
-          initialRetailPrice={85000}
-          initialRentals={6}
-          onListGarment={() => navigate('/listings/new')}
-        />
+      </section>
+
+      {/* ── 9. High-Fashion Editorial Atelier Wardrobe Monetization Banner ── */}
+      <section className={styles.atelierBannerSection} aria-label="Monetize Your Atelier Closet">
+        <div className={styles.atelierBannerCard}>
+          <div className={styles.atelierContent}>
+            <span className={styles.atelierEyebrow}>WARDROBE MONETIZATION STUDIO</span>
+            <h2 className={styles.atelierHeading}>Turn Your Designer Closet Into Passive Income</h2>
+            <p className={styles.atelierText}>
+              Designer bridal lehengas and luxury couture shouldn’t sit idle in garment bags.
+              Earn recurring rental income while verified courier transit, dry cleaning, and deposit security are completely handled.
+            </p>
+            <div className={styles.atelierButtonGroup}>
+              <Link to="/listings/new" className={styles.atelierPrimaryBtn}>
+                List Your Designer Piece →
+              </Link>
+              <button
+                type="button"
+                className={styles.atelierSecondaryBtn}
+                onClick={() => setShowLenderModal(true)}
+              >
+                Estimate Your Wardrobe Yield
+              </button>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ── 10. RTR Comparison Matrix ("Why buy when you could rent?") in INR ── */}
@@ -163,6 +213,64 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Hygiene & Sterilization Protocol Modal Overlay ── */}
+      {showHygieneModal && (
+        <div className={styles.modalBackdrop} onClick={() => setShowHygieneModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className={styles.modalCloseBtn}
+              onClick={() => setShowHygieneModal(false)}
+              aria-label="Close hygiene protocol modal"
+            >
+              ✕
+            </button>
+            <SterilizationGuaranteeInfographic compact={false} />
+          </div>
+        </div>
+      )}
+
+      {/* ── Sustainability Impact Simulation Modal Overlay ── */}
+      {showEcoModal && (
+        <div className={styles.modalBackdrop} onClick={() => setShowEcoModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className={styles.modalCloseBtn}
+              onClick={() => setShowEcoModal(false)}
+              aria-label="Close sustainability calculator modal"
+            >
+              ✕
+            </button>
+            <SustainabilityImpactCalculator defaultCategory="Lehenga" initialRentals={1} />
+          </div>
+        </div>
+      )}
+
+      {/* ── Lender Monetization Studio Modal Overlay ── */}
+      {showLenderModal && (
+        <div className={styles.modalBackdrop} onClick={() => setShowLenderModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className={styles.modalCloseBtn}
+              onClick={() => setShowLenderModal(false)}
+              aria-label="Close lender income calculator modal"
+            >
+              ✕
+            </button>
+            <LenderIncomeCalculator
+              initialRetailPrice={85000}
+              initialRentals={6}
+              onListGarment={() => {
+                setShowLenderModal(false);
+                navigate('/listings/new');
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
