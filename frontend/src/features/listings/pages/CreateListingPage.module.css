@@ -220,7 +220,7 @@
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 400;
-  color: #1A1A1A;
+  color: var(--color-ink-primary, #1A1A1A);
   background: #FFFFFF;
   border: 1px solid #D6D0C7;
   border-radius: var(--radius-xs, 12px);
@@ -463,7 +463,7 @@
   font-family: var(--font-display);
   font-size: 1.15rem;
   font-weight: 600;
-  color: #1A1A1A;
+  color: var(--color-ink-primary, #1A1A1A);
   margin: 0 0 4px;
   display: flex;
   align-items: center;
@@ -1793,3 +1793,138 @@
     text-align: center;
   }
 }
+
+.previewImgFrameVideo916 {
+  aspect-ratio: 9 / 16 !important;
+  max-height: 520px !important;
+}
+
+.conditionGraderBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  width: 100%;
+}
+
+.recommendedFeeBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: linear-gradient(135deg, rgba(87, 0, 32, 0.05) 0%, rgba(200, 162, 81, 0.1) 100%);
+  border: 1px solid var(--color-gold-border, rgba(200, 162, 81, 0.4));
+  border-radius: var(--radius-sm, 8px);
+  margin-top: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.recommendedFeeLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recommendedBadge {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-brand-burgundy, #570020);
+  text-transform: uppercase;
+}
+
+.recommendedText {
+  font-size: 13px;
+  color: var(--color-ink-primary, #1A1A1A);
+}
+
+.applyFeeBtn {
+  background: var(--color-brand-burgundy, #570020);
+  color: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-full, 999px);
+  padding: 6px 14px;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s ease;
+}
+
+.applyFeeBtn:hover {
+  opacity: 0.9;
+}
+
+.earningsBadge {
+  display: block;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: var(--color-brand-burgundy, #570020);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.earningsDetails {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.deductText {
+  color: #C0392B;
+  font-weight: 500;
+}
+
+.earningsRowHighlight {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  background: rgba(87, 0, 32, 0.06);
+  border-radius: var(--radius-xs, 6px);
+  margin-top: 4px;
+}
+
+.netAmount {
+  color: var(--color-brand-burgundy, #570020);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.earningsMetaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.metaBox {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-2);
+  background: #F4F1EA;
+  border-radius: var(--radius-xs, 6px);
+  text-align: center;
+}
+
+.metaLabel {
+  font-size: 10px;
+  color: var(--color-ink-muted, #7C7A75);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.metaVal {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-ink-primary, #1A1A1A);
+}
+

@@ -1,0 +1,738 @@
+/* ── Indian Luxury Rental Interactive Infographics Styling ── */
+
+/* Container & Base Card */
+.container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+  background: var(--color-surface-pure);
+  color: var(--color-ink-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  border: var(--border-hairline);
+  box-sizing: border-box;
+  font-family: var(--font-body);
+}
+
+.compactContainer {
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  border: var(--border-hairline);
+}
+
+/* Header & Badges */
+.header {
+  text-align: center;
+  margin-bottom: var(--space-8);
+}
+
+.compactHeader {
+  margin-bottom: var(--space-4);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 4px 14px;
+  background: var(--color-brand-burgundy-subtle);
+  color: var(--color-brand-burgundy);
+  border-radius: var(--radius-full);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+  border: 1px solid rgba(87, 0, 32, 0.15);
+}
+
+.badgeGold {
+  background: var(--color-gold-champagne);
+  color: #7A5B1A;
+  border: 1px solid var(--color-gold-border);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  color: var(--color-ink-primary);
+  margin: var(--space-1) 0 var(--space-2);
+  line-height: 1.2;
+}
+
+.compactTitle {
+  font-size: var(--text-lg);
+}
+
+.subtitle {
+  font-size: var(--text-sm);
+  color: var(--color-ink-secondary);
+  max-width: 680px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   1. SterilizationGuaranteeInfographic
+   ───────────────────────────────────────────────────────────── */
+.stepperTrack {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+}
+
+.stepButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-3) var(--space-2);
+  background: var(--color-canvas-subtle);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-spring);
+  color: var(--color-ink-secondary);
+  text-align: center;
+  position: relative;
+  min-width: 100px;
+}
+
+.stepButton:hover {
+  background: var(--color-brand-burgundy-subtle);
+  color: var(--color-brand-burgundy);
+  transform: translateY(-2px);
+}
+
+.stepButtonActive {
+  background: var(--color-brand-burgundy);
+  color: var(--color-ink-inverse);
+  border-color: var(--color-brand-burgundy);
+  box-shadow: 0 4px 12px rgba(87, 0, 32, 0.25);
+}
+
+.stepIcon {
+  font-size: 1.5rem;
+  margin-bottom: var(--space-1);
+}
+
+.stepNumber {
+  font-family: var(--font-mono);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  opacity: 0.85;
+}
+
+.stepLabel {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+.stageDetailCard {
+  background: var(--color-canvas-base);
+  border: 1px solid rgba(87, 0, 32, 0.12);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-luxury-card);
+  transition: all var(--duration-smooth) var(--ease-spring);
+}
+
+.stageDetailCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--color-brand-burgundy);
+}
+
+.stageHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.stageCounter {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-brand-burgundy);
+  background: var(--color-brand-burgundy-subtle);
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+}
+
+.stageTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-ink-primary);
+  margin: 0 0 var(--space-1);
+}
+
+.stageSubtitle {
+  font-size: var(--text-sm);
+  color: var(--color-gold-zari);
+  font-weight: 600;
+  margin: 0 0 var(--space-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stageDescription {
+  font-size: var(--text-base);
+  color: var(--color-ink-secondary);
+  line-height: 1.6;
+  margin: 0 0 var(--space-4);
+}
+
+.stageMetaRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(26, 26, 26, 0.08);
+}
+
+.stageMetricBadge {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-status-success);
+  background: rgba(27, 102, 62, 0.08);
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.certificationTag {
+  font-size: var(--text-xs);
+  color: var(--color-status-success);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-weight: 600;
+}
+
+.stageNavControls {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  justify-content: flex-end;
+}
+
+.navBtn {
+  background: var(--color-surface-pure);
+  border: 1px solid rgba(26, 26, 26, 0.15);
+  color: var(--color-ink-primary);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-spring);
+}
+
+.navBtn:hover:not(:disabled) {
+  background: var(--color-brand-burgundy);
+  color: var(--color-ink-inverse);
+  border-color: var(--color-brand-burgundy);
+}
+
+.navBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   2. SustainabilityImpactCalculator
+   ───────────────────────────────────────────────────────────── */
+.calcControlsRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.controlGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.controlLabel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-secondary);
+}
+
+.controlValue {
+  font-family: var(--font-mono);
+  color: var(--color-brand-burgundy);
+  font-weight: 700;
+  font-size: var(--text-sm);
+}
+
+.pillSelector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.categoryPill {
+  padding: 8px 14px;
+  background: var(--color-canvas-subtle);
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-ink-secondary);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-spring);
+}
+
+.categoryPill:hover {
+  background: var(--color-brand-burgundy-subtle);
+  color: var(--color-brand-burgundy);
+}
+
+.categoryPillActive {
+  background: var(--color-brand-burgundy);
+  color: var(--color-ink-inverse);
+  border-color: var(--color-brand-burgundy);
+}
+
+.sliderInput {
+  width: 100%;
+  accent-color: var(--color-brand-burgundy);
+  cursor: pointer;
+  height: 6px;
+  background: var(--color-canvas-subtle);
+  border-radius: var(--radius-full);
+}
+
+.counterRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.counterBtn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(26, 26, 26, 0.15);
+  background: var(--color-surface-pure);
+  color: var(--color-ink-primary);
+  font-size: var(--text-lg);
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-spring);
+}
+
+.counterBtn:hover {
+  background: var(--color-brand-burgundy);
+  color: var(--color-ink-inverse);
+  border-color: var(--color-brand-burgundy);
+}
+
+.metricsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.metricCard {
+  background: var(--color-canvas-base);
+  border: 1px solid rgba(26, 26, 26, 0.08);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  text-align: center;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--duration-fast) var(--ease-spring);
+}
+
+.metricCard:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-luxury-card);
+}
+
+.metricIcon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: var(--space-2);
+}
+
+.metricValue {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--color-brand-burgundy);
+  line-height: 1.1;
+  margin-bottom: var(--space-1);
+}
+
+.metricTitle {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-ink-primary);
+  margin-bottom: var(--space-1);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.metricSubtitle {
+  font-size: var(--text-2xs);
+  color: var(--color-ink-muted);
+  line-height: 1.4;
+}
+
+.footnote {
+  text-align: center;
+  font-size: var(--text-2xs);
+  color: var(--color-ink-muted);
+  margin-top: var(--space-4);
+  border-top: 1px solid rgba(26, 26, 26, 0.08);
+  padding-top: var(--space-3);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   3. LenderIncomeCalculator
+   ───────────────────────────────────────────────────────────── */
+.lenderCalcGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+  align-items: center;
+}
+
+.slidersColumn {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.sliderHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-2);
+}
+
+.sliderTitle {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-ink-primary);
+}
+
+.sliderValueTag {
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--color-brand-burgundy);
+}
+
+.sliderRangeMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-2xs);
+  color: var(--color-ink-muted);
+  margin-top: var(--space-1);
+}
+
+.summaryBox {
+  background: var(--color-canvas-base);
+  border: 1px solid var(--color-gold-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-luxury-card);
+  position: relative;
+  overflow: hidden;
+}
+
+.summaryBox::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 90px;
+  height: 90px;
+  background: radial-gradient(circle, rgba(200, 162, 81, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.breakdownRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.06);
+  font-size: var(--text-sm);
+}
+
+.breakdownLabel {
+  color: var(--color-ink-secondary);
+}
+
+.breakdownValue {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--color-ink-primary);
+}
+
+.netHighlightRow {
+  padding: var(--space-4) 0;
+  border-bottom: 2px solid var(--color-gold-border);
+  margin-bottom: var(--space-3);
+}
+
+.netLabel {
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-brand-burgundy);
+  margin-bottom: 4px;
+}
+
+.netAmount {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: 700;
+  color: var(--color-brand-burgundy);
+  line-height: 1.1;
+}
+
+.netMonthly {
+  font-size: var(--text-xs);
+  color: var(--color-ink-muted);
+  margin-top: 4px;
+}
+
+.paybackCallout {
+  background: var(--color-gold-champagne);
+  border: 1px solid var(--color-gold-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-xs);
+  color: #5D430C;
+  line-height: 1.4;
+  margin-bottom: var(--space-5);
+}
+
+.roiBadge {
+  display: inline-block;
+  font-weight: 700;
+  background: #5D430C;
+  color: var(--color-gold-champagne);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  margin-left: 6px;
+}
+
+.ctaButton {
+  width: 100%;
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-brand-burgundy);
+  color: var(--color-ink-inverse);
+  border: none;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-spring);
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(87, 0, 32, 0.25);
+}
+
+.ctaButton:hover {
+  background: var(--color-brand-burgundy-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(87, 0, 32, 0.35);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   4. ConditionRatingScale
+   ───────────────────────────────────────────────────────────── */
+.tierTabsTrack {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--space-2);
+  margin-bottom: var(--space-6);
+  overflow-x: auto;
+}
+
+.tierTab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-3) var(--space-2);
+  background: var(--color-canvas-subtle);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-spring);
+  text-align: center;
+  min-width: 110px;
+}
+
+.tierTab:hover {
+  background: var(--color-brand-burgundy-subtle);
+  border-color: rgba(87, 0, 32, 0.2);
+}
+
+.tierTabActive {
+  background: var(--color-brand-burgundy);
+  color: var(--color-ink-inverse);
+  border-color: var(--color-brand-burgundy);
+  box-shadow: 0 4px 12px rgba(87, 0, 32, 0.25);
+}
+
+.tierScorePill {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.tierTabName {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.conditionCard {
+  background: var(--color-canvas-base);
+  border: 1px solid rgba(26, 26, 26, 0.1);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-card);
+}
+
+.conditionCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-3);
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.conditionGradeTitle {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  color: var(--color-ink-primary);
+  margin: 0;
+}
+
+.conditionBadgeTag {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-gold-zari);
+  background: var(--color-gold-champagne);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-gold-border);
+}
+
+.conditionSummary {
+  font-size: var(--text-sm);
+  color: var(--color-ink-secondary);
+  font-weight: 500;
+  margin: 0 0 var(--space-2);
+}
+
+.conditionDescription {
+  font-size: var(--text-sm);
+  color: var(--color-ink-muted);
+  line-height: 1.5;
+  margin: 0 0 var(--space-5);
+}
+
+.checklistSection {
+  border-top: 1px solid rgba(26, 26, 26, 0.08);
+  padding-top: var(--space-4);
+}
+
+.checklistTitle {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-ink-primary);
+  margin-bottom: var(--space-3);
+}
+
+.checklistGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.checklistItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-ink-secondary);
+  padding: 6px 10px;
+  background: var(--color-surface-pure);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(26, 26, 26, 0.05);
+}
+
+.checkIcon {
+  color: var(--color-status-success);
+  font-weight: bold;
+}
+
+.checkboxInput {
+  accent-color: var(--color-brand-burgundy);
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   Responsive Layouts
+   ───────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  .lenderCalcGrid {
+    grid-template-columns: 1fr;
+  }
+  .metricsGrid {
+    grid-template-columns: 1fr;
+  }
+  .calcControlsRow {
+    grid-template-columns: 1fr;
+  }
+  .checklistGrid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { rentalsApi } from '../../../api/rentalsApi.js';
+import { formatPaiseToRupees } from '../../../utils/formatters.js';
 import styles from './BookingsPage.module.css';
 
 export function MyBookingsPage() {
@@ -29,10 +30,7 @@ export function MyBookingsPage() {
     });
   }
 
-  function formatPrice(paise) {
-    if (!paise) return '—';
-    return `₹${(Number(paise) / 100).toFixed(0)}`;
-  }
+  const formatPrice = formatPaiseToRupees;
 
   const statusColors = {
     pending: 'warning',

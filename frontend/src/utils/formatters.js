@@ -5,7 +5,11 @@ export function formatPaiseToRupees(paise, { showDecimals = false } = {}) {
   if (paise === null || paise === undefined || isNaN(paise)) {
     return '₹0';
   }
-  const rupees = Number(paise) / 100;
+  const num = Number(paise);
+  if (!isFinite(num) || num < 0) {
+    return '₹0';
+  }
+  const rupees = num / 100;
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',
     currency: 'INR',
@@ -33,11 +37,12 @@ export function formatRentalRange(startDate, endDate) {
   const end = new Date(endDate);
   if (isNaN(start.getTime()) || isNaN(end.getTime())) return `${startDate} – ${endDate}`;
 
-  const diffTime = Math.abs(end - start);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffTime = Math.abs(end.getTime() - start.getTime());
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-  const startFormatted = start.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
-  const endFormatted = end.toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' });
+  const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const startFormatted = `${MONTHS[start.getUTCMonth()]} ${start.getUTCDate()}`;
+  const endFormatted = `${MONTHS[end.getUTCMonth()]} ${end.getUTCDate()}, ${end.getUTCFullYear()}`;
 
   return `${startFormatted} – ${endFormatted} (${diffDays} days)`;
 }
@@ -52,3 +57,10 @@ export function calculateReturnDate(deliveryDateStr, durationDays = 4) {
   date.setDate(date.getDate() + Number(durationDays));
   return date.toISOString().split('T')[0];
 }
+
+/**
+ * Standard aliases for Indian currency formatters
+ */
+export const paiseToInr = formatPaiseToRupees;
+export const formatInr = formatPaiseToRupees;
+

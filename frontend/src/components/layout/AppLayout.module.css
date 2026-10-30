@@ -27,7 +27,9 @@
 }
 
 .topBarDivider {
-  opacity: 0.4;
+  color: var(--color-gold-zari, #C8A251);
+  font-size: 10px;
+  opacity: 0.8;
 }
 
 /* ── Header ── */
@@ -35,8 +37,11 @@
   position: sticky;
   top: 0;
   z-index: var(--z-sticky);
-  background: var(--color-canvas);
-  border-bottom: 1px solid var(--color-hairline);
+  background: rgba(87, 0, 32, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(200, 162, 81, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
 .headerInner {
@@ -75,10 +80,10 @@
 
 .brandSubtitle {
   font-family: var(--font-extended);
-  font-size: 0.55rem;
-  font-weight: 400;
-  letter-spacing: 0.16em;
-  color: var(--color-ink-secondary);
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--color-gold-zari, #C8A251);
   text-transform: uppercase;
 }
 

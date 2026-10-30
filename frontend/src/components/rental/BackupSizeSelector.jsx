@@ -51,9 +51,9 @@ export function BackupSizeSelector({
         <div className={styles.backupHeader}>
           <div className={styles.backupTitleGroup}>
             <span className={styles.label}>2. Select Free Backup Size</span>
-            <span className={styles.freeBadge}>FREE COMPLIMENTARY</span>
+            <span className={`${styles.freeBadge} ${styles.freeTag}`}>FREE COMPLIMENTARY</span>
           </div>
-          <span className={styles.backupTip}>Sent in the same delivery</span>
+          <span className={`${styles.backupTip} ${styles.backupDesc}`}>Sent in the same delivery</span>
         </div>
 
         <div className={styles.chipsRow} role="radiogroup" aria-label="Backup size selection">

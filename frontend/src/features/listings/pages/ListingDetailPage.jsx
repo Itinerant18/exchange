@@ -15,6 +15,9 @@ import { DamageWaiverBadge } from '../../../components/rental/DamageWaiverBadge.
 import { ModeSwitcher } from '../../../components/rental/ModeSwitcher.jsx';
 import { CoutureFittingEngine } from '../../../components/rental/CoutureFittingEngine.jsx';
 import { PincodeTransitCalculator } from '../../../components/rental/PincodeTransitCalculator.jsx';
+import { SterilizationGuaranteeInfographic } from '../../../components/rental/SterilizationGuaranteeInfographic.jsx';
+import { SustainabilityImpactCalculator } from '../../../components/rental/SustainabilityImpactCalculator.jsx';
+import { CatwalkVideoPlayer } from '../../../components/rental/CatwalkVideoPlayer.jsx';
 import styles from './ListingDetailPage.module.css';
 
 export function ListingDetailPage() {
@@ -27,6 +30,7 @@ export function ListingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [hygieneModalOpen, setHygieneModalOpen] = useState(false);
 
   // Rental parameters
   const [rentalDuration, setRentalDuration] = useState(4);
@@ -106,12 +110,12 @@ export function ListingDetailPage() {
 
   // Exact pricing breakdown calculated from backend daily rental rate & duration
   const pricing = useMemo(() => {
-    if (!listing) return { dailyRate: 0, subtotal: 0, deposit: 0, waiverFee: 1250, total: 0, buyPrice: 0 };
+    if (!listing) return { dailyRate: 0, subtotal: 0, deposit: 0, waiverFee: 29900, total: 0, buyPrice: 0 };
     const dailyRate = Number(listing.rentalPricePaise || 0);
     const deposit = Number(listing.depositPaise || 0);
     const subtotal = dailyRate * rentalDuration;
-    // Flat per-booking waiver, mirroring the platform setting default.
-    const waiverFee = damageWaiver ? 1250 : 0;
+    // Flat per-booking waiver: strictly ₹299 (29900 paise) per Blueprint §3.6
+    const waiverFee = damageWaiver ? 29900 : 0;
     const total = subtotal + deposit + waiverFee;
     const buyPrice = Number(listing.salePricePaise || 0);
     return { dailyRate, subtotal, deposit, waiverFee, total, buyPrice };
@@ -142,6 +146,7 @@ export function ListingDetailPage() {
       fittingSpecs: fittingSpecs || undefined,
       // Opt-in damage care waiver.
       damageWaiver,
+      waiverFeePaise: pricing.waiverFee,
     };
 
     // If available units were returned by backend, select 1 unit so subtotal isn't multiplied
@@ -152,12 +157,13 @@ export function ListingDetailPage() {
     addToBag(payload, {
       title,
       brand,
-      image: displayImages[0] || undefined,
+      image: displayMedia[0]?.url || undefined,
       size: primarySize || listingSize,
       backupSize: backupSize || undefined,
       fittingSpecs: fittingSpecs || undefined,
       durationDays: rentalDuration,
-      subtotalPaise: pricing.subtotal + pricing.waiverFee,
+      subtotalPaise: pricing.subtotal,
+      waiverFeePaise: pricing.waiverFee,
       depositPaise: pricing.deposit,
       totalPaise: pricing.total,
     });
@@ -245,10 +251,21 @@ export function ListingDetailPage() {
     })
     .filter(Boolean);
 
+  const displayImages = displayMedia.map((m) => m.url);
+
   const estimatedRetail = replacementValuePaise;
 
-  // Available sizing choices (based strictly on listing.size from database)
-  const availableSizes = listingSize ? [listingSize] : [];
+  // Available sizing choices (standard atelier sizes plus custom listing size)
+  const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL'];
+  const availableSizes = useMemo(() => {
+    if (listing?.availableSizes && Array.isArray(listing.availableSizes) && listing.availableSizes.length > 0) {
+      return listing.availableSizes;
+    }
+    if (listingSize && !STANDARD_SIZES.includes(listingSize)) {
+      return [listingSize, ...STANDARD_SIZES];
+    }
+    return STANDARD_SIZES;
+  }, [listing?.availableSizes, listingSize]);
 
   const isDateSelected = Boolean(deliveryDate && returnDate);
   const isAvailable = availableUnitsCount !== null && availableUnitsCount > 0;
@@ -273,14 +290,14 @@ export function ListingDetailPage() {
             <div className={styles.mainImageFrame}>
               {displayMedia.length > 0 ? (
                 displayMedia[activeImageIndex]?.isVideo ? (
-                  <video
+                  <CatwalkVideoPlayer
                     key={displayMedia[activeImageIndex].url}
                     src={displayMedia[activeImageIndex].url}
-                    controls
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
+                    poster={displayMedia.find((m) => !m.isVideo)?.url}
+                    title={title}
+                    aspectRatio="3:4"
+                    autoPlayOnVisible={true}
+                    mutedDefault={true}
                     className={styles.mainVideo}
                   />
                 ) : (
@@ -371,6 +388,16 @@ export function ListingDetailPage() {
             brand={brand}
           />
 
+          {/* ── Circular Sustainability Impact ── */}
+          <div className={styles.sustainabilitySection}>
+            <SustainabilityImpactCalculator
+              garmentType={listing?.category?.name || listing?.category || 'Lehenga'}
+              defaultCategory={listing?.category?.name || listing?.category || 'Lehenga'}
+              initialRentals={1}
+              compact={true}
+            />
+          </div>
+
           {/* Real Customer Photos & Reviews from Backend */}
           <CustomerReviews listingId={id} activeUserSize={primarySize} listingTitle={title} />
         </div>
@@ -399,16 +426,25 @@ export function ListingDetailPage() {
 
               {/* Price Anchoring */}
               <div className={styles.priceContainer}>
-                {isRental && rentalPricePaise && (
+                {mode === 'buy' ? (
+                  <div className={styles.priceRow}>
+                    <span className={styles.rentalPrice}>
+                      {formatPaiseToRupees(pricing.buyPrice)}
+                    </span>
+                    <span className={styles.rentalDurationTag}>
+                      pre-owned purchase
+                    </span>
+                  </div>
+                ) : isRental && rentalPricePaise ? (
                   <div className={styles.priceRow}>
                     <span className={styles.rentalPrice}>
                       {formatPaiseToRupees(pricing.dailyRate)}
                     </span>
                     <span className={styles.rentalDurationTag}>
-                      / day (₹{formatPaiseToRupees(pricing.subtotal)} for {rentalDuration} days)
+                      / day ({formatPaiseToRupees(pricing.subtotal)} for {rentalDuration} days)
                     </span>
                   </div>
-                )}
+                ) : null}
                 {estimatedRetail && (
                   <span className={styles.retailCompare}>
                     {formatPaiseToRupees(estimatedRetail)} estimated retail
@@ -572,12 +608,72 @@ export function ListingDetailPage() {
               <DamageWaiverBadge
                 checked={damageWaiver}
                 onChange={setDamageWaiver}
-                feePaise={1250}
+                feePaise={29900}
               />
             )}
+
+            {/* ── Hygiene Guarantee Trust Badge Trigger ── */}
+            <div
+              className={styles.hygieneTrustBadge}
+              onClick={() => setHygieneModalOpen(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setHygieneModalOpen(true);
+                }
+              }}
+              aria-label="Open 7-Stage Sterilization & Hygiene Protocol"
+            >
+              <span className={styles.hygieneBadgeIcon}>🛡️</span>
+              <div className={styles.hygieneBadgeContent}>
+                <div className={styles.hygieneBadgeHeader}>
+                  <span className={styles.hygieneBadgeTitle}>7-Stage Sterilization Guarantee</span>
+                  <span className={styles.hygieneBadgeTag}>Hospital-Grade</span>
+                </div>
+                <p className={styles.hygieneBadgeSummary}>
+                  Hydrocarbon eco-clean, 140°C thermal disinfection &amp; O3 molecular deodorization before tamper-evident seal.
+                </p>
+              </div>
+              <span className={styles.hygieneBadgeAction}>Learn More →</span>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* ── 7-Stage Sterilization Guarantee Modal Overlay ── */}
+      {hygieneModalOpen && (
+        <div
+          className={styles.modalOverlay}
+          onClick={() => setHygieneModalOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="hygiene-modal-title"
+        >
+          <div className={styles.hygieneModal} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <div>
+                <span className={styles.modalKicker}>Hygiene &amp; Quality Protocol</span>
+                <h2 id="hygiene-modal-title" className={styles.modalTitle}>
+                  7-Stage Medical-Grade Sterilization Guarantee
+                </h2>
+              </div>
+              <button
+                type="button"
+                className={styles.modalCloseBtn}
+                onClick={() => setHygieneModalOpen(false)}
+                aria-label="Close sterilization modal"
+              >
+                ✕
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <SterilizationGuaranteeInfographic compact={false} />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

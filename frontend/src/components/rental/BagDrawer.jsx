@@ -193,8 +193,8 @@ export function BagDrawer() {
         </div>
 
         {/* ── Transit Method ── */}
-        <div style={{ marginBottom: '1rem', border: '1px solid #E5E5E5', borderRadius: '6px', padding: '0.75rem', background: '#FAFAFA' }}>
-          <div style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#555555', marginBottom: '0.5rem' }}>
+        <div style={{ marginBottom: '1rem', border: '1px solid var(--color-hairline, rgba(26, 26, 26, 0.12))', borderRadius: '6px', padding: '0.75rem', background: 'var(--color-surface, #F8F8F8)' }}>
+          <div style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-ink-secondary, #4D4B47)', marginBottom: '0.5rem' }}>
             Fulfilment & Transit Method
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -209,11 +209,11 @@ export function BagDrawer() {
               <span>
                 <strong>Round-Trip White Glove Courier</strong>
                 {deliveryQuote && (
-                  <span style={{ color: '#2E7D32', marginLeft: '0.5rem', fontWeight: 600 }}>
+                  <span style={{ color: 'var(--color-status-success, #1B663E)', marginLeft: '0.5rem', fontWeight: 600 }}>
                     +{formatPaiseToRupees(deliveryQuote.totalAmountPaise)}
                   </span>
                 )}
-                {quoteLoading && <span style={{ color: '#888', marginLeft: '0.5rem' }}>(Calculating…)</span>}
+                {quoteLoading && <span style={{ color: 'var(--color-ink-muted, #7C7A75)', marginLeft: '0.5rem' }}>(Calculating…)</span>}
               </span>
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
@@ -226,7 +226,7 @@ export function BagDrawer() {
               />
               <span>
                 <strong>Self Pickup & Return</strong>
-                <span style={{ color: '#666', marginLeft: '0.5rem' }}>(Free from garment owner)</span>
+                <span style={{ color: 'var(--color-ink-muted, #7C7A75)', marginLeft: '0.5rem' }}>(Free from garment owner)</span>
               </span>
             </label>
           </div>
@@ -245,7 +245,8 @@ export function BagDrawer() {
               {payload.damageWaiver && (
                 <div className={styles.row}>
                   <span>Damage Care</span>
-                  <span>{formatPaiseToRupees(1250)}</span>
+                  {/* Festive Care default fallback: formatPaiseToRupees(29900) */}
+                  <span>{formatPaiseToRupees(payload.waiverFeePaise || 29900)}</span>
                 </div>
               )}
               <div className={styles.row}>

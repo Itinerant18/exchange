@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { listingsApi } from '../../../api/listingsApi.js';
 import { ListingCard } from '../../../components/rental/ListingCard.jsx';
+import { CatwalkVideoPlayer } from '../../../components/rental/CatwalkVideoPlayer.jsx';
+import { SterilizationGuaranteeInfographic } from '../../../components/rental/SterilizationGuaranteeInfographic.jsx';
+import { SustainabilityImpactCalculator } from '../../../components/rental/SustainabilityImpactCalculator.jsx';
+import { LenderIncomeCalculator } from '../../../components/rental/LenderIncomeCalculator.jsx';
 import { HeroVideoShowcase } from '../components/HeroVideoShowcase.jsx';
 import { BrandTicker } from '../components/BrandTicker.jsx';
 import { MoleculeVisualNav } from '../components/MoleculeVisualNav.jsx';
@@ -11,6 +15,7 @@ import { MoleculeComparisonTable } from '../components/MoleculeComparisonTable.j
 import styles from './HomePage.module.css';
 
 export function HomePage() {
+  const navigate = useNavigate();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -75,13 +80,76 @@ export function HomePage() {
       {/* ── 5. RTR Expandable Interactive Tabs ("Our closet is your closet") ── */}
       <HeroWithExpandableTextPills />
 
-      {/* ── 6. How It Works (RTR 3-Step Sliding Value Proposition) ── */}
+      {/* ── Haute Couture in Motion: 9:16 Catwalk Video Showcase ── */}
+      <section className={styles.catwalkShowcaseSection}>
+        <div className={styles.editorialIntro}>
+          <span className={styles.editorialEyebrow}>RUNWAY IN MOTION</span>
+          <h2 className={styles.editorialHeading}>Experience Couture in 9:16 Motion</h2>
+          <p className={styles.editorialText}>
+            Watch how master-crafted lehenga flares, silk drapes, and hand-embroidered dupattas move on the runway.
+          </p>
+        </div>
+        <div className={styles.catwalkContainer}>
+          <CatwalkVideoPlayer
+            src="/videos/hero-runway.mp4"
+            poster="/videos/hero-runway-poster.jpg"
+            title="Official Atelier Runway Catwalk"
+            aspectRatio="9:16"
+            autoPlayOnVisible={true}
+            mutedDefault={true}
+          />
+        </div>
+      </section>
+
+      {/* ── 6. How It Works (RTR Sliding Value Proposition) ── */}
       <SlidingValueProps />
 
-      {/* ── 7. RTR Comparison Matrix ("Why buy when you could rent?") in INR ── */}
+      {/* ── 7. 7-Stage Sterilization Guarantee with Editorial Introduction ── */}
+      <section className={styles.infographicSection}>
+        <div className={styles.editorialIntro}>
+          <span className={styles.editorialEyebrow}>HOSPITAL-GRADE CLINICAL HYGIENE</span>
+          <h2 className={styles.editorialHeading}>The 7-Stage Hygiene &amp; Sterilization Guarantee</h2>
+          <p className={styles.editorialText}>
+            Every piece arrives in certified showroom condition. Backed by 365nm UV optical micro-scanning, high-pressure steam sanitization, and molecular ozone chamber deodorization. Safer, fresher, and cleaner than buying off-the-rack.
+          </p>
+        </div>
+        <SterilizationGuaranteeInfographic />
+      </section>
+
+      {/* ── 8. Circular Sustainability Impact Calculator ── */}
+      <section className={styles.infographicSectionAlt}>
+        <div className={styles.infographicInner}>
+          <div className={styles.editorialIntro}>
+            <span className={styles.editorialEyebrow}>CIRCULAR SUSTAINABILITY FOOTPRINT</span>
+            <h2 className={styles.editorialHeading}>Calculate Your Positive Environmental Impact</h2>
+            <p className={styles.editorialText}>
+              By choosing circular rental over single-wear manufacturing, you conserve thousands of liters of freshwater and prevent kilograms of CO2e emissions. Select a garment silhouette and see your verified eco-savings.
+            </p>
+          </div>
+          <SustainabilityImpactCalculator defaultCategory="Lehenga" initialRentals={1} />
+        </div>
+      </section>
+
+      {/* ── 9. Wardrobe Monetization Studio / Lender Passive Income Teaser ── */}
+      <section className={styles.infographicSection}>
+        <div className={styles.editorialIntro}>
+          <span className={styles.editorialEyebrow}>PASSIVE WARDROBE YIELD</span>
+          <h2 className={styles.editorialHeading}>Turn Your Atelier Closet Into Passive Income</h2>
+          <p className={styles.editorialText}>
+            Designer bridal lehengas and luxury couture shouldn’t spend 360 days a year in garment bags. Calculate your estimated annual yield while white-glove transit, dry cleaning, and deposit protection are completely handled.
+          </p>
+        </div>
+        <LenderIncomeCalculator
+          initialRetailPrice={85000}
+          initialRentals={6}
+          onListGarment={() => navigate('/listings/new')}
+        />
+      </section>
+
+      {/* ── 10. RTR Comparison Matrix ("Why buy when you could rent?") in INR ── */}
       <MoleculeComparisonTable />
 
-      {/* ── 8. Bottom Atelier & Circular Fashion Collective CTA ── */}
+      {/* ── 11. Bottom Atelier & Circular Fashion Collective CTA ── */}
       <section className={styles.bottomCtaSection}>
         <div className={styles.bottomCtaContainer}>
           <span className={styles.ctaEyebrow}>CIRCULAR FASHION REVOLUTION</span>
@@ -98,3 +166,4 @@ export function HomePage() {
     </div>
   );
 }
+

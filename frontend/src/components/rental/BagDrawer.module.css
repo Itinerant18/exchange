@@ -245,10 +245,10 @@
 
 /* ── Membership Upsell ── */
 .upsell {
-  background: #F4ECF7;
-  border: 1px solid #D5B4E0;
+  background: var(--color-brand-burgundy-subtle, #FBEBF0);
+  border: 1px solid rgba(87, 0, 32, 0.2);
   padding: var(--space-4);
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 8px);
   margin-bottom: var(--space-5);
   display: flex;
   flex-direction: column;
@@ -258,12 +258,12 @@
 
 .upsell strong {
   font-size: 0.92rem;
-  color: #6A1B9A;
+  color: var(--color-brand-burgundy, #570020);
 }
 
 .upsell span {
   font-size: 0.82rem;
-  color: #7A3388;
+  color: var(--color-on-surface-soft, #420022);
   line-height: 1.5;
 }
 
@@ -275,7 +275,7 @@
   margin-top: var(--space-1);
   font-size: 0.82rem;
   font-weight: 600;
-  color: #6A1B9A;
+  color: var(--color-brand-burgundy, #570020);
   text-decoration: underline;
   cursor: pointer;
 }

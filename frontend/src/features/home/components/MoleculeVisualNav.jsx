@@ -29,7 +29,7 @@ const OCCASIONS = [
   {
     title: 'Festive & Sangeet',
     subtitle: 'Sequins & Mirrorwork Archive',
-    query: 'occasion=Gala',
+    query: 'occasion=Festive',
     image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=600&q=80',
   },
 ];

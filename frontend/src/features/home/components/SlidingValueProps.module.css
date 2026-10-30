@@ -51,9 +51,15 @@
   gap: var(--space-6);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 640px) {
   .cardsGrid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .cardsGrid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 
@@ -122,7 +128,7 @@
   font-family: var(--font-display, serif);
   font-size: 1.25rem;
   font-weight: 500;
-  color: #1A1A1A;
+  color: var(--color-ink-primary, #1A1A1A);
   margin: 0 0 var(--space-2);
 }
 

@@ -33,6 +33,8 @@ export function ReviewFormModal({
   const [heightCm, setHeightCm] = useState('');
   const [weightKg, setWeightKg] = useState('');
   const [bustSize, setBustSize] = useState('');
+  const [waistSize, setWaistSize] = useState('');
+  const [hipsSize, setHipsSize] = useState('');
   const [bodyType, setBodyType] = useState('');
   const [comment, setComment] = useState('');
   const [photos, setPhotos] = useState([]);
@@ -91,6 +93,8 @@ export function ReviewFormModal({
         reviewerHeightCm: heightCm ? Number(heightCm) : null,
         reviewerWeightKg: weightKg ? Number(weightKg) : null,
         bustSize: bustSize.trim() || null,
+        waistSize: waistSize.trim() || null,
+        hipsSize: hipsSize.trim() || null,
         bodyType: bodyType || null,
         comment: comment.trim() || null,
         photos: photos.length > 0 ? photos : undefined,
@@ -274,6 +278,32 @@ export function ReviewFormModal({
                     value={bustSize}
                     onChange={(e) => setBustSize(e.target.value)}
                     placeholder="e.g. 34B"
+                    className={styles.input}
+                    maxLength={15}
+                  />
+                </div>
+
+                <div className={styles.inputWrap}>
+                  <label htmlFor="waistSize" className={styles.subLabel}>Waist (in)</label>
+                  <input
+                    id="waistSize"
+                    type="text"
+                    value={waistSize}
+                    onChange={(e) => setWaistSize(e.target.value)}
+                    placeholder="e.g. 28 in"
+                    className={styles.input}
+                    maxLength={15}
+                  />
+                </div>
+
+                <div className={styles.inputWrap}>
+                  <label htmlFor="hipsSize" className={styles.subLabel}>Hips (in)</label>
+                  <input
+                    id="hipsSize"
+                    type="text"
+                    value={hipsSize}
+                    onChange={(e) => setHipsSize(e.target.value)}
+                    placeholder="e.g. 38 in"
                     className={styles.input}
                     maxLength={15}
                   />

@@ -72,12 +72,14 @@ export function RentalDatePicker({
         </div>
 
         {deliveryDate && returnDate && (
-          <div className={styles.returnNotice}>
-            <div className={styles.returnDot} />
-            <div className={styles.returnText}>
-              <span>Return by <strong>12:00 PM on {formatDate(returnDate)}</strong></span>
-              <span className={styles.returnSub}>Pre-paid label & reusable garment bag included</span>
-            </div>
+          <div className={styles.returnPreview}>
+            <span className={styles.returnLabel}>Return Schedule</span>
+            <span className={styles.returnDate}>
+              Return by <strong>12:00 PM on {formatDate(returnDate)}</strong>
+            </span>
+            <span className={styles.returnNote}>
+              Pre-paid label &amp; reusable garment bag included
+            </span>
           </div>
         )}
       </div>

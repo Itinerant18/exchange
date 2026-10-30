@@ -10,8 +10,21 @@ const OCCASIONS = [
   { label: 'Wedding Guest', value: 'WeddingGuest' },
   { label: 'Cocktail & Party', value: 'Cocktail' },
   { label: 'Black Tie Gala', value: 'BlackTie' },
+  { label: 'Festive & Sangeet', value: 'Festive' },
   { label: 'Vacation & Resort', value: 'Vacation' },
 ];
+
+const SILHOUETTES = [
+  { label: 'All Silhouettes', value: '' },
+  { label: 'Lehenga', value: 'Lehenga' },
+  { label: 'Saree', value: 'Saree' },
+  { label: 'Evening Gown', value: 'Gown' },
+  { label: 'Anarkali', value: 'Anarkali' },
+  { label: 'Sherwani', value: 'Sherwani' },
+  { label: 'Indo-Western', value: 'Indo-Western' },
+];
+
+const ALL_FACET_KEYS = [...FACET_KEYS, 'silhouette'];
 
 export function ListingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -20,6 +33,7 @@ export function ListingsPage() {
   const [error, setError] = useState('');
 
   const q = searchParams.get('q') || '';
+  const currentSilhouette = searchParams.get('silhouette') || '';
   const rawType = searchParams.get('type')
     || (searchParams.get('rental') === 'true' || searchParams.get('mode') === 'rent' ? 'rental' : '')
     || (searchParams.get('sale') === 'true' || searchParams.get('mode') === 'sale' ? 'sale' : '')
@@ -31,7 +45,7 @@ export function ListingsPage() {
   const selectedFacets = useMemo(() => {
     const initial = {};
     for (const [key, value] of searchParams.entries()) {
-      if (FACET_KEYS.includes(key) && value) {
+      if (ALL_FACET_KEYS.includes(key) && value) {
         initial[key] = value.split(',').filter(Boolean);
       }
     }
@@ -51,7 +65,10 @@ export function ListingsPage() {
     setError('');
     try {
       const params = { page, limit: 12, attributes: selectedFacets };
-      if (q) params.q = q;
+      const effectiveSilhouette = currentSilhouette || (selectedFacets.silhouette?.length ? selectedFacets.silhouette[0] : '');
+      const effectiveQ = q || effectiveSilhouette;
+      if (effectiveQ) params.q = effectiveQ;
+      if (effectiveSilhouette) params.silhouette = effectiveSilhouette;
       if (filterType === 'rental') params.mode = 'rent';
       if (filterType === 'sale') params.mode = 'sale';
 
@@ -64,7 +81,8 @@ export function ListingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, q, filterType, selectedFacets]);
+  }, [page, q, currentSilhouette, filterType, selectedFacets]);
+
 
   useEffect(() => {
     loadListings();
@@ -105,12 +123,24 @@ export function ListingsPage() {
 
   function syncFacetParams(next) {
     const newParams = new URLSearchParams(searchParams);
-    for (const key of FACET_KEYS) {
+    for (const key of ALL_FACET_KEYS) {
       newParams.delete(key);
     }
     for (const [key, values] of Object.entries(next)) {
-      if (FACET_KEYS.includes(key) && values.length > 0) {
+      if (ALL_FACET_KEYS.includes(key) && values.length > 0) {
         newParams.set(key, values.join(','));
+      }
+    }
+    if (next.silhouette && next.silhouette.length > 0) {
+      const sil = next.silhouette[0];
+      if (!q || SILHOUETTES.some((s) => s.value && s.value === q)) {
+        newParams.set('q', sil);
+        setSearchInput(sil);
+      }
+    } else {
+      if (SILHOUETTES.some((s) => s.value && s.value === q)) {
+        newParams.delete('q');
+        setSearchInput('');
       }
     }
     newParams.set('page', '1');
@@ -120,6 +150,12 @@ export function ListingsPage() {
   function handleOccasionChange(occ) {
     const next = occ ? { ...selectedFacets, occasion: [occ] } : { ...selectedFacets };
     if (!occ) delete next.occasion;
+    syncFacetParams(next);
+  }
+
+  function handleSilhouetteChange(sil) {
+    const next = sil ? { ...selectedFacets, silhouette: [sil] } : { ...selectedFacets };
+    if (!sil) delete next.silhouette;
     syncFacetParams(next);
   }
 
@@ -202,18 +238,38 @@ export function ListingsPage() {
         </div>
 
         {/* Occasions Pills */}
-        <div className={styles.occasionPills}>
-          {OCCASIONS.map((occ) => (
-            <button
-              key={occ.value}
-              type="button"
-              className={`${styles.occasionPill} ${(selectedFacets.occasion ?? []).join(',') === occ.value ? styles.occasionPillActive : ''}`}
-              onClick={() => handleOccasionChange(occ.value)}
-              disabled={occ.value === '' && (selectedFacets.occasion ?? []).length === 0}
-            >
-              {occ.label}
-            </button>
-          ))}
+        <div className={styles.filterPillGroup}>
+          <span className={styles.filterSectionLabel}>Occasion:</span>
+          <div className={styles.occasionPills}>
+            {OCCASIONS.map((occ) => (
+              <button
+                key={occ.value}
+                type="button"
+                className={`${styles.occasionPill} ${(selectedFacets.occasion ?? []).join(',') === occ.value ? styles.occasionPillActive : ''}`}
+                onClick={() => handleOccasionChange(occ.value)}
+                disabled={occ.value === '' && (selectedFacets.occasion ?? []).length === 0}
+              >
+                {occ.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Silhouette Pills */}
+        <div className={styles.filterPillGroup}>
+          <span className={styles.filterSectionLabel}>Silhouette:</span>
+          <div className={styles.occasionPills}>
+            {SILHOUETTES.map((sil) => (
+              <button
+                key={sil.value}
+                type="button"
+                className={`${styles.occasionPill} ${(currentSilhouette === sil.value || (!currentSilhouette && sil.value === '')) ? styles.occasionPillActive : ''}`}
+                onClick={() => handleSilhouetteChange(sil.value)}
+              >
+                {sil.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className={styles.controlsActions}>
@@ -239,7 +295,12 @@ export function ListingsPage() {
 
       <div className={styles.resultsMeta}>
         <span>Showing {items.length} designer {items.length === 1 ? 'style' : 'styles'}</span>
-        {Object.entries(selectedFacets).map(([key, values]) => (
+        {currentSilhouette && (
+          <span className={styles.activeFilterTag}>
+            silhouette: {currentSilhouette}
+          </span>
+        )}
+        {Object.entries(selectedFacets).filter(([key]) => key !== 'silhouette').map(([key, values]) => (
           <span key={key} className={styles.activeFilterTag}>
             {key}: {values.join(', ')}
           </span>
@@ -255,6 +316,7 @@ export function ListingsPage() {
         onClearAll={handleClearAllFacets}
         facetCounts={facetCounts}
         activeCount={activeFacetCount}
+        totalResults={items.length}
       />
 
       {/* ── 3:4 Aspect Ratio Product Cards Grid ── */}

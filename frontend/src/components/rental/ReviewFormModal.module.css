@@ -107,7 +107,7 @@
 }
 
 .starFilled {
-  color: #E2A03F;
+  color: var(--color-gold-zari, #C8A251);
 }
 
 .starEmpty {

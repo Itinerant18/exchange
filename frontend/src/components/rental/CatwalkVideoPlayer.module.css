@@ -1,0 +1,308 @@
+.playerContainer {
+  --aspect-ratio: 9 / 16;
+  position: relative;
+  width: 100%;
+  aspect-ratio: var(--aspect-ratio);
+  background-color: var(--color-ink-primary, #1A1A1A);
+  border-radius: var(--radius-md, 24px);
+  overflow: hidden;
+  box-shadow: var(--shadow-luxury-card, 0 12px 32px -8px rgba(26, 26, 26, 0.08));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  user-select: none;
+}
+
+.playerContainer:focus-visible {
+  outline: 2px solid var(--color-gold-zari, #C8A251);
+  outline-offset: 2px;
+}
+
+.video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: filter var(--duration-base, 200ms) var(--ease-editorial, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.videoDimmed {
+  filter: brightness(0.85);
+}
+
+/* ── Fallback Poster when Error or Loading ── */
+.fallbackPoster {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 1;
+}
+
+.errorOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2, 8px);
+  padding: var(--space-4, 16px);
+  text-align: center;
+  color: var(--color-surface, #F8F8F8);
+  z-index: 3;
+  backdrop-filter: blur(8px);
+}
+
+.errorTitle {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-gold-zari, #C8A251);
+}
+
+.errorText {
+  font-size: 13px;
+  color: rgba(248, 248, 248, 0.85);
+  max-width: 240px;
+}
+
+.retryBtn {
+  margin-top: var(--space-2, 8px);
+  padding: 6px 14px;
+  background: var(--color-brand-burgundy, #570020);
+  color: #FFFFFF;
+  border: 1px solid var(--color-gold-zari, #C8A251);
+  border-radius: var(--radius-full, 9999px);
+  font-family: var(--font-extended, sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all var(--duration-fast, 150ms) ease;
+}
+
+.retryBtn:hover {
+  background: var(--color-brand-burgundy-hover, #400017);
+  transform: translateY(-1px);
+}
+
+/* ── Loading Spinner ── */
+.loadingSpinner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 26, 26, 0.35);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.spinnerRing {
+  width: 36px;
+  height: 36px;
+  border: 2px solid rgba(200, 162, 81, 0.25);
+  border-top-color: var(--color-gold-zari, #C8A251);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Centered Play / Pause Button Overlay ── */
+.centerPlayOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+  z-index: 2;
+  opacity: 1;
+  transition: opacity var(--duration-base, 200ms) ease;
+  pointer-events: none;
+}
+
+.centerPlayBtn {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-full, 9999px);
+  background: rgba(87, 0, 32, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-gold-border, rgba(200, 162, 81, 0.4));
+  color: var(--color-surface, #F8F8F8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: var(--shadow-luxury-float, 0 20px 48px -12px rgba(87, 0, 32, 0.22));
+  transition: transform var(--duration-fast, 150ms) cubic-bezier(0.175, 0.885, 0.32, 1.275), background var(--duration-fast, 150ms) ease;
+}
+
+.centerPlayBtn:hover {
+  transform: scale(1.08);
+  background: rgba(87, 0, 32, 0.9);
+  border-color: var(--color-gold-zari, #C8A251);
+}
+
+/* ── Top Bar / Tag ── */
+.topOverlay {
+  position: absolute;
+  top: var(--space-3, 12px);
+  left: var(--space-3, 12px);
+  right: var(--space-3, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.catwalkTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  background: rgba(87, 0, 32, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #FFFFFF;
+  border: 1px solid rgba(200, 162, 81, 0.35);
+  border-radius: var(--radius-full, 9999px);
+  font-family: var(--font-extended, sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-gold-zari, #C8A251);
+  box-shadow: 0 0 6px var(--color-gold-zari, #C8A251);
+  animation: pulseDot 1.8s ease-in-out infinite;
+}
+
+@keyframes pulseDot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+}
+
+/* ── Bottom Controls Overlay ── */
+.controlsOverlay {
+  position: absolute;
+  bottom: var(--space-3, 12px);
+  left: var(--space-3, 12px);
+  right: var(--space-3, 12px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2, 8px);
+  z-index: 3;
+}
+
+.soundControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Frosted Glass Audio Toggle Button ── */
+.soundToggleBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 12px;
+  background: rgba(87, 0, 32, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(200, 162, 81, 0.4);
+  border-radius: var(--radius-full, 9999px);
+  color: var(--color-surface, #F8F8F8);
+  font-family: var(--font-extended, sans-serif);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--duration-fast, 150ms) var(--ease-editorial, cubic-bezier(0.16, 1, 0.3, 1));
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.soundToggleBtn:hover {
+  background: rgba(87, 0, 32, 0.85);
+  border-color: var(--color-gold-zari, #C8A251);
+  transform: scale(1.04);
+}
+
+.soundToggleBtn:focus-visible {
+  outline: 2px solid var(--color-gold-zari, #C8A251);
+  outline-offset: 2px;
+}
+
+.soundToggleActive {
+  background: rgba(200, 162, 81, 0.25);
+  border-color: var(--color-gold-zari, #C8A251);
+}
+
+.soundIcon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.soundLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* ── Bottom Mini Play/Pause Toggle ── */
+.miniPlayBtn {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(26, 26, 26, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-full, 9999px);
+  color: #FFFFFF;
+  cursor: pointer;
+  transition: all var(--duration-fast, 150ms) ease;
+}
+
+.miniPlayBtn:hover {
+  background: rgba(26, 26, 26, 0.85);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.04);
+}
+
+.miniPlayBtn:focus-visible {
+  outline: 2px solid var(--color-gold-zari, #C8A251);
+  outline-offset: 2px;
+}

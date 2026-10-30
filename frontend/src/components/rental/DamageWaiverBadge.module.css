@@ -57,8 +57,9 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-full);
-  background: #D1DBFF;
-  color: var(--color-on-primary);
+  background: var(--color-gold-champagne, #F4EBD9);
+  color: var(--color-brand-burgundy, #570020);
+  border: 1px solid var(--color-gold-border, rgba(200, 162, 81, 0.35));
   display: flex;
   align-items: center;
   justify-content: center;

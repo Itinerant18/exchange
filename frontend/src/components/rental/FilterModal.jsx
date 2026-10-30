@@ -4,6 +4,11 @@ import styles from './FilterModal.module.css';
 /** Facet taxonomy mirrored from backend/src/modules/listings/listingAttributes.js */
 export const FACET_TAXONOMY = [
   {
+    key: 'silhouette',
+    label: 'Silhouette',
+    values: ['Lehenga', 'Saree', 'Anarkali', 'Gown', 'Sherwani', 'IndoWestern'],
+  },
+  {
     key: 'occasion',
     label: 'Occasion',
     values: ['WeddingGuest', 'Cocktail', 'BlackTie', 'Gala', 'DateNight', 'Festive', 'Workwear', 'Casual', 'Vacation'],
@@ -50,7 +55,7 @@ export const FACET_TAXONOMY = [
   },
 ];
 
-const MAX_VISIBLE_VALUES = 8;
+const MAX_VISIBLE_VALUES = 12;
 
 export function FilterModal({
   open,
@@ -61,6 +66,7 @@ export function FilterModal({
   onClearAll,           // () => void
   facetCounts = {},     // { occasion: [{ value, count }], ... }
   activeCount = 0,
+  totalResults = null,
 }) {
   useEffect(() => {
     if (!open) return undefined;
@@ -154,7 +160,9 @@ export function FilterModal({
 
         <div className={styles.modalFooter}>
           <button type="button" className={styles.doneBtn} onClick={onClose}>
-            Show Results
+            {totalResults !== undefined && totalResults !== null
+              ? `VIEW ${totalResults} ${totalResults === 1 ? 'STYLE' : 'STYLES'}`
+              : 'Show Results'}
           </button>
         </div>
       </div>

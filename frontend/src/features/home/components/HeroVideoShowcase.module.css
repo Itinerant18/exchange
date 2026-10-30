@@ -230,7 +230,7 @@
 }
 
 .secondaryCta:hover {
-  background-color: #F8F8F8;
+  background-color: var(--color-surface, #F8F8F8);
 }
 
 @media (max-width: 540px) {
@@ -337,7 +337,7 @@
 .calloutDivider {
   width: 1px;
   height: 32px;
-  background-color: #4051D5; /* RTR accent blue line */
+  background-color: var(--color-gold-zari, #C8A251);
 }
 
 .calloutRight {

@@ -49,6 +49,34 @@
   border-color: #FFFFFF;
 }
 
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.writeReviewBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-gold-zari, #C8A251);
+  color: var(--color-ink-primary, #1A1A1A);
+  font-family: var(--font-extended, sans-serif);
+  font-size: var(--text-xs, 12px);
+  font-weight: 600;
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid var(--color-gold-zari, #C8A251);
+  cursor: pointer;
+  transition: all var(--transition-fast, 0.15s ease);
+}
+
+.writeReviewBtn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
 .filterPills {
   display: flex;
   flex-wrap: wrap;
@@ -80,7 +108,7 @@
 
 .filterPillActive {
   background: #FFFFFF;
-  color: #420022;
+  color: var(--color-brand-burgundy, #570020);
   border-color: #FFFFFF;
   font-weight: 500;
 }
@@ -92,7 +120,7 @@
   padding: var(--space-4);
   background: var(--color-surface);
   color: var(--color-on-surface);
-  border: 1px solid #DDDDDD;
+  border: 1px solid var(--border-hairline, rgba(26, 26, 26, 0.12));
   border-radius: var(--radius-sm);
 }
 
@@ -122,14 +150,14 @@
 .fitMeterFill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: #D1DBFF;
+  background: var(--color-gold-zari, #C8A251);
   border-radius: var(--radius-full);
 }
 
 .fitMeterMarker {
   position: absolute;
   inset: 0 auto 0 0;
-  background: #420022;
+  background: var(--color-brand-burgundy, #570020);
   border-radius: var(--radius-full);
 }
 
@@ -151,8 +179,9 @@
   align-self: flex-start;
   font-family: var(--font-extended);
   font-size: 10px;
-  color: #420022;
-  background: #D1DBFF;
+  color: var(--color-brand-burgundy, #570020);
+  background: var(--color-gold-champagne, #F4EBD9);
+  border: 1px solid var(--color-gold-border, rgba(200, 162, 81, 0.35));
   padding: 0.15rem 0.45rem;
   border-radius: var(--radius-full);
   font-weight: 500;
@@ -261,7 +290,7 @@
 }
 
 .stars {
-  color: #D1DBFF;
+  color: var(--color-gold-zari, #C8A251);
   font-size: 13px;
   letter-spacing: 2px;
 }
@@ -276,8 +305,9 @@
 .verifiedBadge {
   font-family: var(--font-extended);
   font-size: 10px;
-  color: #420022;
-  background: #D1DBFF;
+  color: var(--color-brand-burgundy, #570020);
+  background: var(--color-gold-champagne, #F4EBD9);
+  border: 1px solid var(--color-gold-border, rgba(200, 162, 81, 0.35));
   padding: 0.15rem 0.45rem;
   border-radius: var(--radius-full);
   font-weight: 500;
@@ -376,7 +406,7 @@
 
 .emptyIcon {
   font-size: 24px;
-  color: #D1DBFF;
+  color: var(--color-gold-zari, #C8A251);
 }
 
 .emptyTitle {

@@ -6,7 +6,7 @@ export function CoutureFittingEngine({ onFittingChange }) {
   const [bust, setBust] = useState('Default');
   const [waist, setWaist] = useState('Default');
   const [length, setLength] = useState('Standard');
-  const [heelHeight, setHeelHeight] = useState('Flats (0")');
+  const [heelHeight, setHeelHeight] = useState('Flats (0 in)');
   const [paddingPref, setPaddingPref] = useState('Keep');
   const [specialNotes, setSpecialNotes] = useState('');
 
@@ -29,7 +29,7 @@ export function CoutureFittingEngine({ onFittingChange }) {
     if (onFittingChange) onFittingChange(updated);
   };
 
-  const isCustomized = bust !== 'Default' || waist !== 'Default' || length !== 'Standard' || heelHeight !== 'Flats (0")' || specialNotes.trim() !== '';
+  const isCustomized = bust !== 'Default' || waist !== 'Default' || length !== 'Standard' || (heelHeight !== 'Flats (0 in)' && heelHeight !== 'Flats (0")') || specialNotes.trim() !== '';
 
   return (
     <div className={styles.wrapper}>

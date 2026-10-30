@@ -26,9 +26,9 @@ export function AppLayout() {
       <div className={styles.topBar}>
         <div className={styles.topBarInner}>
           <span>Complimentary 2nd backup size on all event dress rentals</span>
-          <span className={styles.topBarDivider}>•</span>
+          <span className={styles.topBarDivider}>✦</span>
           <span>Eco-friendly dry cleaning included</span>
-          <span className={styles.topBarDivider}>•</span>
+          <span className={styles.topBarDivider}>✦</span>
           <span>Free pre-paid return garment bag</span>
         </div>
       </div>
@@ -66,14 +66,14 @@ export function AppLayout() {
               Rent for Events
             </NavLink>
             <NavLink
-              to="/listings?occasion=wedding"
+              to="/listings?occasion=WeddingGuest"
               className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}
               onClick={() => setMenuOpen(false)}
             >
               Weddings
             </NavLink>
             <NavLink
-              to="/listings?occasion=cocktail"
+              to="/listings?occasion=Cocktail"
               className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}
               onClick={() => setMenuOpen(false)}
             >

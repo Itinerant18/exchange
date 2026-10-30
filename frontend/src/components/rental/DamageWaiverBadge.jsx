@@ -1,7 +1,7 @@
 import styles from './DamageWaiverBadge.module.css';
 import { formatPaiseToRupees } from '../../utils/formatters.js';
 
-const DEFAULT_WAIVER_FEE_PAISE = 1250; // mirrors the platform setting default
+const DEFAULT_WAIVER_FEE_PAISE = 29900; // ₹299 Festive Care Protection per blueprint §3.6
 
 /**
  * Damage-waiver opt-in for the PDP buy box. Renters add a flat per-booking
@@ -23,8 +23,8 @@ export function DamageWaiverBadge({ checked = false, onChange, feePaise }) {
             onChange={(e) => onChange(e.target.checked)}
           />
           <span className={styles.waiverCopy}>
-            <strong className={styles.waiverTitle}>Add Damage Care — {formatPaiseToRupees(fee)}</strong>
-            <span className={styles.waiverDesc}>Covers minor tears, spills & zipper snags. No deposit reduction required.</span>
+            <strong className={styles.waiverTitle}>Add Festive Care Protection — {formatPaiseToRupees(fee)}</strong>
+            <span className={styles.waiverDesc}>Covers accidental food spills, seam tears &amp; loose embroidery. 100% deposit waiver.</span>
           </span>
         </label>
       )}

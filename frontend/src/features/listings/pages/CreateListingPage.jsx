@@ -3,6 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { listingsApi } from '../../../api/listingsApi.js';
 import { categoriesApi } from '../../../api/categoriesApi.js';
 import { api } from '../../../api/apiClient.js';
+import { ConditionRatingScale, CONDITION_TIERS } from '../../../components/rental/ConditionRatingScale.jsx';
+import { CatwalkVideoPlayer } from '../../../components/rental/CatwalkVideoPlayer.jsx';
+import { formatPaiseToRupees } from '../../../utils/formatters.js';
 import { FACET_TAXONOMY } from '../../../components/rental/FilterModal.jsx';
 import styles from './CreateListingPage.module.css';
 
@@ -217,6 +220,8 @@ export function CreateListingPage() {
     size: 'M',
     colour: '',
     condition: 'good',
+    conditionScore: 10,
+    conditionGrade: 'Pristine (10/10)',
     description: '',
     city: '',
     isRental: true,
@@ -240,6 +245,7 @@ export function CreateListingPage() {
 
   // Structured style attributes ({ occasion: [...], length: [...] })
   const [attributes, setAttributes] = useState({});
+  const [conditionScore, setConditionScore] = useState(10);
   const [activeFacetGroup, setActiveFacetGroup] = useState('occasion_style');
 
   const primaryItem = mediaItems.find((m) => m.isPrimary) || mediaItems[0] || null;
@@ -320,6 +326,7 @@ export function CreateListingPage() {
         fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
         mimeType: file.type || (isVideo ? 'video/mp4' : 'image/jpeg'),
         mediaType: isVideo ? 'video' : 'image',
+        aspectRatio: isVideo ? '9:16' : '3:4',
         isPrimary: false,
       });
     }
@@ -338,6 +345,38 @@ export function CreateListingPage() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  }
+
+  const handleProcessFiles = handleFiles;
+
+  function handleCatwalkVideoUpload(file) {
+    if (!file) return;
+    if (file.size > 60 * 1024 * 1024) {
+      setError(`Catwalk video "${file.name}" exceeds the 60 MB limit.`);
+      return;
+    }
+    const tempId = `catwalk-${Date.now()}`;
+    const previewUrl = URL.createObjectURL(file);
+    const videoItem = {
+      id: tempId,
+      file,
+      url: previewUrl,
+      fileName: file.name,
+      fileSize: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+      mimeType: file.type || 'video/mp4',
+      mediaType: 'video',
+      aspectRatio: '9:16',
+      isPrimary: false,
+    };
+    setMediaItems((prev) => {
+      const filtered = prev.filter((m) => m.mediaType !== 'video');
+      return [...filtered, videoItem];
+    });
+    setForm((prev) => ({
+      ...prev,
+      media: [...(prev.media || []).filter((m) => m.mediaType !== 'video'), videoItem],
+    }));
+    setPreviewActiveIndex(mediaItems.length);
   }
 
   function handleFileInputChange(e) {
@@ -382,6 +421,7 @@ export function CreateListingPage() {
       fileSize: isVideo ? 'Remote Video' : 'Remote URL',
       mimeType: isVideo ? 'video/mp4' : 'image/jpeg',
       mediaType: isVideo ? 'video' : 'image',
+      aspectRatio: isVideo ? '9:16' : '3:4',
       isPrimary: false,
     };
 
@@ -499,6 +539,7 @@ export function CreateListingPage() {
                 sizeBytes: uploadRes?.data?.sizeBytes || item.file.size,
                 isPrimary: item.isPrimary,
                 mediaType: item.mediaType,
+                aspectRatio: item.aspectRatio || (item.mediaType === 'video' ? '9:16' : '3:4'),
               });
             }
           } catch (uploadErr) {
@@ -514,11 +555,14 @@ export function CreateListingPage() {
             sizeBytes: item.mediaType === 'video' ? 12000000 : 250000,
             isPrimary: item.isPrimary,
             mediaType: item.mediaType,
+            aspectRatio: item.aspectRatio || (item.mediaType === 'video' ? '9:16' : '3:4'),
           });
         }
       }
 
       const primaryMedia = uploadedMedia.find((m) => m.isPrimary) || uploadedMedia[0];
+
+      const tier = CONDITION_TIERS.find((t) => t.numericScore === conditionScore) || CONDITION_TIERS[0];
 
       // 2. Build listing payload with integer paise conversion and attached media
       const payload = {
@@ -528,6 +572,8 @@ export function CreateListingPage() {
         size: form.size,
         colour: form.colour.trim() || null,
         condition: form.condition,
+        conditionScore: conditionScore,
+        conditionGrade: tier.grade,
         description: form.description.trim() || null,
         city: form.city.trim() || null,
         isRental: Boolean(form.isRental),
@@ -553,9 +599,9 @@ export function CreateListingPage() {
         payload.salePricePaise = Math.round(Number(form.salePriceRupees) * 100);
       }
 
-      if (Object.keys(attributes).length > 0) {
-        payload.attributes = attributes;
-      }
+      payload.attributes = {
+        ...(attributes || {}),
+      };
 
       // 3. Create listing row (with attached media items and inventory created atomically)
       const listing = await listingsApi.createListing(payload);
@@ -571,7 +617,7 @@ export function CreateListingPage() {
 
   // Calculated estimates for UI feedback
   const fourDaySubtotal = Number(form.rentalPriceRupees || 0) * 4;
-  const retailSavingPct = form.replacementValueRupees && fourDaySubtotal > 0
+  const retailSavingPct = Number(form.replacementValueRupees) > 0 && fourDaySubtotal > 0
     ? Math.max(0, Math.round(((Number(form.replacementValueRupees) - fourDaySubtotal) / Number(form.replacementValueRupees)) * 100))
     : null;
 
@@ -690,24 +736,29 @@ export function CreateListingPage() {
                 </div>
               </div>
 
-              <div className={styles.row}>
-                <div className={styles.formGroup}>
-                  <label htmlFor="condition-select" className={styles.label}>
-                    Condition <span className={styles.req}>*</span>
-                  </label>
-                  <select
-                    id="condition-select"
-                    className={styles.select}
-                    value={form.condition}
-                    onChange={(e) => setForm({ ...form, condition: e.target.value })}
-                  >
-                    <option value="new">New with tags (Never worn)</option>
-                    <option value="like_new">Like new (Worn once / Pristine)</option>
-                    <option value="good">Good (Gentle wear, flawless)</option>
-                    <option value="fair">Fair (Minor signs of wear)</option>
-                  </select>
-                </div>
+              <div className={styles.conditionGraderBlock}>
+                <label className={styles.label}>
+                  10-Point Condition Rating &amp; Verification Scale <span className={styles.req}>*</span>
+                </label>
+                <ConditionRatingScale
+                  selectedScore={form.conditionScore || conditionScore || 10}
+                  onSelectScore={(score) => {
+                    setConditionScore(score);
+                    const tier = CONDITION_TIERS.find((t) => t.numericScore === score);
+                    const dbCondition = score >= 10 ? 'new' : score === 9 ? 'like_new' : score >= 7 ? 'good' : 'fair';
+                    setForm((prev) => ({
+                      ...prev,
+                      condition: dbCondition,
+                      conditionScore: score,
+                      conditionGrade: tier?.grade || 'Good',
+                    }));
+                  }}
+                  mode="grade"
+                  compact={true}
+                />
+              </div>
 
+              <div className={styles.row}>
                 <div className={styles.formGroup}>
                   <label htmlFor="colour-input" className={styles.label}>
                     Primary Color / Shade
@@ -864,7 +915,7 @@ export function CreateListingPage() {
                       className={styles.hiddenFileInput}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) handleProcessFiles([file]);
+                        if (file) handleFiles([file]);
                         e.target.value = '';
                       }}
                     />
@@ -881,6 +932,7 @@ export function CreateListingPage() {
                         fileSize: '5.1 MB',
                         mimeType: 'video/mp4',
                         mediaType: 'video',
+                        aspectRatio: '9:16',
                         isPrimary: false,
                       };
                       setMediaItems((prev) => [...prev.filter((m) => m.mediaType !== 'video'), videoItem]);
@@ -888,6 +940,7 @@ export function CreateListingPage() {
                         ...prev,
                         media: [...(prev.media || []).filter((m) => m.mediaType !== 'video'), videoItem],
                       }));
+                      setPreviewActiveIndex(mediaItems.length);
                     }}
                   >
                     + Use Sample Runway Video
@@ -1302,6 +1355,29 @@ export function CreateListingPage() {
                     ✨ Renters save {retailSavingPct}% compared to buying retail!
                   </span>
                 ) : null}
+                {(() => {
+                  const retailVal = Number(form.replacementValueRupees || 0);
+                  const recommended4DayFee = retailVal >= 25000 ? Math.round((retailVal * 0.065) / 100) * 100 : null;
+                  const recommendedDailyRate = recommended4DayFee ? Math.round(recommended4DayFee / 4) : null;
+                  if (!recommendedDailyRate) return null;
+                  return (
+                    <div className={styles.recommendedFeeBanner}>
+                      <div className={styles.recommendedFeeLeft}>
+                        <span className={styles.recommendedBadge}>AI PRICING RECOMMENDATION</span>
+                        <span className={styles.recommendedText}>
+                          Recommended 4-day fee for ₹{retailVal.toLocaleString('en-IN')} MSRP: <strong>₹{recommended4DayFee.toLocaleString('en-IN')}</strong> (₹{recommendedDailyRate.toLocaleString('en-IN')}/day, 6.5% yield)
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.applyFeeBtn}
+                        onClick={() => setForm((prev) => ({ ...prev, rentalPriceRupees: String(recommendedDailyRate) }))}
+                      >
+                        Apply Recommended Rate
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Pre-Loved Sale Price */}
@@ -1376,57 +1452,51 @@ export function CreateListingPage() {
 
               {/* Mirror of ListingCard */}
               <article className={styles.previewCard}>
-                <div className={styles.previewImgFrame}>
-                  {(() => {
-                    const activePreviewMedia = mediaItems[previewActiveIndex] || primaryItem || null;
-                    if (!activePreviewMedia?.url) {
-                      return (
+                {(() => {
+                  const activePreviewMedia = mediaItems[previewActiveIndex] || primaryItem || null;
+                  const isVideo = activePreviewMedia?.mediaType === 'video';
+
+                  return (
+                    <div className={`${styles.previewImgFrame} ${isVideo ? styles.previewImgFrameVideo916 : ''}`}>
+                      {!activePreviewMedia?.url ? (
                         <div className={styles.previewNoImg}>
                           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2">
                             <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />
                           </svg>
                           <span>Atelier Media Pending</span>
                         </div>
-                      );
-                    }
-
-                    if (activePreviewMedia.mediaType === 'video') {
-                      return (
-                        <video
+                      ) : isVideo ? (
+                        <CatwalkVideoPlayer
                           key={activePreviewMedia.url}
                           src={activePreviewMedia.url}
-                          controls
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          className={styles.previewVideo}
+                          title={form.title || 'Catwalk Preview'}
+                          aspectRatio="9:16"
+                          autoPlayOnVisible={false}
+                          mutedDefault={true}
                         />
-                      );
-                    }
+                      ) : (
+                        <img
+                          src={activePreviewMedia.url}
+                          alt={form.title || 'Outfit Preview'}
+                          className={styles.previewImg}
+                          onError={() => setImageLoadError(true)}
+                        />
+                      )}
 
-                    return (
-                      <img
-                        src={activePreviewMedia.url}
-                        alt={form.title || 'Outfit Preview'}
-                        className={styles.previewImg}
-                        onError={() => setImageLoadError(true)}
-                      />
-                    );
-                  })()}
+                      {/* Overlays */}
+                      <div className={styles.cardBadges}>
+                        {form.isRental && <span className={styles.badgeRental}>Rent</span>}
+                        {form.isSale && <span className={styles.badgeSale}>Pre-Loved</span>}
+                      </div>
 
-                  {/* Overlays */}
-                  <div className={styles.cardBadges}>
-                    {form.isRental && <span className={styles.badgeRental}>Rent</span>}
-                    {form.isSale && <span className={styles.badgeSale}>Pre-Loved</span>}
-                  </div>
-
-                  {form.size && (
-                    <div className={styles.sizeIndicator}>
-                      <span>Size {form.size}</span>
+                      {form.size && (
+                        <div className={styles.sizeIndicator}>
+                          <span>Size {form.size}</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
 
                 {/* Micro Thumbnail Strip for Multiple Media Items */}
                 {mediaItems.length > 1 && (
@@ -1494,36 +1564,62 @@ export function CreateListingPage() {
                 </div>
               </article>
 
-              {/* Earnings Estimator Card */}
-              <div className={styles.earningsCard}>
-                <div className={styles.earningsHeader}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 6v12M17 10h-7a2.5 2.5 0 0 0 0 5h4a2.5 2.5 0 0 1 0 5H7" />
-                  </svg>
-                  <span className={styles.earningsTitle}>Estimated Closet Revenue</span>
-                </div>
-                {form.rentalPriceRupees > 0 ? (
-                  <>
-                    <div className={styles.earningsRow}>
-                      <span>6 Weekend Rentals / Year</span>
-                      <strong>
-                        ₹{((Number(form.rentalPriceRupees) * 4) * 6).toLocaleString('en-IN')}
-                      </strong>
+              {/* Enhanced Passive Earnings Estimator Card */}
+              {(() => {
+                const retailPrice = Number(form.replacementValueRupees) > 0 ? Number(form.replacementValueRupees) : 85000;
+                const dailyRate = Number(form.rentalPriceRupees || 0);
+                const fee4Day = dailyRate * 4;
+                const rentalsPerYear = 6;
+                const grossAnnual = fee4Day * rentalsPerYear;
+                const platformFee = Math.round(grossAnnual * 0.20);
+                const netEarnings = grossAnnual - platformFee;
+                const paybackYears = netEarnings > 0 && retailPrice > 0 ? (retailPrice / netEarnings).toFixed(1) : 'N/A';
+                const roi3Year = netEarnings > 0 && retailPrice > 0 ? Math.round(((netEarnings * 3) / retailPrice) * 100) : 0;
+
+                return (
+                  <div className={styles.earningsCard}>
+                    <div className={styles.earningsHeader}>
+                      <div>
+                        <span className={styles.earningsBadge}>WARDROBE YIELD PROJECTION</span>
+                        <span className={styles.earningsTitle}>Passive Closet Economics</span>
+                      </div>
                     </div>
-                    <div className={styles.earningsSubRow}>
-                      <span>₹{(Number(form.rentalPriceRupees) * 4).toLocaleString('en-IN')} per 4-day booking</span>
-                    </div>
-                  </>
-                ) : (
-                  <div className={styles.earningsPrompt}>
-                    Enter daily rental rate in Step 04 to calculate annual closet earnings.
+                    {dailyRate > 0 ? (
+                      <div className={styles.earningsDetails}>
+                        <div className={styles.earningsRow}>
+                          <span>Gross Annual (6 Rentals)</span>
+                          <strong>₹{grossAnnual.toLocaleString('en-IN')}</strong>
+                        </div>
+                        <div className={styles.earningsRow}>
+                          <span>20% Platform Care (Logistics/Dry Clean)</span>
+                          <span className={styles.deductText}>-₹{platformFee.toLocaleString('en-IN')}</span>
+                        </div>
+                        <div className={styles.earningsRowHighlight}>
+                          <span>80% Net Passive Payout</span>
+                          <strong className={styles.netAmount}>₹{netEarnings.toLocaleString('en-IN')}/yr</strong>
+                        </div>
+                        <div className={styles.earningsMetaGrid}>
+                          <div className={styles.metaBox}>
+                            <span className={styles.metaLabel}>Payback Period</span>
+                            <span className={styles.metaVal}>{paybackYears} Years</span>
+                          </div>
+                          <div className={styles.metaBox}>
+                            <span className={styles.metaLabel}>3-Year Net ROI</span>
+                            <span className={styles.metaVal}>{roi3Year}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className={styles.earningsPrompt}>
+                        Enter daily rental rate in Step 04 to calculate passive wardrobe yield.
+                      </div>
+                    )}
+                    <p className={styles.earningsNote}>
+                      Verified courier pickup, inspection, and return shipping handled completely by Exchange.
+                    </p>
                   </div>
-                )}
-                <p className={styles.earningsNote}>
-                  Verified courier pickup, inspection, and return shipping handled completely by Exchange.
-                </p>
-              </div>
+                );
+              })()}
             </div>
           </aside>
         </div>

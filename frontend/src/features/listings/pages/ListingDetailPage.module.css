@@ -269,7 +269,7 @@
 }
 
 .stars {
-  color: #D1DBFF;
+  color: var(--color-gold-zari, #C8A251);
   letter-spacing: 2px;
   font-size: 14px;
 }
@@ -521,4 +521,159 @@
 
 .pdpWishlistBtnActive {
   color: #E60000;
+}
+
+/* ── Hygiene & Sterilization Trust Badge ── */
+.hygieneTrustBadge {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: linear-gradient(135deg, rgba(87, 0, 32, 0.05) 0%, rgba(200, 162, 81, 0.08) 100%);
+  border: 1px solid var(--color-gold-border, rgba(200, 162, 81, 0.35));
+  border-radius: var(--radius-sm, 8px);
+  cursor: pointer;
+  transition: transform var(--duration-fast, 180ms) var(--ease-spring, ease),
+              box-shadow var(--duration-fast, 180ms) var(--ease-spring, ease);
+  text-decoration: none;
+  margin-top: var(--space-4);
+}
+
+.hygieneTrustBadge:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card, 0 4px 16px rgba(26, 26, 26, 0.05));
+  border-color: var(--color-gold-zari, #C8A251);
+}
+
+.hygieneBadgeIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.hygieneBadgeContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hygieneBadgeHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.hygieneBadgeTitle {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-brand-burgundy, #570020);
+}
+
+.hygieneBadgeTag {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--color-brand-burgundy, #570020);
+  color: #FFFFFF;
+  padding: 1px 6px;
+  border-radius: var(--radius-full, 999px);
+}
+
+.hygieneBadgeSummary {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-ink-muted, #7C7A75);
+  line-height: 1.4;
+}
+
+.hygieneBadgeAction {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-brand-burgundy, #570020);
+  white-space: nowrap;
+}
+
+/* ── Hygiene Modal Overlay & Drawer ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 26, 0.7);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+}
+
+.hygieneModal {
+  background: var(--color-canvas-base, #F8F8F8);
+  border: 1px solid var(--color-hairline, rgba(26, 26, 26, 0.12));
+  border-radius: var(--radius-md, 12px);
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-modal, 0 24px 56px -12px rgba(26, 26, 26, 0.18));
+  display: flex;
+  flex-direction: column;
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-hairline, rgba(26, 26, 26, 0.1));
+  background: #FFFFFF;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.modalKicker {
+  display: block;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-brand-burgundy, #570020);
+}
+
+.modalTitle {
+  font-family: var(--font-display, serif);
+  font-size: 20px;
+  font-weight: 400;
+  margin: 0;
+  color: var(--color-ink-primary, #1A1A1A);
+}
+
+.modalCloseBtn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--color-ink-muted, #7C7A75);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+}
+
+.modalCloseBtn:hover {
+  color: var(--color-ink-primary, #1A1A1A);
+}
+
+.modalBody {
+  padding: var(--space-4) var(--space-6) var(--space-8);
+}
+
+/* ── Sustainability Section ── */
+.sustainabilitySection {
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-hairline, rgba(26, 26, 26, 0.1));
 }

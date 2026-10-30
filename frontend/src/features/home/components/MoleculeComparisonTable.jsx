@@ -29,7 +29,7 @@ const COMPARISON_ROWS = [
   {
     feature: 'Accidental Damage Protection',
     buying: 'Full cost of repair or replacement out of pocket',
-    renting: 'Optional ₹125 damage waiver covers minor wear',
+    renting: 'Optional ₹299 Festive Care protection covers minor wear',
     highlight: false,
   },
   {

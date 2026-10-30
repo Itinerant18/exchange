@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { reviewsApi } from '../../api/reviewsApi.js';
 import { formatDate } from '../../utils/formatters.js';
+import { ReviewFormModal } from './ReviewFormModal.jsx';
 import styles from './CustomerReviews.module.css';
 
 const FIT_LABELS = {
@@ -15,6 +16,8 @@ function bodySpecLine(review) {
   if (review.reviewerHeightCm) parts.push(`${review.reviewerHeightCm} cm`);
   if (review.reviewerWeightKg) parts.push(`${review.reviewerWeightKg} kg`);
   if (review.bustSize) parts.push(`Bust ${review.bustSize}`);
+  if (review.waistSize || review.waist) parts.push(`Waist ${review.waistSize || review.waist}`);
+  if (review.hipsSize || review.hips) parts.push(`Hips ${review.hipsSize || review.hips}`);
   if (review.bodyType) parts.push(review.bodyType.replace('_', ' '));
   return parts.join(' · ');
 }
@@ -29,6 +32,7 @@ export function CustomerReviews({ listingId, activeUserSize, listingTitle }) {
   const [loading, setLoading] = useState(false);
   const [fitFilter, setFitFilter] = useState('all');
   const [activePhotoModal, setActivePhotoModal] = useState(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   const customerPhotos = useMemo(() => {
     return reviews.flatMap((r) => (r.photos || []).map((url) => ({ url, review: r })));
@@ -69,9 +73,18 @@ export function CustomerReviews({ listingId, activeUserSize, listingTitle }) {
             )}
           </p>
         </div>
-        <a href="/bookings" className={styles.writeReviewLink}>
-          Review a Completed Rental →
-        </a>
+        <div className={styles.headerActions}>
+          <button
+            type="button"
+            className={styles.writeReviewBtn}
+            onClick={() => setReviewModalOpen(true)}
+          >
+            ✍ Write a Review &amp; Upload Look
+          </button>
+          <a href="/bookings" className={styles.writeReviewLink}>
+            Review a Completed Rental →
+          </a>
+        </div>
       </div>
 
       {/* ── Fit Meter Aggregate ── */}
@@ -143,6 +156,8 @@ export function CustomerReviews({ listingId, activeUserSize, listingTitle }) {
                 <div className={styles.photoPill}>
                   {item.review.sizeWorn ? `Size ${item.review.sizeWorn}` : 'Rented'}
                   {item.review.reviewerHeightCm ? ` • ${item.review.reviewerHeightCm} cm` : ''}
+                  {(item.review.waistSize || item.review.waist) ? ` • W: ${item.review.waistSize || item.review.waist}` : ''}
+                  {(item.review.hipsSize || item.review.hips) ? ` • H: ${item.review.hipsSize || item.review.hips}` : ''}
                 </div>
               </button>
             ))}
@@ -249,6 +264,25 @@ export function CustomerReviews({ listingId, activeUserSize, listingTitle }) {
           </div>
         </div>
       )}
+
+      {/* ── Review Submission Modal ── */}
+      <ReviewFormModal
+        isOpen={reviewModalOpen}
+        onClose={() => setReviewModalOpen(false)}
+        listingTitle={listingTitle}
+        initialSize={activeUserSize}
+        onSuccess={() => {
+          if (listingId) {
+            reviewsApi.getListingReviews(listingId, { limit: 10 })
+              .then((res) => {
+                const rows = Array.isArray(res) ? res : (res?.data ?? []);
+                setReviews(rows);
+                if (res?.meta?.fitStats) setFitStats(res.meta.fitStats);
+              })
+              .catch(() => {});
+          }
+        }}
+      />
     </div>
   );
 }
