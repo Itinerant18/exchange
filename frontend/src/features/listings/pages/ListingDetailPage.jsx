@@ -20,6 +20,8 @@ import { SustainabilityImpactCalculator } from '../../../components/rental/Susta
 import { CatwalkVideoPlayer } from '../../../components/rental/CatwalkVideoPlayer.jsx';
 import styles from './ListingDetailPage.module.css';
 
+const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL'];
+
 export function ListingDetailPage() {
   const { id } = useParams();
   const { isAuthed } = useAuth();
@@ -127,7 +129,7 @@ export function ListingDetailPage() {
           const isVideo = Boolean(img.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i));
           return { url: img, isVideo, mimeType: isVideo ? 'video/mp4' : 'image/jpeg' };
         }
-        const url = img?.objectKey;
+        const url = img?.objectKey || img?.url;
         if (!url) return null;
         const isVideo = Boolean(img.mimeType?.startsWith('video/') || url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i));
         return {
@@ -208,6 +210,24 @@ export function ListingDetailPage() {
     setLightboxIndex((prev) => (prev + delta + total) % total);
   }
 
+  const {
+    title = '',
+    brand = '',
+    description = '',
+    size: listingSize = '',
+    colour = '',
+    rentalPricePaise,
+    salePricePaise,
+    depositPaise,
+    replacementValuePaise,
+    isRental,
+    isSale,
+    condition = '',
+    city,
+    images = [],
+    ownerId,
+  } = listing || {};
+
   // Exact pricing breakdown calculated from backend daily rental rate & duration
   const pricing = useMemo(() => {
     if (!listing) return { dailyRate: 0, subtotal: 0, deposit: 0, waiverFee: 29900, total: 0, buyPrice: 0 };
@@ -220,6 +240,18 @@ export function ListingDetailPage() {
     const buyPrice = Number(listing.salePricePaise || 0);
     return { dailyRate, subtotal, deposit, waiverFee, total, buyPrice };
   }, [listing, rentalDuration, damageWaiver]);
+
+  // Available sizing choices (standard atelier sizes plus custom listing size)
+  const availableSizes = useMemo(() => {
+    if (listing?.availableSizes && Array.isArray(listing.availableSizes) && listing.availableSizes.length > 0) {
+      return listing.availableSizes;
+    }
+    const sz = listing?.size || listingSize;
+    if (sz && !STANDARD_SIZES.includes(sz)) {
+      return [sz, ...STANDARD_SIZES];
+    }
+    return STANDARD_SIZES;
+  }, [listing?.availableSizes, listing?.size, listingSize]);
 
   function handleAddToBag(e) {
     e.preventDefault();
@@ -315,40 +347,8 @@ export function ListingDetailPage() {
     );
   }
 
-  const {
-    title = '',
-    brand = '',
-    description = '',
-    size: listingSize = '',
-    colour = '',
-    rentalPricePaise,
-    salePricePaise,
-    depositPaise,
-    replacementValuePaise,
-    isRental,
-    isSale,
-    condition = '',
-    city,
-    images = [],
-    ownerId,
-  } = listing || {};
-
   const displayImages = displayMedia.map((m) => m.url);
-
   const estimatedRetail = replacementValuePaise;
-
-  // Available sizing choices (standard atelier sizes plus custom listing size)
-  const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL'];
-  const availableSizes = useMemo(() => {
-    if (listing?.availableSizes && Array.isArray(listing.availableSizes) && listing.availableSizes.length > 0) {
-      return listing.availableSizes;
-    }
-    if (listingSize && !STANDARD_SIZES.includes(listingSize)) {
-      return [listingSize, ...STANDARD_SIZES];
-    }
-    return STANDARD_SIZES;
-  }, [listing?.availableSizes, listingSize]);
-
   const isDateSelected = Boolean(deliveryDate && returnDate);
   const isAvailable = availableUnitsCount !== null && availableUnitsCount > 0;
   const isSoldOutForDates = isDateSelected && availableUnitsCount === 0;
