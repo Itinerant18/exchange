@@ -26,7 +26,7 @@
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
   margin-bottom: var(--space-3);
 }
 
@@ -115,7 +115,7 @@
   display: inline-block;
   align-self: flex-start;
   padding: 2px 8px;
-  background-color: var(--color-canvas);
+  background-color: var(--color-brand-burgundy, #570020);
   color: #FFFFFF;
   font-family: var(--font-extended);
   font-size: 9px;
@@ -137,7 +137,7 @@
   font-family: var(--font-display);
   font-size: 1.35rem;
   font-weight: 600;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
 }
 
 .colSubtext {
@@ -232,7 +232,7 @@
   justify-content: center;
   min-height: 48px;
   padding: 0 2.25rem;
-  background-color: var(--color-canvas);
+  background-color: var(--color-brand-burgundy, #570020);
   color: #FFFFFF;
   font-family: var(--font-extended);
   font-size: 13px;
@@ -246,8 +246,9 @@
 }
 
 .primaryBtn:hover {
+  background-color: var(--color-brand-burgundy-hover, #400017);
   transform: translateY(-1px);
-  opacity: 0.92;
+  opacity: 0.95;
   box-shadow: 0 12px 24px -6px rgba(87, 0, 32, 0.45);
 }
 

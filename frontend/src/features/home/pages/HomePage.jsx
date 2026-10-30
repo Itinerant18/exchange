@@ -11,6 +11,7 @@ import { BrandTicker } from '../components/BrandTicker.jsx';
 import { MoleculeVisualNav } from '../components/MoleculeVisualNav.jsx';
 import { HeroWithExpandableTextPills } from '../components/HeroWithExpandableTextPills.jsx';
 import { SlidingValueProps } from '../components/SlidingValueProps.jsx';
+import { CustomerFitGallery } from '../components/CustomerFitGallery.jsx';
 import { MoleculeComparisonTable } from '../components/MoleculeComparisonTable.jsx';
 import styles from './HomePage.module.css';
 
@@ -36,22 +37,21 @@ export function HomePage() {
 
   return (
     <div className={styles.home}>
-      {/* ── 1. Editorial Hero (Rent The Runway FullCoverageHero) ── */}
+      {/* ── 1. Editorial Hero Showcase ── */}
       <section className={styles.hero}>
         <HeroVideoShowcase />
       </section>
 
-      {/* ── 2. Designer Brand Marquee Ticker (RTR Ticker analogue) ── */}
+      {/* ── 2. Designer Brand Marquee Ticker ── */}
       <BrandTicker />
 
-      {/* ── 3. Visual Occasions Carousel (RTR MoleculeVisualNav analogue) ── */}
+      {/* ── 3. Visual Occasions Carousel ── */}
       <MoleculeVisualNav />
 
       {/* ── 4. Trending Rental Looks Grid with INR Pricing ── */}
       <section className={styles.trendingSection}>
         <div className={styles.sectionHeader}>
           <div>
-            <span className={styles.sectionEyebrow}>MOST COVETED OCCASION WEAR</span>
             <h2 className={styles.sectionHeading}>Trending for the Season</h2>
             <p className={styles.sectionDesc}>
               The most reserved designer lehengas, evening gowns, and festive couture in India.
@@ -80,34 +80,7 @@ export function HomePage() {
         )}
       </section>
 
-      {/* ── 5. RTR Expandable Interactive Tabs ("Our closet is your closet") ── */}
-      <HeroWithExpandableTextPills />
-
-      {/* ── Haute Couture in Motion: 9:16 Catwalk Video Showcase ── */}
-      <section className={styles.catwalkShowcaseSection}>
-        <div className={styles.editorialIntro}>
-          <span className={styles.editorialEyebrow}>RUNWAY IN MOTION</span>
-          <h2 className={styles.editorialHeading}>Experience Couture in 9:16 Motion</h2>
-          <p className={styles.editorialText}>
-            Watch how master-crafted lehenga flares, silk drapes, and hand-embroidered dupattas move on the runway.
-          </p>
-        </div>
-        <div className={styles.catwalkContainer}>
-          <CatwalkVideoPlayer
-            src="/videos/hero-runway.mp4"
-            poster="/videos/hero-runway-poster.jpg"
-            title="Official Atelier Runway Catwalk"
-            aspectRatio="9:16"
-            autoPlayOnVisible={true}
-            mutedDefault={true}
-          />
-        </div>
-      </section>
-
-      {/* ── 6. How It Works (RTR Sliding Value Proposition) ── */}
-      <SlidingValueProps />
-
-      {/* ── 7. Luxury 4-Pillar Trust Ribbon (Replaces bulky in-place widgets) ── */}
+      {/* ── 5. Sleek 4-Pillar Luxury Trust Ribbon (Direct Trust Reassurance) ── */}
       <section className={styles.trustBarSection} aria-label="Luxury Rental Guarantees">
         <div className={styles.trustBarContainer}>
           <div className={styles.trustPill}>
@@ -150,10 +123,38 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ── 8. Circular Sustainability Impact Statement ── */}
+      {/* ── 6. How It Works (3-Step Frictionless Sequence) ── */}
+      <SlidingValueProps />
+
+      {/* ── 7. "Our Runway" Customer Fit Gallery (Real UGC Social Proof) ── */}
+      <CustomerFitGallery />
+
+      {/* ── Curated Expandable Atelier Intel ("Our closet is your closet") ── */}
+      <HeroWithExpandableTextPills />
+
+      {/* ── Haute Couture in Motion: 9:16 Catwalk Showcase ── */}
+      <section className={styles.catwalkShowcaseSection}>
+        <div className={styles.editorialIntro}>
+          <h2 className={styles.editorialHeading}>Haute Couture in Motion</h2>
+          <p className={styles.editorialText}>
+            Watch how master-crafted lehenga flares, silk drapes, and hand-embroidered dupattas move on the runway.
+          </p>
+        </div>
+        <div className={styles.catwalkContainer}>
+          <CatwalkVideoPlayer
+            src="/videos/hero-runway.mp4"
+            poster="/videos/hero-runway-poster.jpg"
+            title="Official Atelier Runway Catwalk"
+            aspectRatio="9:16"
+            autoPlayOnVisible={true}
+            mutedDefault={true}
+          />
+        </div>
+      </section>
+
+      {/* ── Circular Sustainability Impact Statement ── */}
       <section className={styles.circularPledgeSection} aria-label="Circular Luxury Sustainability">
         <div className={styles.circularPledgeContainer}>
-          <span className={styles.editorialEyebrow}>CIRCULAR SUSTAINABILITY FOOTPRINT</span>
           <h2 className={styles.editorialHeading}>The Environmental Power of Renting</h2>
           <p className={styles.circularStatSummary}>
             Choosing circular fashion over single-wear manufacturing conserves up to <strong>3,450 liters of freshwater</strong> and prevents <strong>28.4 kg of CO₂e</strong> per ensemble. Together, our community has diverted thousands of kilograms of designer luxury from landfills.
@@ -170,11 +171,10 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ── 9. High-Fashion Editorial Atelier Wardrobe Monetization Banner ── */}
+      {/* ── 8. High-Fashion Editorial Atelier Wardrobe Monetization Banner ── */}
       <section className={styles.atelierBannerSection} aria-label="Monetize Your Atelier Closet">
         <div className={styles.atelierBannerCard}>
           <div className={styles.atelierContent}>
-            <span className={styles.atelierEyebrow}>WARDROBE MONETIZATION STUDIO</span>
             <h2 className={styles.atelierHeading}>Turn Your Designer Closet Into Passive Income</h2>
             <p className={styles.atelierText}>
               Designer bridal lehengas and luxury couture shouldn’t sit idle in garment bags.
@@ -191,28 +191,16 @@ export function HomePage() {
               >
                 Estimate Your Wardrobe Yield
               </button>
+              <Link to="/lend" className={styles.atelierSecondaryBtn}>
+                Explore Lender Studio &amp; FAQs
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ── 10. RTR Comparison Matrix ("Why buy when you could rent?") in INR ── */}
+      {/* ── RTR Comparison Matrix ("Why buy when you could rent?") in INR ── */}
       <MoleculeComparisonTable />
-
-      {/* ── 11. Bottom Atelier & Circular Fashion Collective CTA ── */}
-      <section className={styles.bottomCtaSection}>
-        <div className={styles.bottomCtaContainer}>
-          <span className={styles.ctaEyebrow}>CIRCULAR FASHION REVOLUTION</span>
-          <h2 className={styles.ctaHeading}>Monetize Your Own Atelier Wardrobe</h2>
-          <p className={styles.ctaText}>
-            List your luxury lehengas, gowns, and designer occasion wear. Earn recurring rental income while verified courier delivery, dry cleaning, and deposit security are completely handled.
-          </p>
-          <div className={styles.ctaButtonGroup}>
-            <Link to="/listings/new" className={styles.primaryCtaBtn}>Start Renting Out</Link>
-            <Link to="/listings?rental=true" className={styles.secondaryCtaBtn}>Browse Collection</Link>
-          </div>
-        </div>
-      </section>
 
       {/* ── Hygiene & Sterilization Protocol Modal Overlay ── */}
       {showHygieneModal && (

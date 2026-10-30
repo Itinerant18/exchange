@@ -449,7 +449,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
 }
 
 .photoReelSubtitle {
@@ -645,7 +645,7 @@
   font-family: var(--font-extended);
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
   background: rgba(87, 0, 32, 0.06);
   padding: 6px 12px;
   border-radius: 8px;

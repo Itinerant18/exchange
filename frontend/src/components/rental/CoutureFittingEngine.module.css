@@ -83,7 +83,7 @@
 
 .arrowIcon {
   font-size: 11px;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
 }
 
 .body {
@@ -151,7 +151,7 @@
 
 .select:focus,
 .textInput:focus {
-  border-color: var(--color-canvas);
+  border-color: var(--color-brand-burgundy, #570020);
   background-color: #FFFFFF;
 }
 

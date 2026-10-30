@@ -24,7 +24,7 @@
   font-weight: 600;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-canvas, #570020);
+  color: var(--color-brand-burgundy, #570020);
   margin-bottom: 8px;
 }
 

@@ -31,7 +31,7 @@
   font-weight: 500;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
   margin-bottom: var(--space-3);
 }
 
@@ -79,7 +79,7 @@
 }
 
 .pillItemActive {
-  border-color: var(--color-canvas);
+  border-color: var(--color-brand-burgundy, #570020);
   background: #FFFFFF;
   box-shadow: 0 8px 24px -6px rgba(87, 0, 32, 0.12);
 }
@@ -96,7 +96,7 @@
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.1em;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
   background: rgba(87, 0, 32, 0.08);
   padding: 2px 8px;
   border-radius: 999px;
@@ -115,7 +115,7 @@
 .pillArrow {
   font-family: var(--font-extended);
   font-size: 1.1rem;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
   font-weight: bold;
 }
 
@@ -149,7 +149,7 @@
   justify-content: center;
   min-height: 48px;
   padding: 0 2rem;
-  background-color: var(--color-canvas);
+  background-color: var(--color-brand-burgundy, #570020);
   color: #FFFFFF;
   font-family: var(--font-extended);
   font-size: 13px;
@@ -163,8 +163,9 @@
 }
 
 .ctaButton:hover {
-  transform: translateY(-1px);
-  opacity: 0.92;
+  background-color: var(--color-brand-burgundy-hover, #400017);
+  transform: translateY(-2px);
+  opacity: 0.95;
 }
 
 /* ── Right Column: Image Card ── */

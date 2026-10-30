@@ -189,7 +189,7 @@
   justify-content: center;
   min-height: 44px;
   padding: 0 1.75rem;
-  background-color: var(--color-canvas);
+  background-color: var(--color-brand-burgundy, #570020);
   color: #FFFFFF;
   font-family: var(--font-extended);
   font-size: 13px;
@@ -199,14 +199,14 @@
   border-radius: var(--radius-full);
   border: 1px solid var(--color-hairline);
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(87, 0, 32, 0.3);
   transition: all var(--duration-fast) var(--ease-editorial);
   white-space: nowrap;
 }
 
 .primaryCta:hover {
-  background-color: #420022;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  background-color: var(--color-brand-burgundy-hover, #400017);
+  box-shadow: 0 6px 16px rgba(87, 0, 32, 0.4);
 }
 
 .secondaryCta {
@@ -216,8 +216,8 @@
   min-height: 44px;
   padding: 0 1.75rem;
   background-color: #FFFFFF;
-  color: var(--color-canvas);
-  border: 1px solid var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
+  border: 1px solid var(--color-brand-burgundy, #570020);
   font-family: var(--font-extended);
   font-size: 13px;
   font-weight: 500;
@@ -230,7 +230,7 @@
 }
 
 .secondaryCta:hover {
-  background-color: var(--color-surface, #F8F8F8);
+  background-color: var(--color-brand-burgundy-subtle, #FBEBF0);
 }
 
 @media (max-width: 540px) {
@@ -269,7 +269,7 @@
 
 .reelTabActive {
   background: #FFFFFF;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
   border-color: #FFFFFF;
   font-weight: 600;
 }
@@ -350,7 +350,7 @@
   font-family: var(--font-display);
   font-size: 22px;
   font-weight: 400;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
   line-height: 1;
 }
 

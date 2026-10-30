@@ -13,6 +13,7 @@ import {
   ListingsPage,
   ListingDetailPage,
   CreateListingPage,
+  LendPage,
 } from '../features/listings/index.js';
 import {
   MyBookingsPage,
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
       { path: 'forgot-password', element: <ForgotPasswordPage /> },
       { path: 'reset-password', element: <ResetPasswordPage /> },
       { path: 'listings', element: <ListingsPage /> },
+      { path: 'lend', element: <LendPage /> },
       { path: 'listings/new', element: <ProtectedRoute><CreateListingPage /></ProtectedRoute> },
       { path: 'listings/:id', element: <ListingDetailPage /> },
       { path: 'favorites', element: <ProtectedRoute><FavoritesPage /></ProtectedRoute> },

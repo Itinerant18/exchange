@@ -260,9 +260,10 @@
 
 /* ── Footer ── */
 .footer {
-  background: var(--color-canvas-alt);
+  background: var(--color-canvas-alt, #29000B);
   border-top: 1px solid var(--color-hairline);
   margin-top: auto;
+  color: #FFFFFF;
 }
 
 .footerGuarantees {
@@ -272,7 +273,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-6);
-  border-bottom: 1px solid var(--color-hairline);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .guaranteeItem {
@@ -280,11 +281,11 @@
   flex-direction: column;
   gap: 4px;
   font-size: 13px;
-  color: var(--color-ink-soft);
+  color: rgba(255, 255, 255, 0.85);
 }
 
 .guaranteeIcon {
-  color: #FFFFFF;
+  color: var(--color-antique-zari-gold, #C8A251);
   font-size: 14px;
   margin-bottom: var(--space-1);
 }
@@ -316,7 +317,7 @@
 .footerDesc {
   font-size: 13px;
   line-height: 1.6;
-  color: var(--color-ink-secondary);
+  color: rgba(255, 255, 255, 0.7);
   max-width: 320px;
 }
 
@@ -333,12 +334,12 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #FFFFFF;
+  color: var(--color-antique-zari-gold, #C8A251);
   margin-bottom: var(--space-2);
 }
 
 .footerLinksCol a {
-  color: var(--color-ink-secondary);
+  color: rgba(255, 255, 255, 0.75);
   text-decoration: none;
   transition: color var(--duration-fast) var(--ease-editorial);
 }
@@ -351,9 +352,9 @@
   max-width: var(--content-width);
   margin: 0 auto;
   padding: var(--space-6) var(--space-4);
-  border-top: 1px solid var(--color-hairline);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 12px;
-  color: var(--color-muted);
+  color: rgba(255, 255, 255, 0.6);
   text-align: center;
 }
 

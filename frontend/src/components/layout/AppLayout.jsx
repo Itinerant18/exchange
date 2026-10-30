@@ -86,6 +86,13 @@ export function AppLayout() {
             >
               Buy Pre-Loved
             </NavLink>
+            <NavLink
+              to="/lend"
+              className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}
+              onClick={() => setMenuOpen(false)}
+            >
+              Lend Couture
+            </NavLink>
           </nav>
 
           {/* Action Utilities (Search, Closet, Profile) */}
@@ -193,6 +200,7 @@ export function AppLayout() {
             <Link to="/listings">All Designer Listings</Link>
             <Link to="/listings?rental=true">Event Rentals</Link>
             <Link to="/listings?sale=true">Pre-Loved Resale</Link>
+            <Link to="/lend">Lender Studio &amp; Earnings</Link>
             <Link to="/listings/new">List an Outfit</Link>
           </div>
 

@@ -37,7 +37,7 @@
   font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.12em;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
   margin-bottom: var(--space-1);
 }
 
@@ -141,13 +141,13 @@
 }
 
 .fitPill:hover {
-  border-color: var(--color-canvas);
+  border-color: var(--color-brand-burgundy, #570020);
 }
 
 .fitPillActive {
-  background: var(--color-canvas);
-  color: var(--color-ink);
-  border-color: var(--color-canvas);
+  background: var(--color-brand-burgundy, #570020);
+  color: #FFFFFF;
+  border-color: var(--color-brand-burgundy, #570020);
 }
 
 .specsSection {
@@ -208,7 +208,7 @@
 .select:focus,
 .textarea:focus {
   outline: none;
-  border-color: var(--color-canvas);
+  border-color: var(--color-brand-burgundy, #570020);
   box-shadow: 0 0 0 2px rgba(87, 0, 32, 0.1);
 }
 
@@ -235,8 +235,8 @@
   justify-content: center;
   width: 54px;
   height: 54px;
-  background: var(--color-canvas);
-  color: var(--color-ink);
+  background: var(--color-brand-burgundy, #570020);
+  color: #FFFFFF;
   font-size: 24px;
   border-radius: 50%;
   margin-bottom: var(--space-4);
@@ -275,7 +275,7 @@
   font-family: var(--font-extended);
   font-size: 11px;
   font-weight: 600;
-  color: var(--color-canvas);
+  color: var(--color-brand-burgundy, #570020);
 }
 
 .photoHint {
@@ -341,18 +341,19 @@
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background-color: var(--color-canvas);
+  background-color: var(--color-brand-burgundy, #570020);
   color: #FFFFFF;
   font-family: var(--font-extended);
   font-size: 12px;
   font-weight: 500;
   border-radius: 8px;
   cursor: pointer;
-  transition: opacity 0.2s ease;
+  transition: background-color var(--duration-fast);
 }
 
 .uploadPhotoBtn:hover {
-  opacity: 0.9;
+  background-color: var(--color-brand-burgundy-hover, #400017);
+  opacity: 0.95;
 }
 
 .orDivider {

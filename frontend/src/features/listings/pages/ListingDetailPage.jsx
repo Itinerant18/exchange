@@ -626,7 +626,7 @@ export function ListingDetailPage() {
               }}
               aria-label="Open 7-Stage Sterilization & Hygiene Protocol"
             >
-              <span className={styles.hygieneBadgeIcon}>🛡️</span>
+              <span className={styles.hygieneBadgeIcon}>✦</span>
               <div className={styles.hygieneBadgeContent}>
                 <div className={styles.hygieneBadgeHeader}>
                   <span className={styles.hygieneBadgeTitle}>7-Stage Sterilization Guarantee</span>
@@ -636,7 +636,7 @@ export function ListingDetailPage() {
                   Hydrocarbon eco-clean, 140°C thermal disinfection &amp; O3 molecular deodorization before tamper-evident seal.
                 </p>
               </div>
-              <span className={styles.hygieneBadgeAction}>Learn More →</span>
+              <span className={styles.hygieneBadgeAction}>View Certificate &amp; Protocol →</span>
             </div>
           </div>
         </div>

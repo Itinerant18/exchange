@@ -18,20 +18,20 @@
   --color-canvas-subtle: #F0EEEA;
   --color-canvas-editorial: #570020;
   --color-canvas-alt: #29000B;
-  --color-surface: #F8F8F8;
+  --color-surface: #FFFFFF;
   --color-surface-pure: #FFFFFF;
-  --color-surface-raised: #F9F9F9;
-  --color-surface-translucent: rgba(248, 248, 248, 0.88);
+  --color-surface-raised: #FFFFFF;
+  --color-surface-translucent: rgba(255, 255, 255, 0.88);
   --color-surface-overlay: rgba(26, 26, 26, 0.65);
   --color-overlay: rgba(0, 0, 0, 0.6);
 
   /* ── High-Contrast Supporting Inks ── */
-  --color-ink: #FFFFFF;
+  --color-ink: #1A1A1A;
   --color-ink-primary: #1A1A1A;
   --color-ink-secondary: #4D4B47;
   --color-ink-muted: #7C7A75;
-  --color-ink-inverse: #F8F8F8;
-  --color-ink-soft: #CCCCCC;
+  --color-ink-inverse: #FFFFFF;
+  --color-ink-soft: #666666;
   --color-muted: #6F6B67;
   --color-faint: #555555;
   --color-ink-strike: #777777;
