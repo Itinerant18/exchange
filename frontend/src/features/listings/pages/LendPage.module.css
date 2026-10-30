@@ -124,14 +124,14 @@
   font-family: var(--font-display, serif);
   font-size: clamp(26px, 3.5vw, 36px);
   font-weight: 300;
-  color: var(--color-ink-primary, #1A1A1A);
+  color: #FFFFFF;
   margin: 0 0 var(--space-2);
 }
 
 .sectionSub {
   font-family: var(--font-body, sans-serif);
   font-size: 15px;
-  color: var(--color-ink-secondary, #4D4B47);
+  color: rgba(255, 255, 255, 0.85);
   margin: 0;
 }
 

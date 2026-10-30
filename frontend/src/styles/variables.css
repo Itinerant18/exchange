@@ -12,10 +12,10 @@
   --color-zari-gold: #C8A251;
   --color-kajal-noir: #1A1A1A;
 
-  /* ── Canvas & Surfaces ── */
-  --color-canvas: #F8F8F8;
-  --color-canvas-base: #F8F8F8;
-  --color-canvas-subtle: #F0EEEA;
+  /* ── Canvas & Surfaces (Deep Royal Burgundy / Magenta & Elevated Surfaces) ── */
+  --color-canvas: #570020;
+  --color-canvas-base: #570020;
+  --color-canvas-subtle: #420022;
   --color-canvas-editorial: #570020;
   --color-canvas-alt: #29000B;
   --color-surface: #FFFFFF;
@@ -26,12 +26,12 @@
   --color-overlay: rgba(0, 0, 0, 0.6);
 
   /* ── High-Contrast Supporting Inks ── */
-  --color-ink: #1A1A1A;
+  --color-ink: #FFFFFF;
   --color-ink-primary: #1A1A1A;
   --color-ink-secondary: #4D4B47;
   --color-ink-muted: #7C7A75;
   --color-ink-inverse: #FFFFFF;
-  --color-ink-soft: #666666;
+  --color-ink-soft: #CCCCCC;
   --color-muted: #6F6B67;
   --color-faint: #555555;
   --color-ink-strike: #777777;
@@ -140,8 +140,14 @@
   --radius-xl: 40px;
   --radius-full: 9999px;
 
+  /* ── Warm Alabaster Canvas (Quiet-Luxury Tonal Stacking) ── */
+  --color-canvas-alabaster: #F5F2EB;   /* Warm Alabaster band */
+  --color-surface-alabaster: #FAF9F6;  /* Lifted Alabaster surface */
+  --color-alabaster-deep: #EFEBE1;     /* Alabaster shadow step for tonal depth */
+
   /* ── Aspect Ratios ── */
   --aspect-product: 3 / 4;
+  --aspect-runway-vertical: 9 / 16;
   --aspect-hero: 16 / 9;
 
   /* ── Elevation & Ambient Shadows ── */
@@ -156,10 +162,15 @@
   --shadow-luxury-float: 0 20px 48px -12px rgba(87, 0, 32, 0.22);
   --shadow-hover: 0 8px 24px -4px rgba(0, 0, 0, 0.1);
 
-  /* ── Letter-Spacing / Kerning ── */
+  /* ── Letter-Spacing / Kerning (Luxury Cadence) ── */
   --tracking-editorial: -0.025em;
-  --tracking-wide: 0.12em;
+  --tracking-wide: 0.14em;
+  --tracking-luxury-badge: 0.18em;
   --tracking-display: -0.035em;
+
+  /* ── Editorial Section Rhythm (Quiet-Luxury Whitespace, 80–120px) ── */
+  --section-pad-y: clamp(80px, 10vw, 120px);
+  --section-pad-x: clamp(20px, 5vw, 64px);
 
   /* ── Layout Constraints ── */
   --content-width: 90rem;
@@ -175,7 +186,7 @@
   /* ── Motion Curves, Spring Dynamics & Micro-Transitions ── */
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring-gentle: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-spring-snappy: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-spring-snappy: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-editorial-drift: cubic-bezier(0.25, 1, 0.5, 1);
   --ease-editorial: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);

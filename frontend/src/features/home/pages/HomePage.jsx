@@ -15,6 +15,64 @@ import { CustomerFitGallery } from '../components/CustomerFitGallery.jsx';
 import { MoleculeComparisonTable } from '../components/MoleculeComparisonTable.jsx';
 import styles from './HomePage.module.css';
 
+const CATWALK_REELS = [
+  {
+    id: 'catwalk-1',
+    category: 'bridal',
+    designer: 'Sabyasachi Archive',
+    title: 'Heritage Crimson Velvet Zardozi Lehenga',
+    motionTag: '360° Kali Flare & Swish',
+    videoSrc: '/videos/catwalk-bridal-lehenga.mp4',
+    poster: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?auto=format&fit=crop&w=800&q=80',
+    rentalPrice: '₹6,500 / 4 days',
+    retailAnchor: '₹2,85,000',
+    link: '/listings?category=Lehenga',
+  },
+  {
+    id: 'catwalk-2',
+    category: 'gowns',
+    designer: 'Badgley Mischka',
+    title: 'Emerald Cascade Liquid Silk Pleated Gown',
+    motionTag: 'Floor-Sweeping Train & Drape',
+    videoSrc: '/videos/catwalk-evening-gown.mp4',
+    poster: 'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?auto=format&fit=crop&w=800&q=80',
+    rentalPrice: '₹4,200 / 4 days',
+    retailAnchor: '₹1,45,000',
+    link: '/listings?category=Gown',
+  },
+  {
+    id: 'catwalk-3',
+    category: 'drapes',
+    designer: 'Tarun Tahiliani',
+    title: 'Champagne Sheer Organza Concept Saree',
+    motionTag: 'Airy Pallu Suspension & Flow',
+    videoSrc: '/videos/catwalk-saree-drape.mp4',
+    poster: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=800&q=80',
+    rentalPrice: '₹5,100 / 4 days',
+    retailAnchor: '₹1,95,000',
+    link: '/listings?category=Saree',
+  },
+  {
+    id: 'catwalk-4',
+    category: 'gowns',
+    designer: 'Manish Malhotra',
+    title: 'Midnight Starry Sequined Runway Column',
+    motionTag: 'Dynamic Runway Reflection',
+    videoSrc: '/videos/hero-runway.mp4',
+    poster: '/videos/hero-runway-poster.jpg',
+    rentalPrice: '₹5,800 / 4 days',
+    retailAnchor: '₹2,20,000',
+    link: '/listings?occasion=BlackTie',
+  },
+];
+
+const CATWALK_CATEGORIES = [
+  { id: 'all', label: 'All Runway Looks (4)' },
+  { id: 'bridal', label: 'Bridal Lehengas' },
+  { id: 'gowns', label: 'Evening Gowns' },
+  { id: 'drapes', label: 'Contemporary Drapes' },
+];
+
 export function HomePage() {
   const navigate = useNavigate();
   const [listings, setListings] = useState([]);
@@ -22,6 +80,11 @@ export function HomePage() {
   const [showHygieneModal, setShowHygieneModal] = useState(false);
   const [showLenderModal, setShowLenderModal] = useState(false);
   const [showEcoModal, setShowEcoModal] = useState(false);
+  const [activeCatwalkCategory, setActiveCatwalkCategory] = useState('all');
+
+  const filteredCatwalkReels = activeCatwalkCategory === 'all'
+    ? CATWALK_REELS
+    : CATWALK_REELS.filter((item) => item.category === activeCatwalkCategory);
 
   useEffect(() => {
     listingsApi.getListings({ limit: 8, isRental: true })
@@ -132,23 +195,58 @@ export function HomePage() {
       {/* ── Curated Expandable Atelier Intel ("Our closet is your closet") ── */}
       <HeroWithExpandableTextPills />
 
-      {/* ── Haute Couture in Motion: 9:16 Catwalk Showcase ── */}
-      <section className={styles.catwalkShowcaseSection}>
-        <div className={styles.editorialIntro}>
-          <h2 className={styles.editorialHeading}>Haute Couture in Motion</h2>
-          <p className={styles.editorialText}>
-            Watch how master-crafted lehenga flares, silk drapes, and hand-embroidered dupattas move on the runway.
+      {/* ── Haute Couture in Motion: 9:16 Catwalk Showcase (Multi-Video Runway) ── */}
+      <section className={styles.catwalkShowcaseSection} aria-label="Haute Couture Runway Video Showcase">
+        <div className={styles.catwalkHeader}>
+          <span className={styles.catwalkEyebrow}>✦ 9:16 RUNWAY MOTION ENGINE</span>
+          <h2 className={styles.catwalkHeading}>Haute Couture in Motion</h2>
+          <p className={styles.catwalkSubtext}>
+            Observe how master-crafted lehenga flares, liquid silk cascades, and hand-embroidered zari dupattas move on live runways before reserving your look.
           </p>
         </div>
-        <div className={styles.catwalkContainer}>
-          <CatwalkVideoPlayer
-            src="/videos/hero-runway.mp4"
-            poster="/videos/hero-runway-poster.jpg"
-            title="Official Atelier Runway Catwalk"
-            aspectRatio="9:16"
-            autoPlayOnVisible={true}
-            mutedDefault={true}
-          />
+
+        {/* Category Filter Tabs */}
+        <div className={styles.catwalkFilterTabs}>
+          {CATWALK_CATEGORIES.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`${styles.catwalkFilterBtn} ${activeCatwalkCategory === tab.id ? styles.catwalkFilterBtnActive : ''}`}
+              onClick={() => setActiveCatwalkCategory(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 4-Column Responsive Runway Video Grid */}
+        <div className={styles.catwalkGrid}>
+          {filteredCatwalkReels.map((reel) => (
+            <div key={reel.id} className={styles.catwalkCard}>
+              <div className={styles.catwalkPlayerWrapper}>
+                <CatwalkVideoPlayer
+                  src={reel.videoSrc}
+                  poster={reel.poster}
+                  title={reel.title}
+                  aspectRatio="9:16"
+                  autoPlayOnVisible={true}
+                  mutedDefault={true}
+                />
+              </div>
+              <div className={styles.catwalkCardMeta}>
+                <span className={styles.catwalkMotionBadge}>✦ {reel.motionTag}</span>
+                <span className={styles.catwalkDesigner}>{reel.designer}</span>
+                <h3 className={styles.catwalkTitle}>{reel.title}</h3>
+                <div className={styles.catwalkPricingRow}>
+                  <span className={styles.catwalkRentalPrice}>{reel.rentalPrice}</span>
+                  <span className={styles.catwalkRetailAnchor}>{reel.retailAnchor}</span>
+                </div>
+                <Link to={reel.link} className={styles.catwalkActionBtn}>
+                  Reserve Look →
+                </Link>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 

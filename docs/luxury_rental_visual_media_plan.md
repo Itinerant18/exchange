@@ -50,6 +50,12 @@ The following production media assets have been fetched from live luxury CDNs, o
 ### A. Video & Motion Assets
 - **Haute Couture Runway Hero Video**: [`public/videos/hero-runway.mp4`](file:///C:/Users/itine/Downloads/exchange/exchange/frontend/public/videos/hero-runway.mp4) (5.1 MB)
   - Features high-fashion runway models walking in flowing evening gowns and designer drapes.
+- **Bridal Lehenga Flare Runway Video**: [`public/videos/catwalk-bridal-lehenga.mp4`](file:///C:/Users/itine/Downloads/exchange/exchange/frontend/public/videos/catwalk-bridal-lehenga.mp4) (1.16 MB)
+  - Demonstrates 360-degree kali flare, zardozi embroidery reflection, and heavy velvet drape motion.
+- **Evening Gown Cascade Runway Video**: [`public/videos/catwalk-evening-gown.mp4`](file:///C:/Users/itine/Downloads/exchange/exchange/frontend/public/videos/catwalk-evening-gown.mp4) (2.45 MB)
+  - Highlights floor-sweeping fluid liquid silk train movement and elegant stride drape.
+- **Contemporary Saree Drape Runway Video**: [`public/videos/catwalk-saree-drape.mp4`](file:///C:/Users/itine/Downloads/exchange/exchange/frontend/public/videos/catwalk-saree-drape.mp4) (1.11 MB)
+  - Displays sheer organza micro-pleat flow and airy pallu suspension.
 - **Cinematic Video Poster**: [`public/videos/hero-runway-poster.jpg`](file:///C:/Users/itine/Downloads/exchange/exchange/frontend/public/videos/hero-runway-poster.jpg) (125 KB)
   - Instant high-resolution poster displayed before video initialization to eliminate layout shifts (CLS = 0).
 - **Step 1 Animation ("Choose 2 Sizes")**: [`public/animations/step-choose.gif`](file:///C:/Users/itine/Downloads/exchange/exchange/frontend/public/animations/step-choose.gif) (1.4 MB)

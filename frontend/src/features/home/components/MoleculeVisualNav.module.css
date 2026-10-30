@@ -18,7 +18,7 @@
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-muted, #78716C);
+  color: var(--color-antique-zari-gold, #C8A251);
   margin-bottom: 4px;
 }
 
@@ -26,7 +26,7 @@
   font-family: var(--font-display, 'Martina Plantijn', serif);
   font-size: clamp(26px, 3.5vw, 36px);
   font-weight: 400;
-  color: var(--color-on-surface, #1C1917);
+  color: #FFFFFF;
   margin: 0;
 }
 
@@ -34,7 +34,7 @@
   font-family: var(--font-extended, sans-serif);
   font-size: 12px;
   font-weight: 600;
-  color: var(--color-on-surface, #1C1917);
+  color: var(--color-antique-zari-gold, #C8A251);
   text-decoration: none;
   letter-spacing: 0.04em;
   transition: opacity 0.2s ease;

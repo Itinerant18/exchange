@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { listingsApi } from '../../../api/listingsApi.js';
 import { rentalsApi } from '../../../api/rentalsApi.js';
@@ -31,6 +31,15 @@ export function ListingDetailPage() {
   const [error, setError] = useState('');
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [hygieneModalOpen, setHygieneModalOpen] = useState(false);
+
+  // Macro-zoom inspection lens (desktop pointer devices only).
+  const [zoomActive, setZoomActive] = useState(false);
+  const [hasFinePointer, setHasFinePointer] = useState(false);
+  const zoomImgRef = useRef(null);
+
+  // Full-screen lightbox viewer.
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   // Rental parameters
   const [rentalDuration, setRentalDuration] = useState(4);
@@ -107,6 +116,97 @@ export function ListingDetailPage() {
       })
       .finally(() => setCheckingAvailability(false));
   }, [id, deliveryDate, returnDate]);
+
+  // Normalized gallery media (stills + catwalk video), memoized so the zoom
+  // and lightbox hooks below can reference it regardless of load state.
+  const displayMedia = useMemo(() => {
+    const images = listing?.images || [];
+    return images
+      .map((img) => {
+        if (typeof img === 'string') {
+          const isVideo = Boolean(img.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i));
+          return { url: img, isVideo, mimeType: isVideo ? 'video/mp4' : 'image/jpeg' };
+        }
+        const url = img?.objectKey;
+        if (!url) return null;
+        const isVideo = Boolean(img.mimeType?.startsWith('video/') || url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i));
+        return {
+          url,
+          isVideo,
+          mimeType: img.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg'),
+          isPrimary: img.isPrimary,
+        };
+      })
+      .filter(Boolean);
+  }, [listing]);
+
+  // ── Macro-zoom lens: only engage on fine-pointer (mouse/trackpad) devices ──
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return undefined;
+    const mq = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 720px)');
+    const sync = () => setHasFinePointer(mq.matches);
+    sync();
+    if (mq.addEventListener) {
+      mq.addEventListener('change', sync);
+      return () => mq.removeEventListener('change', sync);
+    }
+    mq.addListener(sync);
+    return () => mq.removeListener(sync);
+  }, []);
+
+  // Reset the lens when the shopper swaps gallery frames.
+  useEffect(() => {
+    setZoomActive(false);
+  }, [activeImageIndex]);
+
+  // ── Lightbox: lock page scroll + global keyboard control while open ──
+  useEffect(() => {
+    if (!lightboxOpen) return undefined;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setLightboxOpen(false);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        stepLightbox(-1);
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        stepLightbox(1);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightboxOpen, displayMedia.length]);
+
+  // Move the zoom transform-origin to the cursor's position inside the frame.
+  function handleZoomMove(e) {
+    const img = zoomImgRef.current;
+    if (!img) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const clamp = (v) => Math.min(100, Math.max(0, v));
+    // Written straight to the node so cursor panning never re-renders the PDP.
+    img.style.transformOrigin = `${clamp(x)}% ${clamp(y)}%`;
+  }
+
+  function openLightbox(index) {
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+    setZoomActive(false);
+  }
+
+  function stepLightbox(delta) {
+    const total = displayMedia.length;
+    if (total < 2) return;
+    setLightboxIndex((prev) => (prev + delta + total) % total);
+  }
 
   // Exact pricing breakdown calculated from backend daily rental rate & duration
   const pricing = useMemo(() => {
@@ -233,24 +333,6 @@ export function ListingDetailPage() {
     ownerId,
   } = listing || {};
 
-  const displayMedia = images
-    .map((img) => {
-      if (typeof img === 'string') {
-        const isVideo = Boolean(img.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i));
-        return { url: img, isVideo, mimeType: isVideo ? 'video/mp4' : 'image/jpeg' };
-      }
-      const url = img?.objectKey;
-      if (!url) return null;
-      const isVideo = Boolean(img.mimeType?.startsWith('video/') || url.match(/\.(mp4|webm|mov|ogg)(\?.*)?$/i));
-      return {
-        url,
-        isVideo,
-        mimeType: img.mimeType || (isVideo ? 'video/mp4' : 'image/jpeg'),
-        isPrimary: img.isPrimary,
-      };
-    })
-    .filter(Boolean);
-
   const displayImages = displayMedia.map((m) => m.url);
 
   const estimatedRetail = replacementValuePaise;
@@ -287,7 +369,12 @@ export function ListingDetailPage() {
         {/* ── Left Column: Imagery & Fit Intel ── */}
         <div className={styles.visualCol}>
           <div className={styles.gallery}>
-            <div className={styles.mainImageFrame}>
+            <div
+              className={`${styles.mainImageFrame} ${hasFinePointer ? styles.zoomFrame : ''} ${zoomActive ? styles.zoomFrameActive : ''}`}
+              onMouseMove={hasFinePointer ? handleZoomMove : undefined}
+              onMouseEnter={hasFinePointer ? () => setZoomActive(true) : undefined}
+              onMouseLeave={hasFinePointer ? () => setZoomActive(false) : undefined}
+            >
               {displayMedia.length > 0 ? (
                 displayMedia[activeImageIndex]?.isVideo ? (
                   <CatwalkVideoPlayer
@@ -302,9 +389,11 @@ export function ListingDetailPage() {
                   />
                 ) : (
                   <img
+                    ref={zoomImgRef}
                     src={displayMedia[activeImageIndex]?.url}
                     alt={title}
-                    className={styles.mainImage}
+                    className={`${styles.mainImage} ${hasFinePointer ? styles.zoomImg : ''}`}
+                    onClick={() => openLightbox(activeImageIndex)}
                   />
                 )
               ) : (
@@ -314,6 +403,31 @@ export function ListingDetailPage() {
                   </svg>
                   <span>No imagery uploaded for this piece</span>
                 </div>
+              )}
+
+              {/* Macro-zoom affordance (desktop pointer devices only) */}
+              {hasFinePointer && displayMedia.length > 0 && !displayMedia[activeImageIndex]?.isVideo && (
+                <span className={styles.zoomHint} aria-hidden="true">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="m21 21-4.35-4.35M11 8.5v5M8.5 11h5" />
+                  </svg>
+                  Hover to inspect · macro detail
+                </span>
+              )}
+
+              {/* Dedicated expand control for the full-screen lightbox */}
+              {displayMedia.length > 0 && (
+                <button
+                  type="button"
+                  className={styles.lightboxExpandBtn}
+                  onClick={() => openLightbox(activeImageIndex)}
+                  aria-label="Open full-screen viewer"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                    <path d="M9 3H3v6M15 21h6v-6M3 3l7 7M21 21l-7-7" />
+                  </svg>
+                </button>
               )}
             </div>
 
@@ -672,6 +786,80 @@ export function ListingDetailPage() {
               <SterilizationGuaranteeInfographic compact={false} />
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── Full-Screen Editorial Lightbox ── */}
+      {lightboxOpen && displayMedia.length > 0 && (
+        <div
+          className={styles.lightboxOverlay}
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${title || 'Garment'} — full-screen viewer`}
+          onClick={() => setLightboxOpen(false)}
+        >
+          <div className={styles.lightboxTopBar}>
+            <span className={styles.lightboxCounter}>
+              {(displayMedia[lightboxIndex]?.isVideo ? 'Film ' : '')}
+              {lightboxIndex + 1} / {displayMedia.length}
+            </span>
+            <button
+              type="button"
+              className={styles.lightboxCloseBtn}
+              onClick={() => setLightboxOpen(false)}
+              aria-label="Close full-screen viewer"
+              autoFocus
+            >
+              ✕
+            </button>
+          </div>
+
+          <div
+            className={styles.lightboxStage}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {displayMedia[lightboxIndex]?.isVideo ? (
+              <div className={styles.lightboxVideoPlaceholder}>
+                <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M10 8.5 16 12l-6 3.5z" fill="currentColor" stroke="none" />
+                </svg>
+                <span className={styles.lightboxVideoLabel}>Catwalk film — play from the gallery</span>
+              </div>
+            ) : (
+              <img
+                key={`${displayMedia[lightboxIndex]?.url}-${lightboxIndex}`}
+                src={displayMedia[lightboxIndex]?.url}
+                alt={`${title} — view ${lightboxIndex + 1} of ${displayMedia.length}`}
+                className={styles.lightboxImg}
+              />
+            )}
+          </div>
+
+          {displayMedia.length > 1 && (
+            <>
+              <button
+                type="button"
+                className={`${styles.lightboxNavBtn} ${styles.lightboxNavPrev}`}
+                onClick={(e) => { e.stopPropagation(); stepLightbox(-1); }}
+                aria-label="Previous view"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="m15 5-7 7 7 7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className={`${styles.lightboxNavBtn} ${styles.lightboxNavNext}`}
+                onClick={(e) => { e.stopPropagation(); stepLightbox(1); }}
+                aria-label="Next view"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                  <path d="m9 5 7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
         </div>
       )}
     </div>
