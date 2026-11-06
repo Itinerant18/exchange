@@ -8,6 +8,7 @@
 import { Client } from 'pg';
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
+import { DurableObject } from 'cloudflare:workers';
 
 const scrypt = promisify(scryptCallback);
 
@@ -17,6 +18,7 @@ export interface Env {
   EXCHANGE_D1?: D1Database;
   EXCHANGE_KV?: KVNamespace;
   EVENT_QUEUE?: Queue<any>;
+  INVENTORY_LOCK?: DurableObjectNamespace<InventoryLockDO>;
   UPLOADS_BUCKET?: R2Bucket;
   AUTH_JWT_SECRET?: string;
   API_PREFIX?: string;
@@ -261,6 +263,77 @@ function emitQueueEvent(
   );
 }
 
+// ---------------------------------------------------------------------- Durable Object: InventoryLockDO
+
+export class InventoryLockDO extends DurableObject {
+  constructor(ctx: DurableObjectState, env: Env) {
+    super(ctx, env);
+    this.ctx.storage.sql.exec(`
+      CREATE TABLE IF NOT EXISTS unit_holds (
+        hold_id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        start_date TEXT NOT NULL,
+        end_date TEXT NOT NULL,
+        expires_at INTEGER NOT NULL
+      )
+    `);
+  }
+
+  async acquireHold(
+    userId: string,
+    startDate: string,
+    endDate: string,
+    durationMinutes = 15,
+  ): Promise<{ success: boolean; reason?: string; holdId?: string; expiresAt?: number }> {
+    const now = Date.now();
+    this.ctx.storage.sql.exec('DELETE FROM unit_holds WHERE expires_at <= ?', now);
+
+    const existing = [...this.ctx.storage.sql.exec(
+      'SELECT hold_id, user_id, start_date, end_date, expires_at FROM unit_holds WHERE start_date < ? AND end_date > ? LIMIT 1',
+      endDate,
+      startDate,
+    )];
+
+    if (existing.length > 0) {
+      const active = existing[0] as any;
+      if (active.user_id === userId) {
+        const newExpiry = now + durationMinutes * 60 * 1000;
+        this.ctx.storage.sql.exec('UPDATE unit_holds SET expires_at = ? WHERE hold_id = ?', newExpiry, active.hold_id);
+        return { success: true, holdId: active.hold_id, expiresAt: newExpiry };
+      }
+      return {
+        success: false,
+        reason: 'This garment unit is currently reserved in another customer checkout.',
+      };
+    }
+
+    const holdId = crypto.randomUUID();
+    const expiresAt = now + durationMinutes * 60 * 1000;
+    this.ctx.storage.sql.exec(
+      'INSERT INTO unit_holds (hold_id, user_id, start_date, end_date, expires_at) VALUES (?, ?, ?, ?, ?)',
+      holdId,
+      userId,
+      startDate,
+      endDate,
+      expiresAt,
+    );
+    return { success: true, holdId, expiresAt };
+  }
+
+  async releaseHold(userId: string): Promise<{ success: boolean }> {
+    this.ctx.storage.sql.exec('DELETE FROM unit_holds WHERE user_id = ?', userId);
+    return { success: true };
+  }
+
+  async getHoldStatus(): Promise<{ isHeld: boolean; hold?: any }> {
+    const now = Date.now();
+    this.ctx.storage.sql.exec('DELETE FROM unit_holds WHERE expires_at <= ?', now);
+    const holds = [...this.ctx.storage.sql.exec('SELECT hold_id, user_id, start_date, end_date, expires_at FROM unit_holds LIMIT 1')];
+    if (holds.length === 0) return { isHeld: false };
+    return { isHeld: true, hold: holds[0] };
+  }
+}
+
 // ---------------------------------------------------------------------- API Request Handler
 
 async function handleApi(
@@ -338,6 +411,7 @@ async function handleApi(
           edgeD1Sessions: d1Sessions,
           edgeKV: kvStatus,
           edgeQueue: env.EVENT_QUEUE ? 'connected' : 'unbound',
+          edgeDurableObjects: env.INVENTORY_LOCK ? 'connected' : 'unbound',
           timestamp: new Date().toISOString(),
         },
       },
@@ -954,6 +1028,16 @@ async function handleApi(
           }
           const unitId = unitRes.rows[0].id;
 
+          // Edge coordination check: acquire distributed hold in Durable Object
+          if (env.INVENTORY_LOCK) {
+            const doId = env.INVENTORY_LOCK.idFromName(unitId);
+            const stub = env.INVENTORY_LOCK.get(doId);
+            const lockCheck = await stub.acquireHold(auth.userId, startDate, endDate);
+            if (!lockCheck.success) {
+              throw new Error(lockCheck.reason || 'Unit is temporarily reserved in another checkout');
+            }
+          }
+
           const ratePaise = Number(listing.rental_price_paise);
           const subtotalPaise = ratePaise * days;
           const depositPaise = Number(listing.deposit_paise ?? 0);
@@ -1002,6 +1086,12 @@ async function handleApi(
           );
 
           await client.query('COMMIT');
+
+          if (env.INVENTORY_LOCK) {
+            const doId = env.INVENTORY_LOCK.idFromName(unitId);
+            const stub = env.INVENTORY_LOCK.get(doId);
+            ctx.waitUntil(stub.releaseHold(auth.userId));
+          }
           return {
             id: header.id,
             status: header.status,
@@ -1673,6 +1763,65 @@ async function handleApi(
     } catch (err: any) {
       return jsonResponse({ error: { message: err.message, code: 'QUERY_ERROR' } }, 500, cors);
     }
+  }
+
+  // 15. Inventory Item DO Locks (/inventory/items/:id/lock and /unlock)
+  if (path.match(/^\/inventory\/items\/[^/]+\/lock$/) && method === 'POST') {
+    const unitId = path.split('/')[3];
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+    const body = (await request.json().catch(() => ({}))) as any;
+    const { startDate, endDate } = body;
+    if (!startDate || !endDate) {
+      return jsonResponse({ error: { message: 'startDate and endDate required', code: 'INVALID_INPUT' } }, 400, cors);
+    }
+
+    if (!env.INVENTORY_LOCK) {
+      return jsonResponse({ error: { message: 'Durable Object lock unavailable', code: 'UNAVAILABLE' } }, 503, cors);
+    }
+
+    const doId = env.INVENTORY_LOCK.idFromName(unitId);
+    const stub = env.INVENTORY_LOCK.get(doId);
+    const lockResult = await stub.acquireHold(auth.userId, startDate, endDate);
+
+    if (!lockResult.success) {
+      return jsonResponse({ error: { message: lockResult.reason, code: 'UNIT_LOCKED' } }, 409, cors);
+    }
+
+    return jsonResponse({ data: { unitId, ...lockResult } }, 200, cors);
+  }
+
+  if (path.match(/^\/inventory\/items\/[^/]+\/unlock$/) && method === 'POST') {
+    const unitId = path.split('/')[3];
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    if (!env.INVENTORY_LOCK) {
+      return jsonResponse({ data: { released: true } }, 200, cors);
+    }
+
+    const doId = env.INVENTORY_LOCK.idFromName(unitId);
+    const stub = env.INVENTORY_LOCK.get(doId);
+    await stub.releaseHold(auth.userId);
+
+    return jsonResponse({ data: { unitId, released: true } }, 200, cors);
+  }
+
+  if (path.match(/^\/inventory\/items\/[^/]+\/lock$/) && method === 'GET') {
+    const unitId = path.split('/')[3];
+    if (!env.INVENTORY_LOCK) {
+      return jsonResponse({ data: { isHeld: false } }, 200, cors);
+    }
+
+    const doId = env.INVENTORY_LOCK.idFromName(unitId);
+    const stub = env.INVENTORY_LOCK.get(doId);
+    const status = await stub.getHoldStatus();
+
+    return jsonResponse({ data: { unitId, ...status } }, 200, cors);
   }
 
   // 16. Events Test Dispatcher

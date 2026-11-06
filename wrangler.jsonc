@@ -40,6 +40,22 @@
       }
     ]
   },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "INVENTORY_LOCK",
+        "class_name": "InventoryLockDO"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "InventoryLockDO"
+      ]
+    }
+  ],
   "assets": {
     "directory": "./frontend/dist",
     "binding": "ASSETS",
