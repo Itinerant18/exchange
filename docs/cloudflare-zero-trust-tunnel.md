@@ -116,3 +116,4 @@ In the **Cloudflare One Dashboard** (`dash.zero-trust.com`):
 | **Cloudflare Universal SSL** | TLS 1.3 / Strict-Transport-Security | Active on `exchnage-souvik.souvikmn55.workers.dev` |
 | **Cloudflare Tunnels** | Zero-inbound-port private routing | Architectural specification documented above |
 | **Edge Rate Limiting** | Sliding window brute-force defense | Active in D1 SQLite (`edge_rate_limits`) |
+

@@ -4,6 +4,7 @@ import { useBag } from '../../context/BagContext.jsx';
 import { rentalsApi } from '../../api/rentalsApi.js';
 import { formatPaiseToRupees, formatDate } from '../../utils/formatters.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { TurnstileWidget } from '../common/TurnstileWidget.jsx';
 import styles from './BagDrawer.module.css';
 
 /**
@@ -18,6 +19,7 @@ export function BagDrawer() {
   const navigate = useNavigate();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [transportMode, setTransportMode] = useState('both'); // 'both' | 'none'
   const [deliveryQuote, setDeliveryQuote] = useState(null);
   const [quoteLoading, setQuoteLoading] = useState(false);
@@ -92,12 +94,17 @@ export function BagDrawer() {
         transportMode,
         outboundDistanceKm: transportMode === 'both' ? 15 : undefined,
         returnDistanceKm: transportMode === 'both' ? 15 : undefined,
+        turnstileToken: turnstileToken || undefined,
       };
       const res = await rentalsApi.createBooking(bookingPayload);
       clearBag();
       navigate(`/bookings/${res.id}`);
     } catch (err) {
-      setError(err.message || 'Failed to reserve your look. Please try again.');
+      if (err?.status === 409 || err?.message?.includes('LOCKED') || err?.code === 'UNIT_LOCKED') {
+        setError('This garment size is currently on a 15-minute checkout hold by another customer. Please select another look or try again shortly.');
+      } else {
+        setError(err.message || 'Failed to reserve your look. Please try again.');
+      }
       setSubmitting(false);
     }
   }
@@ -294,6 +301,8 @@ export function BagDrawer() {
         <p className={styles.holdNote}>
           ✓ Your size is held while you check out. Bag items release automatically after 20 minutes.
         </p>
+
+        <TurnstileWidget action="booking" onVerify={setTurnstileToken} />
 
         <div className={styles.actions}>
           <button type="button" className={styles.continueBtn} onClick={closeBag}>
