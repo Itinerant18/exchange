@@ -16,6 +16,7 @@ export interface Env {
   HYPERDRIVE?: Hyperdrive;
   EXCHANGE_D1?: D1Database;
   EXCHANGE_KV?: KVNamespace;
+  EVENT_QUEUE?: Queue<any>;
   UPLOADS_BUCKET?: R2Bucket;
   AUTH_JWT_SECRET?: string;
   API_PREFIX?: string;
@@ -244,6 +245,22 @@ async function checkEdgeRateLimit(
   }
 }
 
+function emitQueueEvent(
+  env: Env,
+  ctx: ExecutionContext,
+  eventType: string,
+  payload: Record<string, unknown> = {},
+): void {
+  if (!env.EVENT_QUEUE) return;
+  ctx.waitUntil(
+    env.EVENT_QUEUE.send({
+      type: eventType,
+      payload,
+      timestamp: Date.now(),
+    }).catch((err) => console.error('[QueueProducer] Failed to send event:', err)),
+  );
+}
+
 // ---------------------------------------------------------------------- API Request Handler
 
 async function handleApi(
@@ -320,6 +337,7 @@ async function handleApi(
           edgeD1LatencyMs: d1LatencyMs,
           edgeD1Sessions: d1Sessions,
           edgeKV: kvStatus,
+          edgeQueue: env.EVENT_QUEUE ? 'connected' : 'unbound',
           timestamp: new Date().toISOString(),
         },
       },
@@ -1009,6 +1027,15 @@ async function handleApi(
         totalPaise: bookingResult.totalPaise,
       });
 
+      emitQueueEvent(env, ctx, 'RENTAL_BOOKING_CREATED', {
+        bookingId: bookingResult.id,
+        listingId,
+        userId: auth.userId,
+        startDate,
+        endDate,
+        totalPaise: bookingResult.totalPaise,
+      });
+
       return jsonResponse({ data: bookingResult }, 201, cors);
     } catch (err: any) {
       console.error('[Rentals] Create error:', err);
@@ -1321,6 +1348,13 @@ async function handleApi(
       recordEdgeAudit(env, ctx, 'SALE_ORDER_CREATED', auth.userId, request.headers.get('CF-Connecting-IP'), {
         orderId: orderResult.id,
         listingId,
+        totalPaise: orderResult.totalPaise,
+      });
+
+      emitQueueEvent(env, ctx, 'ORDER_PLACED', {
+        orderId: orderResult.id,
+        listingId,
+        userId: auth.userId,
         totalPaise: orderResult.totalPaise,
       });
 
@@ -1641,6 +1675,21 @@ async function handleApi(
     }
   }
 
+  // 16. Events Test Dispatcher
+  if (path === '/events/test' && method === 'POST') {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+    const body = (await request.json().catch(() => ({}))) as any;
+    const eventType = body.type || 'SYSTEM_TEST_PING';
+    emitQueueEvent(env, ctx, eventType, {
+      userId: auth.userId,
+      message: body.message || 'Cloudflare Queues async pipeline test',
+    });
+    return jsonResponse({ data: { queued: true, type: eventType, queue: 'exchange-events' } }, 202, cors);
+  }
+
   // Fallback for unhandled API endpoints
   return jsonResponse(
     {
@@ -1702,5 +1751,42 @@ export default {
     }
 
     return env.ASSETS.fetch(request);
+  },
+
+  async queue(batch: MessageBatch<any>, env: Env, ctx: ExecutionContext): Promise<void> {
+    for (const message of batch.messages) {
+      try {
+        const event = message.body;
+        console.log(`[QueueConsumer] Processing event: ${event.type}`, event);
+
+        // 1. Record event in D1 edge_audit_logs asynchronously
+        if (env.EXCHANGE_D1 && event.type) {
+          await env.EXCHANGE_D1.prepare(
+            'INSERT INTO edge_audit_logs (id, event_type, user_id, ip_address, payload, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+          )
+            .bind(
+              crypto.randomUUID(),
+              `QUEUE_${event.type}`,
+              event.payload?.userId || null,
+              'queue-consumer',
+              JSON.stringify(event.payload || {}),
+              Date.now(),
+            )
+            .run();
+        }
+
+        // 2. Perform background dispatch / notification side-effects
+        if (event.type === 'RENTAL_BOOKING_CREATED') {
+          console.log(`[QueueConsumer:Logistics] Prepared courier dispatch notification for booking ${event.payload?.bookingId}`);
+        } else if (event.type === 'ORDER_PLACED') {
+          console.log(`[QueueConsumer:Fulfillment] Prepared packaging notification for order ${event.payload?.orderId}`);
+        }
+
+        message.ack();
+      } catch (err) {
+        console.error('[QueueConsumer] Error processing message:', err);
+        message.retry({ delaySeconds: 15 });
+      }
+    }
   },
 } satisfies ExportedHandler<Env>;
