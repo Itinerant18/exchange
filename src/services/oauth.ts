@@ -38,8 +38,9 @@ export async function verifyGoogleToken(
   try {
     const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(credential)}`);
     if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      return { success: false, error: `Google token verification failed: ${errText || res.statusText}` };
+      const errJson = (await res.json().catch(() => null)) as any;
+      const errMsg = errJson?.error_description || errJson?.error || res.statusText;
+      return { success: false, error: `Google verification failed: ${errMsg}` };
     }
 
     const data = (await res.json()) as any;
