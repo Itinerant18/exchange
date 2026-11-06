@@ -1,7 +1,7 @@
 import { requireJwtSecret } from '../../types';
 import type { Env } from '../../types';
 import { jsonResponse, emitQueueEvent } from '../../types';
-import { withDb } from '../../services/db';
+import { withDb, isAdmin } from '../../services/db';
 import { recordEdgeAudit } from '../../services/d1Client';
 import { extractBearerUser } from '../../middleware/auth';
 import { extractTurnstileToken, verifyTurnstileToken } from '../../middleware/turnstile';
@@ -553,7 +553,7 @@ export async function handleRentalsRoutes(
           )
         ).rows[0];
         if (!b) return 'NOT_FOUND';
-        if (b.owner_user_id !== auth.userId && auth.role !== 'admin') return 'FORBIDDEN';
+        if (b.owner_user_id !== auth.userId && !(await isAdmin(client, auth.userId))) return 'FORBIDDEN';
         if (b.status !== 'active') return 'NOT_ACTIVE';
         const ins = await client.query(
           `INSERT INTO return_inspections (rental_booking_id, inspected_by_user_id, result, notes, evidence_urls, estimated_recovery_paise)

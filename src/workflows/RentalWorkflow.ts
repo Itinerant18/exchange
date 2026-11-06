@@ -1,7 +1,7 @@
 import { WorkflowEntrypoint, WorkflowStep, type WorkflowEvent } from 'cloudflare:workers';
 import type { Client } from 'pg';
 import type { Env, RentalWorkflowParams } from '../types';
-import { withDb } from '../services/db';
+import { withDb, withTx } from '../services/db';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 // ponytail: inspection is polled daily rather than pushed via waitForEvent, because instance ids
@@ -18,17 +18,7 @@ type Settlement =
 
 export class RentalLifecycleWorkflow extends WorkflowEntrypoint<Env, RentalWorkflowParams> {
   private tx<T>(fn: (c: Client) => Promise<T>): Promise<T> {
-    return withDb(this.env, this.ctx, async (c) => {
-      await c.query('BEGIN');
-      try {
-        const out = await fn(c);
-        await c.query('COMMIT');
-        return out;
-      } catch (err) {
-        await c.query('ROLLBACK');
-        throw err;
-      }
-    });
+    return withTx(this.env, this.ctx, fn);
   }
 
   // Awaited inside step.do so a failed send retries the step (at-least-once; consumers dedupe on bookingId).

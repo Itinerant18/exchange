@@ -1,7 +1,7 @@
 import { requireJwtSecret } from '../../types';
 import type { Env } from '../../types';
 import { jsonResponse } from '../../types';
-import { withDb } from '../../services/db';
+import { withDb, isAdmin } from '../../services/db';
 import { extractBearerUser } from '../../middleware/auth';
 
 export async function handleAdminRoutes(
@@ -22,6 +22,9 @@ export async function handleAdminRoutes(
   const auth = extractBearerUser(request, jwtSecret);
   if (!auth) {
     return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+  }
+  if (!(await withDb(env, ctx, (c) => isAdmin(c, auth.userId)))) {
+    return jsonResponse({ error: { message: 'Admin role required', code: 'FORBIDDEN' } }, 403, cors);
   }
 
   // Admin audit logs from D1 edge_audit_logs

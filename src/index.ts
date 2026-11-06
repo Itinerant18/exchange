@@ -18,6 +18,7 @@ import { handleInventoryRoutes } from './modules/inventory';
 import { handleRentalsRoutes } from './modules/rentals';
 import { handleOrdersRoutes } from './modules/orders';
 import { handleDepositsRoutes } from './modules/deposits';
+import { handlePaymentsRoutes } from './modules/payments';
 import { handleReviewsRoutes } from './modules/reviews';
 import { handleMediaRoutes } from './modules/media';
 import { handleSecurityRoutes } from './modules/security';
@@ -72,6 +73,10 @@ async function handleApi(
     // 8. Deposits & financial escrow
     const depositsRes = await handleDepositsRoutes(request, env, ctx, path, method, cors);
     if (depositsRes) return depositsRes;
+
+    // 8b. Deposit payments (renter initiates, admin confirms offline receipt)
+    const paymentsRes = await handlePaymentsRoutes(request, env, ctx, path, method, cors);
+    if (paymentsRes) return paymentsRes;
 
     // 9. Reviews & ratings
     const reviewsRes = await handleReviewsRoutes(request, env, ctx, path, method, cors, url);
