@@ -4,10 +4,11 @@ import { useAuth } from '../../../context/AuthContext.jsx';
 import { appConfig } from '../../../config/appConfig.js';
 import { authErrorMessage } from '../../../config/authMessages.js';
 import { TurnstileWidget } from '../../../components/common/TurnstileWidget.jsx';
+import { OAuthButtons } from '../components/OAuthButtons.jsx';
 import styles from './AuthPages.module.css';
 
 export function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle, loginWithApple } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,6 +22,32 @@ export function LoginPage() {
     setBusy(true);
     try {
       await login(email, password, turnstileToken);
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError(authErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleGoogleSuccess(credential) {
+    setError('');
+    setBusy(true);
+    try {
+      await loginWithGoogle(credential, turnstileToken);
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError(authErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleAppleSuccess(payload) {
+    setError('');
+    setBusy(true);
+    try {
+      await loginWithApple(payload);
       navigate('/', { replace: true });
     } catch (err) {
       setError(authErrorMessage(err));
@@ -108,6 +135,13 @@ export function LoginPage() {
               )}
             </button>
           </form>
+
+          <OAuthButtons
+            onGoogleSuccess={handleGoogleSuccess}
+            onAppleSuccess={handleAppleSuccess}
+            onError={(err) => setError(authErrorMessage(err))}
+            turnstileToken={turnstileToken}
+          />
 
           <p className={styles.redirectNote}>
             Don\'t have an account?{' '}

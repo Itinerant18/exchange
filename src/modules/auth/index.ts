@@ -6,6 +6,97 @@ import { recordEdgeAudit, storeEdgeSession, invalidateEdgeSession } from '../../
 import { checkEdgeRateLimit } from '../../middleware/ratelimit';
 import { extractTurnstileToken, verifyTurnstileToken } from '../../middleware/turnstile';
 import { hashPassword, verifyPassword, signJwt, extractBearerUser, hashToken } from '../../middleware/auth';
+import { verifyGoogleToken, verifyAppleToken } from '../../services/oauth';
+
+async function upsertOAuthUser(
+  env: Env,
+  ctx: ExecutionContext,
+  email: string,
+  rawDisplayName: string | null | undefined,
+  rawAvatarUrl: string | null | undefined,
+): Promise<{ id: string; email: string; displayName: string | null; avatarUrl: string | null; roles: string[] }> {
+  const normalizedEmail = email.toLowerCase().trim();
+  const trimmedName = rawDisplayName ? rawDisplayName.trim() : null;
+  const sanitizedName = trimmedName && trimmedName.length >= 2 ? trimmedName.slice(0, 100) : null;
+  const sanitizedAvatar = rawAvatarUrl && rawAvatarUrl.trim().length <= 500 ? rawAvatarUrl.trim() : null;
+
+  return withDb(env, ctx, async (client) => {
+    // 1. Look up existing user
+    const existing = await client.query(
+      `SELECT u.id, u.email, u.status, p.display_name, p.avatar_url,
+              COALESCE(array_agg(r.role_name) FILTER (WHERE r.role_name IS NOT NULL), '{}') AS roles
+       FROM users u
+       LEFT JOIN user_profiles p ON p.user_id = u.id
+       LEFT JOIN user_roles r ON r.user_id = u.id
+       WHERE LOWER(u.email) = LOWER($1)
+       GROUP BY u.id, u.email, u.status, p.display_name, p.avatar_url`,
+      [normalizedEmail],
+    );
+
+    if (existing.rows.length > 0) {
+      const user = existing.rows[0];
+      if (user.status === 'suspended' || user.status === 'deleted') {
+        throw new Error('Account is suspended or deactivated');
+      }
+
+      await client.query(`UPDATE users SET last_login_at = now(), updated_at = now() WHERE id = $1`, [user.id]);
+
+      if (sanitizedName || sanitizedAvatar) {
+        await client.query(
+          `INSERT INTO user_profiles (user_id, display_name, avatar_url)
+           VALUES ($1, $2, $3)
+           ON CONFLICT (user_id) DO UPDATE SET
+             display_name = COALESCE(user_profiles.display_name, EXCLUDED.display_name),
+             avatar_url = COALESCE(user_profiles.avatar_url, EXCLUDED.avatar_url),
+             updated_at = now()`,
+          [user.id, sanitizedName, sanitizedAvatar],
+        );
+      }
+
+      return {
+        id: user.id,
+        email: user.email,
+        displayName: user.display_name || sanitizedName,
+        avatarUrl: user.avatar_url || sanitizedAvatar,
+        roles: user.roles?.length ? user.roles : ['customer'],
+      };
+    }
+
+    // 2. Register new OAuth user
+    const randomPassword = crypto.randomUUID() + '-' + crypto.randomUUID();
+    const pwdHash = await hashPassword(randomPassword);
+
+    const insertUser = await client.query(
+      `INSERT INTO users (email, password_hash, status, last_login_at)
+       VALUES ($1, $2, 'active', now())
+       RETURNING id, email`,
+      [normalizedEmail, pwdHash],
+    );
+    const userId = insertUser.rows[0].id;
+
+    await client.query(
+      `INSERT INTO user_roles (user_id, role_name) VALUES ($1, 'customer') ON CONFLICT DO NOTHING`,
+      [userId],
+    );
+
+    if (sanitizedName || sanitizedAvatar) {
+      await client.query(
+        `INSERT INTO user_profiles (user_id, display_name, avatar_url)
+         VALUES ($1, $2, $3)
+         ON CONFLICT DO NOTHING`,
+        [userId, sanitizedName, sanitizedAvatar],
+      );
+    }
+
+    return {
+      id: userId,
+      email: insertUser.rows[0].email,
+      displayName: sanitizedName,
+      avatarUrl: sanitizedAvatar,
+      roles: ['customer'],
+    };
+  });
+}
 
 export async function handleAuthRoutes(
   request: Request,
@@ -174,7 +265,116 @@ export async function handleAuthRoutes(
     }
   }
 
-  // 3. Me
+  // 3. Google Sign-In
+  if (path === '/auth/google' && method === 'POST') {
+    try {
+      const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const allowed = await checkEdgeRateLimit(env, clientIp, 30, 60);
+      if (!allowed) {
+        return jsonResponse(
+          { error: { message: 'Too many authentication attempts. Please wait a minute.', code: 'RATE_LIMITED' } },
+          429,
+          cors,
+        );
+      }
+
+      const body = (await request.json()) as any;
+      const { credential } = body;
+      if (!credential) {
+        return jsonResponse({ error: { message: 'Google credential required', code: 'INVALID_INPUT' } }, 400, cors);
+      }
+
+      const turnstileToken = extractTurnstileToken(request, body);
+      if (turnstileToken || env.REQUIRE_TURNSTILE === 'true') {
+        const turnstile = await verifyTurnstileToken(turnstileToken, clientIp, env.TURNSTILE_SECRET, 'google_login');
+        if (!turnstile.success) {
+          recordEdgeAudit(env, ctx, 'AUTH_GOOGLE_TURNSTILE_BLOCKED', null, clientIp, { error: turnstile.error });
+          return jsonResponse(
+            { error: { message: 'Bot verification challenge failed.', code: 'TURNSTILE_FAILED' } },
+            403,
+            cors,
+          );
+        }
+      }
+
+      const verified = await verifyGoogleToken(credential, env.GOOGLE_CLIENT_ID);
+      if (!verified.success) {
+        recordEdgeAudit(env, ctx, 'AUTH_GOOGLE_FAILED', null, clientIp, { error: verified.error });
+        return jsonResponse({ error: { message: verified.error, code: 'INVALID_GOOGLE_TOKEN' } }, 401, cors);
+      }
+
+      const user = await upsertOAuthUser(env, ctx, verified.user.email, verified.user.displayName, verified.user.avatarUrl);
+      const accessToken = signJwt({ sub: user.id, email: user.email }, jwtSecret);
+
+      if (env.EXCHANGE_D1) {
+        const sessionTokenHash = hashToken(accessToken, jwtSecret);
+        storeEdgeSession(env, ctx, sessionTokenHash, user.id, user.email, user.roles);
+      }
+
+      recordEdgeAudit(env, ctx, 'AUTH_GOOGLE_SUCCESS', user.id, clientIp, { email: user.email });
+
+      return jsonResponse({ data: { user, accessToken } }, 200, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message || 'Google login failed', code: 'GOOGLE_LOGIN_ERROR' } }, 500, cors);
+    }
+  }
+
+  // 4. Apple Sign-In
+  if (path === '/auth/apple' && method === 'POST') {
+    try {
+      const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const allowed = await checkEdgeRateLimit(env, clientIp, 30, 60);
+      if (!allowed) {
+        return jsonResponse(
+          { error: { message: 'Too many authentication attempts. Please wait a minute.', code: 'RATE_LIMITED' } },
+          429,
+          cors,
+        );
+      }
+
+      const body = (await request.json()) as any;
+      const { idToken, user: appleUser } = body;
+      if (!idToken) {
+        return jsonResponse({ error: { message: 'Apple ID token required', code: 'INVALID_INPUT' } }, 400, cors);
+      }
+
+      const turnstileToken = extractTurnstileToken(request, body);
+      if (turnstileToken || env.REQUIRE_TURNSTILE === 'true') {
+        const turnstile = await verifyTurnstileToken(turnstileToken, clientIp, env.TURNSTILE_SECRET, 'apple_login');
+        if (!turnstile.success) {
+          recordEdgeAudit(env, ctx, 'AUTH_APPLE_TURNSTILE_BLOCKED', null, clientIp, { error: turnstile.error });
+          return jsonResponse(
+            { error: { message: 'Bot verification challenge failed.', code: 'TURNSTILE_FAILED' } },
+            403,
+            cors,
+          );
+        }
+      }
+
+      const verified = await verifyAppleToken(idToken, env.APPLE_CLIENT_ID, env.EXCHANGE_KV);
+      if (!verified.success) {
+        recordEdgeAudit(env, ctx, 'AUTH_APPLE_FAILED', null, clientIp, { error: verified.error });
+        return jsonResponse({ error: { message: verified.error, code: 'INVALID_APPLE_TOKEN' } }, 401, cors);
+      }
+
+      const fullName = [appleUser?.name?.firstName, appleUser?.name?.lastName].filter(Boolean).join(' ').trim() || null;
+      const user = await upsertOAuthUser(env, ctx, verified.user.email, fullName, null);
+      const accessToken = signJwt({ sub: user.id, email: user.email }, jwtSecret);
+
+      if (env.EXCHANGE_D1) {
+        const sessionTokenHash = hashToken(accessToken, jwtSecret);
+        storeEdgeSession(env, ctx, sessionTokenHash, user.id, user.email, user.roles);
+      }
+
+      recordEdgeAudit(env, ctx, 'AUTH_APPLE_SUCCESS', user.id, clientIp, { email: user.email });
+
+      return jsonResponse({ data: { user, accessToken } }, 200, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message || 'Apple login failed', code: 'APPLE_LOGIN_ERROR' } }, 500, cors);
+    }
+  }
+
+  // 5. Me
   if (path === '/auth/me' && method === 'GET') {
     const auth = extractBearerUser(request, jwtSecret);
     if (!auth) {

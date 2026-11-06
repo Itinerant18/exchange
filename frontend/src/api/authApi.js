@@ -10,6 +10,14 @@ export const authApi = {
     return api.post(endpoints.auth.register, payload);
   },
 
+  async loginWithGoogle(payload) {
+    return api.post(endpoints.auth.google, payload);
+  },
+
+  async loginWithApple(payload) {
+    return api.post(endpoints.auth.apple, payload);
+  },
+
   async me() {
     return api.get(endpoints.auth.me);
   },

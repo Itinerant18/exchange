@@ -18,6 +18,8 @@ export const appConfig = Object.freeze({
   currency: readValue(import.meta.env.VITE_PLATFORM_CURRENCY, 'INR'),
   timezone: readValue(import.meta.env.VITE_PLATFORM_TIMEZONE, 'Asia/Kolkata'),
   turnstileSiteKey: readValue(import.meta.env.VITE_TURNSTILE_SITEKEY, '0x4AAAAAAF2CZKS04qmu5moS'),
+  googleClientId: readValue(import.meta.env.VITE_GOOGLE_CLIENT_ID, ''),
+  appleClientId: readValue(import.meta.env.VITE_APPLE_CLIENT_ID, ''),
   get apiBaseUrl() {
     return getApiBaseUrl();
   },

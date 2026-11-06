@@ -4,10 +4,11 @@ import { useAuth } from '../../../context/AuthContext.jsx';
 import { appConfig } from '../../../config/appConfig.js';
 import { authErrorMessage } from '../../../config/authMessages.js';
 import { TurnstileWidget } from '../../../components/common/TurnstileWidget.jsx';
+import { OAuthButtons } from '../components/OAuthButtons.jsx';
 import styles from './AuthPages.module.css';
 
 export function RegisterPage() {
-  const { register } = useAuth();
+  const { register, loginWithGoogle, loginWithApple } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '', displayName: '' });
   const [turnstileToken, setTurnstileToken] = useState('');
@@ -25,6 +26,32 @@ export function RegisterPage() {
         displayName: form.displayName || null,
         turnstileToken,
       });
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError(authErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleGoogleSuccess(credential) {
+    setError('');
+    setBusy(true);
+    try {
+      await loginWithGoogle(credential, turnstileToken);
+      navigate('/', { replace: true });
+    } catch (err) {
+      setError(authErrorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleAppleSuccess(payload) {
+    setError('');
+    setBusy(true);
+    try {
+      await loginWithApple(payload);
       navigate('/', { replace: true });
     } catch (err) {
       setError(authErrorMessage(err));
@@ -130,6 +157,13 @@ export function RegisterPage() {
               Privacy Policy.
             </p>
           </form>
+
+          <OAuthButtons
+            onGoogleSuccess={handleGoogleSuccess}
+            onAppleSuccess={handleAppleSuccess}
+            onError={(err) => setError(authErrorMessage(err))}
+            turnstileToken={turnstileToken}
+          />
 
           <p className={styles.redirectNote}>
             Already have an account?{' '}

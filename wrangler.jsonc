@@ -91,7 +91,9 @@
     "PLATFORM_NAME": "Exchange24",
     "PLATFORM_CURRENCY": "INR",
     "PLATFORM_TIMEZONE": "Asia/Kolkata",
-    "TURNSTILE_SITEKEY": "0x4AAAAAAF2CZKS04qmu5moS"
+    "TURNSTILE_SITEKEY": "0x4AAAAAAF2CZKS04qmu5moS",
+    "GOOGLE_CLIENT_ID": "",
+    "APPLE_CLIENT_ID": ""
   },
   "observability": {
     "enabled": true,

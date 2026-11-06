@@ -11,6 +11,8 @@ export const endpoints = Object.freeze({
   auth: {
     login: '/auth/login',
     register: '/auth/register',
+    google: '/auth/google',
+    apple: '/auth/apple',
     refresh: '/auth/refresh',
     logout: '/auth/logout',
     me: '/auth/me',

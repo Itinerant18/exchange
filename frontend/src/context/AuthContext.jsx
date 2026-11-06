@@ -50,6 +50,28 @@ export function AuthProvider({ children }) {
     return data;
   }, []);
 
+  const loginWithGoogle = useCallback(async (credential, turnstileToken) => {
+    const data = await apiRequest('/auth/google', {
+      method: 'POST',
+      body: { credential, turnstileToken },
+    });
+    localStorage.setItem(STORAGE_KEY, data.accessToken);
+    setAccessToken(data.accessToken);
+    setUser(data.user);
+    return data;
+  }, []);
+
+  const loginWithApple = useCallback(async (payload) => {
+    const data = await apiRequest('/auth/apple', {
+      method: 'POST',
+      body: payload,
+    });
+    localStorage.setItem(STORAGE_KEY, data.accessToken);
+    setAccessToken(data.accessToken);
+    setUser(data.user);
+    return data;
+  }, []);
+
   const logout = useCallback(async () => {
     try { await apiRequest('/auth/logout', { method: 'POST' }); } catch { /* ignore */ }
     localStorage.removeItem(STORAGE_KEY);
@@ -61,8 +83,8 @@ export function AuthProvider({ children }) {
     user, accessToken, loading,
     isAdmin: !!user?.roles?.includes('admin'),
     isAuthed: !!accessToken,
-    login, register, logout, refreshUser: () => fetchMe(accessToken),
-  }), [user, accessToken, loading, login, register, logout, fetchMe]);
+    login, register, loginWithGoogle, loginWithApple, logout, refreshUser: () => fetchMe(accessToken),
+  }), [user, accessToken, loading, login, register, loginWithGoogle, loginWithApple, logout, fetchMe]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

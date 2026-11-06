@@ -26,6 +26,8 @@ export interface Env {
   TURNSTILE_SITEKEY?: string;
   TURNSTILE_SECRET?: string;
   REQUIRE_TURNSTILE?: string;
+  GOOGLE_CLIENT_ID?: string;
+  APPLE_CLIENT_ID?: string;
 }
 
 export interface ApiResponse<T = unknown> {
