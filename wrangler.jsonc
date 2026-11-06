@@ -88,7 +88,7 @@
   },
   "vars": {
     "API_PREFIX": "/api/v1",
-    "PLATFORM_NAME": "Exchnage",
+    "PLATFORM_NAME": "Exchange24",
     "PLATFORM_CURRENCY": "INR",
     "PLATFORM_TIMEZONE": "Asia/Kolkata",
     "TURNSTILE_SITEKEY": "0x4AAAAAAF2CZKS04qmu5moS"

@@ -65,7 +65,7 @@ export async function handleHealthRoutes(
       data: {
         status: 'ok',
         service: 'exchnage-worker-api',
-        platform: env.PLATFORM_NAME || 'Exchnage',
+        platform: env.PLATFORM_NAME || 'Exchange24',
         currency: env.PLATFORM_CURRENCY || 'INR',
         timezone: env.PLATFORM_TIMEZONE || 'Asia/Kolkata',
         database: dbStatus,
