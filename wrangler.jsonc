@@ -6,14 +6,15 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "workers_dev": true,
   "routes": [
     {
-      "pattern": "exchange24.site",
-      "custom_domain": true
+      "pattern": "exchange24.site/*",
+      "zone_name": "exchange24.site"
     },
     {
-      "pattern": "www.exchange24.site",
-      "custom_domain": true
+      "pattern": "www.exchange24.site/*",
+      "zone_name": "exchange24.site"
     }
   ],
   "hyperdrive": [
