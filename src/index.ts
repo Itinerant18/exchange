@@ -1263,8 +1263,8 @@ async function handleApi(
   }
 
   // 11. Rentals Bookings - Single Detail
-  if (path.startsWith('/rentals/bookings/') && !path.includes('/cancel') && !path.includes('/accept')) {
-    const bookingId = path.replace('/rentals/bookings/', '');
+  if (path.match(/^\/rentals\/bookings\/[^/]+$/)) {
+    const bookingId = path.split('/')[3];
     const auth = extractBearerUser(request, jwtSecret);
     if (!auth) {
       return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
