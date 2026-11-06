@@ -13,6 +13,7 @@ pnpm-debug.log*
 
 # Build and test output
 dist/
+dist-worker/
 build/
 coverage/
 .vite/

@@ -28,6 +28,7 @@ export interface Env {
   EVENT_QUEUE?: Queue<any>;
   INVENTORY_LOCK?: DurableObjectNamespace<InventoryLockDO>;
   RENTAL_WORKFLOW?: Workflow<RentalWorkflowParams>;
+  EXCHANGE_R2?: R2Bucket;
   UPLOADS_BUCKET?: R2Bucket;
   AUTH_JWT_SECRET?: string;
   API_PREFIX?: string;
@@ -467,6 +468,7 @@ async function handleApi(
           edgeQueue: env.EVENT_QUEUE ? 'connected' : 'unbound',
           edgeDurableObjects: env.INVENTORY_LOCK ? 'connected' : 'unbound',
           edgeWorkflows: env.RENTAL_WORKFLOW ? 'connected' : 'unbound',
+          edgeR2: (env.EXCHANGE_R2 || env.UPLOADS_BUCKET) ? 'connected' : 'ready (awaiting dashboard bucket activation)',
           timestamp: new Date().toISOString(),
         },
       },
@@ -636,7 +638,7 @@ async function handleApi(
   }
 
   // 4. Listing Details
-  if (path.startsWith('/listings/') && !path.includes('/units') && !path.includes('/facets')) {
+  if (path.startsWith('/listings/') && !path.includes('/units') && !path.includes('/facets') && !path.includes('/images')) {
     const listingId = path.replace('/listings/', '');
     try {
       const listing = await withDb(env, ctx, async (client) => {
@@ -1988,6 +1990,351 @@ async function handleApi(
     return jsonResponse({ data: { queued: true, type: eventType, queue: 'exchange-events' } }, 202, cors);
   }
 
+  // 17. Cloudflare R2 Media & Uploads Subsystem
+  const ALLOWED_MEDIA_TYPES: Record<string, string> = {
+    'image/jpeg': '.jpg',
+    'image/jpg': '.jpg',
+    'image/png': '.png',
+    'image/webp': '.webp',
+    'image/avif': '.avif',
+    'image/gif': '.gif',
+    'video/mp4': '.mp4',
+    'video/webm': '.webm',
+    'video/quicktime': '.mov',
+    'video/ogg': '.ogv',
+  };
+
+  // Upload endpoint (POST /uploads or POST /media/upload)
+  if ((path === '/uploads' || path === '/media/upload') && method === 'POST') {
+    try {
+      const auth = extractBearerUser(request, jwtSecret);
+      const contentTypeHeader = (request.headers.get('content-type') || '').toLowerCase();
+      let buffer: Uint8Array;
+      let mime = '';
+      let originalName = 'upload';
+
+      if (contentTypeHeader.includes('application/json')) {
+        const body = (await request.json().catch(() => ({}))) as any;
+        const { fileData, fileName, mimeType: providedMime } = body || {};
+        if (!fileData || typeof fileData !== 'string') {
+          return jsonResponse(
+            { error: { message: 'fileData (base64 string or data URL) is required', code: 'INVALID_INPUT' } },
+            400,
+            cors,
+          );
+        }
+        originalName = fileName || 'upload';
+        mime = (providedMime || '').trim().toLowerCase();
+        let base64Payload = fileData;
+        const dataUrlMatch = fileData.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+        if (dataUrlMatch) {
+          mime = dataUrlMatch[1].toLowerCase();
+          base64Payload = dataUrlMatch[2];
+        }
+
+        const binaryString = atob(base64Payload);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        buffer = bytes;
+      } else if (contentTypeHeader.includes('multipart/form-data')) {
+        const formData = await request.formData();
+        const file = formData.get('file') || formData.get('image') || formData.get('media');
+        if (!file || typeof file === 'string') {
+          return jsonResponse({ error: { message: 'No file found in multipart upload', code: 'INVALID_INPUT' } }, 400, cors);
+        }
+        const fileBlob = file as File;
+        originalName = fileBlob.name || 'upload';
+        mime = fileBlob.type.toLowerCase();
+        buffer = new Uint8Array(await fileBlob.arrayBuffer());
+      } else {
+        // Raw binary payload
+        mime = contentTypeHeader.split(';')[0].trim().toLowerCase();
+        buffer = new Uint8Array(await request.arrayBuffer());
+      }
+
+      if (!mime || !ALLOWED_MEDIA_TYPES[mime]) {
+        return jsonResponse(
+          {
+            error: {
+              message: `Unsupported file type "${mime}". Allowed types: ${Object.keys(ALLOWED_MEDIA_TYPES).join(', ')}`,
+              code: 'UNSUPPORTED_MEDIA_TYPE',
+            },
+          },
+          400,
+          cors,
+        );
+      }
+
+      const isVideo = mime.startsWith('video/');
+      const maxSizeBytes = isVideo ? 60 * 1024 * 1024 : 15 * 1024 * 1024;
+      if (buffer.byteLength > maxSizeBytes) {
+        return jsonResponse(
+          {
+            error: {
+              message: `File size ${buffer.byteLength} bytes exceeds the ${isVideo ? '60MB' : '15MB'} limit`,
+              code: 'FILE_TOO_LARGE',
+            },
+          },
+          400,
+          cors,
+        );
+      }
+
+      const ext = ALLOWED_MEDIA_TYPES[mime] || (isVideo ? '.mp4' : '.jpg');
+      const uniqueFileName = `${crypto.randomUUID()}${ext}`;
+      const bucket = env.EXCHANGE_R2 || env.UPLOADS_BUCKET;
+      let storageProvider = 'cloudflare-r2';
+
+      if (bucket) {
+        try {
+          await bucket.put(uniqueFileName, buffer, {
+            httpMetadata: {
+              contentType: mime,
+              cacheControl: 'public, max-age=31536000, immutable',
+            },
+            customMetadata: {
+              originalName,
+              uploadedBy: auth?.userId || 'anonymous',
+              sizeBytes: String(buffer.byteLength),
+              uploadedAt: new Date().toISOString(),
+            },
+          });
+        } catch (r2Err) {
+          console.warn('[R2] put failed, using KV edge cache buffer:', r2Err);
+          if (env.EXCHANGE_KV) {
+            storageProvider = 'cloudflare-kv-fallback';
+            await env.EXCHANGE_KV.put(`r2_cache:${uniqueFileName}`, buffer, {
+              metadata: { mimeType: mime, originalName, sizeBytes: buffer.byteLength },
+            });
+          } else {
+            throw r2Err;
+          }
+        }
+      } else if (env.EXCHANGE_KV) {
+        storageProvider = 'cloudflare-kv-fallback';
+        await env.EXCHANGE_KV.put(`r2_cache:${uniqueFileName}`, buffer, {
+          metadata: { mimeType: mime, originalName, sizeBytes: buffer.byteLength },
+        });
+      } else {
+        return jsonResponse(
+          {
+            error: {
+              message: 'Storage backend not configured. Enable R2 in Cloudflare Dashboard.',
+              code: 'STORAGE_UNAVAILABLE',
+            },
+          },
+          503,
+          cors,
+        );
+      }
+
+      const host = request.headers.get('host') || 'exchnage-souvik.souvikmn55.workers.dev';
+      const protocol = url.protocol || 'https:';
+      const publicUrl = `${protocol}//${host}/uploads/${uniqueFileName}`;
+
+      return jsonResponse(
+        {
+          data: {
+            url: publicUrl,
+            fileName: uniqueFileName,
+            objectKey: uniqueFileName,
+            mimeType: mime,
+            sizeBytes: buffer.byteLength,
+            mediaType: isVideo ? 'video' : 'image',
+            storageProvider,
+          },
+        },
+        201,
+        cors,
+      );
+    } catch (err: any) {
+      console.error('[Uploads] Error:', err);
+      return jsonResponse({ error: { message: err.message, code: 'UPLOAD_FAILED' } }, 500, cors);
+    }
+  }
+
+  // Media listing endpoint (GET /media)
+  if (path === '/media' && method === 'GET') {
+    const bucket = env.EXCHANGE_R2 || env.UPLOADS_BUCKET;
+    if (bucket) {
+      const prefix = url.searchParams.get('prefix') || undefined;
+      const cursor = url.searchParams.get('cursor') || undefined;
+      const limit = Math.min(Number(url.searchParams.get('limit')) || 20, 100);
+      const listed = await bucket.list({ prefix, cursor, limit });
+      return jsonResponse(
+        {
+          data: listed.objects.map((o) => ({
+            key: o.key,
+            sizeBytes: o.size,
+            etag: o.etag,
+            uploadedAt: o.uploaded.toISOString(),
+            httpMetadata: o.httpMetadata,
+            customMetadata: o.customMetadata,
+            url: `${url.protocol}//${request.headers.get('host') || ''}/uploads/${o.key}`,
+          })),
+          pagination: {
+            cursor: listed.truncated ? (listed as any).cursor : null,
+            truncated: listed.truncated,
+          },
+        },
+        200,
+        cors,
+      );
+    } else if (env.EXCHANGE_KV) {
+      const listed = await env.EXCHANGE_KV.list({ prefix: 'r2_cache:', limit: 20 });
+      return jsonResponse(
+        {
+          data: listed.keys.map((k) => ({
+            key: k.name.replace(/^r2_cache:/, ''),
+            metadata: k.metadata,
+            storageProvider: 'cloudflare-kv-fallback',
+            url: `${url.protocol}//${request.headers.get('host') || ''}/uploads/${k.name.replace(/^r2_cache:/, '')}`,
+          })),
+          pagination: {
+            cursor: listed.list_complete ? null : listed.cursor,
+            truncated: !listed.list_complete,
+          },
+        },
+        200,
+        cors,
+      );
+    }
+    return jsonResponse({ data: [], message: 'Storage not yet provisioned' }, 200, cors);
+  }
+
+  // Media single object retrieval (GET /media/:key or GET /uploads/:key)
+  if ((path.startsWith('/media/') || path.startsWith('/uploads/')) && method === 'GET') {
+    const key = path.replace(/^\/(media|uploads)\//, '');
+    const bucket = env.EXCHANGE_R2 || env.UPLOADS_BUCKET;
+    if (bucket) {
+      try {
+        const object = await bucket.get(key);
+        if (object) {
+          const headers = new Headers();
+          object.writeHttpMetadata(headers);
+          headers.set('etag', object.httpEtag);
+          headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+          headers.set('X-Media-Source', 'cloudflare-r2');
+          return new Response(object.body, { headers });
+        }
+      } catch (err) {
+        console.warn('[Media] R2 get error:', err);
+      }
+    }
+    if (env.EXCHANGE_KV) {
+      const { value, metadata } = await env.EXCHANGE_KV.getWithMetadata<{ mimeType?: string }>(
+        `r2_cache:${key}`,
+        { type: 'arrayBuffer' },
+      );
+      if (value) {
+        const headers = new Headers();
+        headers.set('Content-Type', metadata?.mimeType || 'image/jpeg');
+        headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+        headers.set('X-Media-Source', 'cloudflare-kv-fallback');
+        return new Response(value, { headers });
+      }
+    }
+    return jsonResponse({ error: { message: `Media object "${key}" not found`, code: 'NOT_FOUND' } }, 404, cors);
+  }
+
+  // Media deletion endpoint (DELETE /media/:key or DELETE /uploads/:key)
+  if ((path.startsWith('/media/') || path.startsWith('/uploads/')) && method === 'DELETE') {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+    const key = path.replace(/^\/(media|uploads)\//, '');
+    const bucket = env.EXCHANGE_R2 || env.UPLOADS_BUCKET;
+    if (bucket) {
+      await bucket.delete(key);
+    }
+    if (env.EXCHANGE_KV) {
+      await env.EXCHANGE_KV.delete(`r2_cache:${key}`);
+    }
+    return new Response(null, { status: 204, headers: cors });
+  }
+
+  // 18. Listing Images Management
+  if (path.match(/^\/listings\/[^/]+\/images$/) && method === 'POST') {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+    const match = path.match(/^\/listings\/([^/]+)\/images$/);
+    const listingId = match ? match[1] : '';
+    const body = (await request.json().catch(() => ({}))) as any;
+    const { objectKey, mimeType, sizeBytes, isPrimary } = body || {};
+
+    if (!objectKey) {
+      return jsonResponse({ error: { message: 'objectKey is required', code: 'INVALID_INPUT' } }, 400, cors);
+    }
+
+    try {
+      const newImage = await withDb(env, ctx, async (client) => {
+        const listingRes = await client.query('SELECT owner_user_id, listing_status FROM listings WHERE id::text = $1', [listingId]);
+        if (listingRes.rowCount === 0) {
+          throw new Error('Listing not found');
+        }
+        if (listingRes.rows[0].owner_user_id !== auth.userId && auth.role !== 'admin') {
+          throw new Error('Only the listing owner can add images');
+        }
+        if (listingRes.rows[0].listing_status === 'retired') {
+          throw new Error('Retired listings cannot accept images');
+        }
+
+        if (isPrimary === true) {
+          await client.query('UPDATE listing_images SET is_primary = false WHERE listing_id::text = $1', [listingId]);
+        }
+
+        const imgId = crypto.randomUUID();
+        const insertRes = await client.query(
+          `INSERT INTO listing_images (id, listing_id, object_key, mime_type, size_bytes, visibility, is_primary, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, 'public', $6, NOW(), NOW())
+           RETURNING id, listing_id AS "listingId", object_key AS "objectKey", mime_type AS "mimeType", size_bytes AS "sizeBytes", is_primary AS "isPrimary", created_at AS "createdAt"`,
+          [imgId, listingId, objectKey, mimeType || 'image/jpeg', Number(sizeBytes) || 250000, isPrimary === true],
+        );
+        return insertRes.rows[0];
+      });
+
+      return jsonResponse({ data: newImage }, 201, cors);
+    } catch (err: any) {
+      console.error('[ListingImages] Add error:', err);
+      const statusCode = err.message.includes('not found') ? 404 : err.message.includes('owner') ? 403 : 500;
+      return jsonResponse({ error: { message: err.message, code: 'IMAGE_ADD_FAILED' } }, statusCode, cors);
+    }
+  }
+
+  if (path.match(/^\/listings\/[^/]+\/images\/[^/]+$/) && method === 'DELETE') {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+    const match = path.match(/^\/listings\/([^/]+)\/images\/([^/]+)$/);
+    const listingId = match ? match[1] : '';
+    const imageId = match ? match[2] : '';
+
+    try {
+      await withDb(env, ctx, async (client) => {
+        const listingRes = await client.query('SELECT owner_user_id FROM listings WHERE id::text = $1', [listingId]);
+        if (listingRes.rowCount === 0) {
+          throw new Error('Listing not found');
+        }
+        if (listingRes.rows[0].owner_user_id !== auth.userId && auth.role !== 'admin') {
+          throw new Error('Unauthorized');
+        }
+        await client.query('DELETE FROM listing_images WHERE id::text = $1 AND listing_id::text = $2', [imageId, listingId]);
+      });
+
+      return new Response(null, { status: 204, headers: cors });
+    } catch (err: any) {
+      console.error('[ListingImages] Delete error:', err);
+      const statusCode = err.message.includes('not found') ? 404 : err.message.includes('Unauthorized') ? 403 : 500;
+      return jsonResponse({ error: { message: err.message, code: 'IMAGE_DELETE_FAILED' } }, statusCode, cors);
+    }
+  }
+
   // Fallback for unhandled API endpoints
   return jsonResponse(
     {
@@ -2025,17 +2372,56 @@ export default {
       return handleApi(request, env, ctx, url, cors);
     }
 
-    // 2. Uploaded image retrieval from R2 (if configured)
-    if (url.pathname.startsWith('/uploads/') && env.UPLOADS_BUCKET) {
+    // 2. Uploaded image retrieval from R2 or Edge KV Cache
+    if (url.pathname.startsWith('/uploads/')) {
       const key = url.pathname.replace(/^\/uploads\//, '');
-      const object = await env.UPLOADS_BUCKET.get(key);
-      if (object) {
-        const headers = new Headers();
-        object.writeHttpMetadata(headers);
-        headers.set('etag', object.httpEtag);
-        headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-        return new Response(object.body, { headers });
+      const bucket = env.EXCHANGE_R2 || env.UPLOADS_BUCKET;
+      if (bucket) {
+        try {
+          const object = await bucket.get(key);
+          if (object) {
+            const headers = new Headers();
+            object.writeHttpMetadata(headers);
+            headers.set('etag', object.httpEtag);
+            headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+            headers.set('X-Media-Source', 'cloudflare-r2');
+            return new Response(object.body, { headers });
+          }
+        } catch (err) {
+          console.warn('[R2] Object retrieval error:', err);
+        }
       }
+
+      // KV Fallback Cache
+      if (env.EXCHANGE_KV) {
+        try {
+          const { value, metadata } = await env.EXCHANGE_KV.getWithMetadata<{ mimeType?: string }>(
+            `r2_cache:${key}`,
+            { type: 'arrayBuffer' },
+          );
+          if (value) {
+            const headers = new Headers();
+            headers.set('Content-Type', metadata?.mimeType || 'image/jpeg');
+            headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+            headers.set('X-Media-Source', 'cloudflare-kv-fallback');
+            return new Response(value, { headers });
+          }
+        } catch (err) {
+          console.warn('[KV] Media retrieval error:', err);
+        }
+      }
+
+      // If media object is not found, return 404 directly rather than falling through to SPA HTML
+      return new Response(
+        JSON.stringify({ error: { message: `Media object "${key}" not found`, code: 'NOT_FOUND' } }),
+        {
+          status: 404,
+          headers: {
+            'Content-Type': 'application/json',
+            ...cors,
+          },
+        },
+      );
     }
 
     // 3. Cloudflare Workers Static Assets (React 19 SPA)

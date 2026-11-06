@@ -25,6 +25,13 @@
       "id": "1696f5ff60834a79875234539dd39cd2"
     }
   ],
+  // Note: To activate R2 bucket binding once enabled in Cloudflare Dashboard:
+  // "r2_buckets": [
+  //   {
+  //     "binding": "EXCHANGE_R2",
+  //     "bucket_name": "exchange-media"
+  //   }
+  // ],
   "queues": {
     "producers": [
       {
