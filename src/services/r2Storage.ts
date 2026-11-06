@@ -109,3 +109,4 @@ export async function deleteMediaObject(env: Env, key: string): Promise<void> {
     await env.EXCHANGE_KV.delete(`r2_cache:${key}`);
   }
 }
+

@@ -1,3 +1,4 @@
+import { requireJwtSecret } from '../../types';
 import type { Env } from '../../types';
 import { jsonResponse } from '../../types';
 import { withDb } from '../../services/db';
@@ -12,7 +13,7 @@ export async function handleListingsRoutes(
   cors: Record<string, string>,
   url: URL,
 ): Promise<Response | null> {
-  const jwtSecret = env.AUTH_JWT_SECRET || 'exchnage_default_production_jwt_secret_min32';
+  const jwtSecret = requireJwtSecret(env);
 
   // 1. Listings Catalog
   if (path === '/listings' && method === 'GET') {
@@ -272,3 +273,4 @@ export async function handleListingsRoutes(
 
   return null;
 }
+

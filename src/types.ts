@@ -98,3 +98,10 @@ export function emitQueueEvent(
     }).catch((err) => console.error('[QueueProducer] Failed to send event:', err)),
   );
 }
+
+// Fail closed: a missing/weak secret must never fall back to a guessable default (token forgery).
+export function requireJwtSecret(env: Env): string {
+  const secret = env.AUTH_JWT_SECRET;
+  if (!secret || secret.length < 32) throw new Error('AUTH_JWT_SECRET is not configured');
+  return secret;
+}

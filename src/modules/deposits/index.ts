@@ -1,3 +1,4 @@
+import { requireJwtSecret } from '../../types';
 import type { Env } from '../../types';
 import { jsonResponse } from '../../types';
 import { withDb } from '../../services/db';
@@ -11,7 +12,7 @@ export async function handleDepositsRoutes(
   method: string,
   cors: Record<string, string>,
 ): Promise<Response | null> {
-  const jwtSecret = env.AUTH_JWT_SECRET || 'exchnage_default_production_jwt_secret_min32';
+  const jwtSecret = requireJwtSecret(env);
 
   if (path.startsWith('/deposits/bookings/') && method === 'GET') {
     const bookingId = path.replace('/deposits/bookings/', '');
@@ -47,3 +48,4 @@ export async function handleDepositsRoutes(
 
   return null;
 }
+

@@ -100,3 +100,4 @@ export function extractBearerUser(request: Request, secret: string): AuthUser | 
 export function hashToken(token: string, secret: string): string {
   return createHmac('sha256', secret).update(token).digest('hex');
 }
+

@@ -231,6 +231,18 @@ export default {
           console.log(`[QueueConsumer:Logistics] Prepared courier dispatch notification for booking ${event.payload?.bookingId}`);
         } else if (event.type === 'ORDER_PLACED') {
           console.log(`[QueueConsumer:Fulfillment] Prepared packaging notification for order ${event.payload?.orderId}`);
+        } else if (event.type === 'RENTAL_DISPATCH_REQUESTED') {
+          console.log(`[QueueConsumer:Logistics] Courier pickup requested for booking ${event.payload?.bookingId}`);
+        } else if (event.type === 'RENTAL_RETURN_REMINDER') {
+          // ponytail: no SMS/email provider wired yet; audit row above is the record. Plug the sender in here.
+          console.log(`[QueueConsumer:Notify] Return reminder for booking ${event.payload?.bookingId} (due ${event.payload?.returnDate})`);
+        } else if (event.type === 'RENTAL_INSPECTION_OVERDUE') {
+          console.warn(`[QueueConsumer:Ops] Inspection overdue for booking ${event.payload?.bookingId}; deposit still held`);
+        } else if (event.type === 'DEPOSIT_SETTLED') {
+          console.log(
+            `[QueueConsumer:Finance] Booking ${event.payload?.bookingId} deposit ${event.payload?.depositStatus}: ` +
+              `refund ${event.payload?.refundPaise} paise, deduction ${event.payload?.deductionPaise} paise`,
+          );
         }
 
         message.ack();

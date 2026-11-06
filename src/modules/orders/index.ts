@@ -1,3 +1,4 @@
+import { requireJwtSecret } from '../../types';
 import type { Env } from '../../types';
 import { jsonResponse, emitQueueEvent } from '../../types';
 import { withDb } from '../../services/db';
@@ -12,7 +13,7 @@ export async function handleOrdersRoutes(
   method: string,
   cors: Record<string, string>,
 ): Promise<Response | null> {
-  const jwtSecret = env.AUTH_JWT_SECRET || 'exchnage_default_production_jwt_secret_min32';
+  const jwtSecret = requireJwtSecret(env);
 
   // 1. Sales Orders - Creation (Pre-loved Resale Purchases)
   if (path === '/orders' && method === 'POST') {
@@ -148,3 +149,4 @@ export async function handleOrdersRoutes(
 
   return null;
 }
+

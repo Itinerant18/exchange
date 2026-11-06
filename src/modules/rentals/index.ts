@@ -1,3 +1,4 @@
+import { requireJwtSecret } from '../../types';
 import type { Env } from '../../types';
 import { jsonResponse, emitQueueEvent } from '../../types';
 import { withDb } from '../../services/db';
@@ -14,7 +15,7 @@ export async function handleRentalsRoutes(
   cors: Record<string, string>,
   url: URL,
 ): Promise<Response | null> {
-  const jwtSecret = env.AUTH_JWT_SECRET || 'exchnage_default_production_jwt_secret_min32';
+  const jwtSecret = requireJwtSecret(env);
 
   // 1. Availability Check
   if (path === '/rentals/availability' && method === 'GET') {
@@ -487,7 +488,7 @@ export async function handleRentalsRoutes(
       let workflowInstanceId: string | null = null;
       if (env.RENTAL_WORKFLOW && bookingDetails) {
         try {
-          workflowInstanceId = `wf-${bookingDetails.id}-${Date.now()}`;
+          workflowInstanceId = `rental-${bookingDetails.id}`; // one lifecycle per booking
           await env.RENTAL_WORKFLOW.create({
             id: workflowInstanceId,
             params: {
@@ -511,6 +512,78 @@ export async function handleRentalsRoutes(
       );
     } catch (err: any) {
       return jsonResponse({ error: { message: err.message, code: 'ACCEPT_FAILED' } }, 400, cors);
+    }
+  }
+
+  // 6b. Return Inspection (listing owner or admin). The lifecycle workflow settles the deposit from this row.
+  if (path.match(/^\/rentals\/bookings\/[^/]+\/inspection$/) && method === 'POST') {
+    const bookingId = path.split('/')[3];
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    const body = (await request.json().catch(() => ({}))) as {
+      result?: string;
+      notes?: string;
+      evidenceUrls?: unknown;
+      estimatedRecoveryPaise?: unknown;
+    };
+    const result = body.result;
+    const recovery = body.estimatedRecoveryPaise;
+    const evidence = Array.isArray(body.evidenceUrls) ? body.evidenceUrls.filter((u) => typeof u === 'string') : [];
+    if (result !== 'pass' && result !== 'damage' && result !== 'missing') {
+      return jsonResponse({ error: { message: "result must be 'pass', 'damage' or 'missing'", code: 'INVALID_INPUT' } }, 400, cors);
+    }
+    if (result !== 'pass' && !(Number.isSafeInteger(recovery) && (recovery as number) > 0)) {
+      return jsonResponse(
+        { error: { message: 'estimatedRecoveryPaise (positive integer) is required for damage/missing', code: 'INVALID_INPUT' } },
+        400,
+        cors,
+      );
+    }
+
+    try {
+      const outcome = await withDb(env, ctx, async (client) => {
+        const b = (
+          await client.query(
+            `SELECT b.id, b.status, l.owner_user_id FROM rental_bookings b
+             JOIN listings l ON l.id = b.rental_listing_id WHERE b.id::text = $1`,
+            [bookingId],
+          )
+        ).rows[0];
+        if (!b) return 'NOT_FOUND';
+        if (b.owner_user_id !== auth.userId && auth.role !== 'admin') return 'FORBIDDEN';
+        if (b.status !== 'active') return 'NOT_ACTIVE';
+        const ins = await client.query(
+          `INSERT INTO return_inspections (rental_booking_id, inspected_by_user_id, result, notes, evidence_urls, estimated_recovery_paise)
+           VALUES ($1, $2, $3, $4, $5::jsonb, $6) ON CONFLICT (rental_booking_id) DO NOTHING`,
+          [b.id, auth.userId, result, body.notes ?? null, JSON.stringify(evidence), result === 'pass' ? null : String(recovery)],
+        );
+        if (!ins.rowCount) return 'EXISTS';
+        await client.query(
+          `UPDATE rental_bookings SET actual_return_date = COALESCE(actual_return_date, GREATEST(CURRENT_DATE, start_date)), updated_at = now()
+           WHERE id = $1`,
+          [b.id],
+        );
+        return 'OK';
+      });
+
+      const failures: Record<string, [number, string]> = {
+        NOT_FOUND: [404, 'Booking not found'],
+        FORBIDDEN: [403, 'Only the listing owner or an admin can record an inspection'],
+        NOT_ACTIVE: [409, 'Inspection can only be recorded for an active rental'],
+        EXISTS: [409, 'Inspection already recorded for this booking'],
+      };
+      if (outcome !== 'OK') {
+        const [status, message] = failures[outcome];
+        return jsonResponse({ error: { message, code: outcome } }, status, cors);
+      }
+
+      emitQueueEvent(env, ctx, 'RENTAL_INSPECTION_RECORDED', { bookingId, userId: auth.userId, result });
+      return jsonResponse({ data: { bookingId, result, recorded: true } }, 201, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'INSPECTION_FAILED' } }, 500, cors);
     }
   }
 
@@ -542,7 +615,7 @@ export async function handleRentalsRoutes(
         return jsonResponse({ error: { message: 'Booking not found or unauthorized', code: 'NOT_FOUND' } }, 404, cors);
       }
 
-      const instanceId = `rental-wf-${booking.id}-${Date.now()}`;
+      const instanceId = `rental-${booking.id}`; // create() throws if one already exists
       const instance = await env.RENTAL_WORKFLOW.create({
         id: instanceId,
         params: {
@@ -567,7 +640,7 @@ export async function handleRentalsRoutes(
       return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
     }
 
-    const instanceId = url.searchParams.get('instanceId') || `wf-${bookingId}`;
+    const instanceId = url.searchParams.get('instanceId') || `rental-${bookingId}`;
     if (!env.RENTAL_WORKFLOW) {
       return jsonResponse({ error: { message: 'Workflows unavailable', code: 'UNAVAILABLE' } }, 503, cors);
     }
@@ -583,3 +656,4 @@ export async function handleRentalsRoutes(
 
   return null;
 }
+

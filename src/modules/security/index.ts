@@ -1,3 +1,4 @@
+import { requireJwtSecret } from '../../types';
 import type { Env } from '../../types';
 import { jsonResponse, emitQueueEvent } from '../../types';
 import { extractBearerUser } from '../../middleware/auth';
@@ -11,7 +12,7 @@ export async function handleSecurityRoutes(
   method: string,
   cors: Record<string, string>,
 ): Promise<Response | null> {
-  const jwtSecret = env.AUTH_JWT_SECRET || 'exchnage_default_production_jwt_secret_min32';
+  const jwtSecret = requireJwtSecret(env);
 
   // 1. Events Test Dispatcher
   if (path === '/events/test' && method === 'POST') {
@@ -54,3 +55,4 @@ export async function handleSecurityRoutes(
 
   return null;
 }
+

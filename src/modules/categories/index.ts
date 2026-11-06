@@ -67,3 +67,4 @@ export async function handleCategoriesRoutes(
 
   return null;
 }
+

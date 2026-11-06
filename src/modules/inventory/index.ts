@@ -1,3 +1,4 @@
+import { requireJwtSecret } from '../../types';
 import type { Env } from '../../types';
 import { jsonResponse } from '../../types';
 import { withDb } from '../../services/db';
@@ -12,7 +13,7 @@ export async function handleInventoryRoutes(
   cors: Record<string, string>,
   url: URL,
 ): Promise<Response | null> {
-  const jwtSecret = env.AUTH_JWT_SECRET || 'exchnage_default_production_jwt_secret_min32';
+  const jwtSecret = requireJwtSecret(env);
 
   // 1. Inventory Items list
   if (path === '/inventory/items' && method === 'GET') {

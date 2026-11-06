@@ -1,3 +1,4 @@
+import { requireJwtSecret } from '../../types';
 import type { Env } from '../../types';
 import { jsonResponse } from '../../types';
 import { ALLOWED_MEDIA_TYPES, putMediaObject, deleteMediaObject } from '../../services/r2Storage';
@@ -12,7 +13,7 @@ export async function handleMediaRoutes(
   cors: Record<string, string>,
   url: URL,
 ): Promise<Response | null> {
-  const jwtSecret = env.AUTH_JWT_SECRET || 'exchnage_default_production_jwt_secret_min32';
+  const jwtSecret = requireJwtSecret(env);
 
   // 1. Upload endpoint (POST /uploads or POST /media/upload)
   if ((path === '/uploads' || path === '/media/upload') && method === 'POST') {
@@ -223,3 +224,4 @@ export async function handleMediaRoutes(
 
   return null;
 }
+

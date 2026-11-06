@@ -1,3 +1,4 @@
+import { requireJwtSecret } from '../../types';
 import type { Env } from '../../types';
 import { jsonResponse } from '../../types';
 import { withDb } from '../../services/db';
@@ -14,7 +15,7 @@ export async function handleAuthRoutes(
   method: string,
   cors: Record<string, string>,
 ): Promise<Response | null> {
-  const jwtSecret = env.AUTH_JWT_SECRET || 'exchnage_default_production_jwt_secret_min32';
+  const jwtSecret = requireJwtSecret(env);
 
   // 1. Register
   if (path === '/auth/register' && method === 'POST') {
@@ -416,3 +417,4 @@ export async function handleAuthRoutes(
 
   return null;
 }
+

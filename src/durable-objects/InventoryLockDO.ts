@@ -69,3 +69,4 @@ export class InventoryLockDO extends DurableObject {
     return { isHeld: true, hold: holds[0] };
   }
 }
+

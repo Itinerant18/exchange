@@ -1,3 +1,4 @@
+import { requireJwtSecret } from '../../types';
 import type { Env } from '../../types';
 import { jsonResponse } from '../../types';
 import { withDb } from '../../services/db';
@@ -13,7 +14,7 @@ export async function handleReviewsRoutes(
   cors: Record<string, string>,
   url: URL,
 ): Promise<Response | null> {
-  const jwtSecret = env.AUTH_JWT_SECRET || 'exchnage_default_production_jwt_secret_min32';
+  const jwtSecret = requireJwtSecret(env);
 
   // 1. Reviews - Listing Reviews or All Reviews
   if ((path === '/reviews' || (path.startsWith('/listings/') && path.endsWith('/reviews'))) && method === 'GET') {
@@ -113,3 +114,4 @@ export async function handleReviewsRoutes(
 
   return null;
 }
+

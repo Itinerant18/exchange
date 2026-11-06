@@ -13,3 +13,4 @@ export async function withDb<T>(env: Env, ctx: ExecutionContext, fn: (client: Cl
     ctx.waitUntil(client.end());
   }
 }
+

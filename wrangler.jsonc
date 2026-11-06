@@ -80,7 +80,6 @@
     "PLATFORM_NAME": "Exchnage",
     "PLATFORM_CURRENCY": "INR",
     "PLATFORM_TIMEZONE": "Asia/Kolkata",
-    "AUTH_JWT_SECRET": "8e4952aca2775546fd924ece45df134ec1d71603407b66c00c1aaaa4c738e979e8d66292fe29f5b4ea6b71bb25a6b663",
     "TURNSTILE_SITEKEY": "0x4AAAAAAF2CZKS04qmu5moS"
   },
   "observability": {
