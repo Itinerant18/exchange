@@ -810,6 +810,837 @@ async function handleApi(
     }
   }
 
+  // 10. Rentals Availability
+  if (path === '/rentals/availability' && method === 'GET') {
+    const listingId = url.searchParams.get('listingId');
+    if (!listingId) {
+      return jsonResponse({ error: { message: 'listingId is required', code: 'INVALID_INPUT' } }, 400, cors);
+    }
+    const startDate = url.searchParams.get('startDate') || new Date().toISOString().split('T')[0];
+    const endDefault = new Date(Date.now() + 4 * 86400000).toISOString().split('T')[0];
+    const endDate = url.searchParams.get('endDate') || endDefault;
+
+    try {
+      const result = await withDb(env, ctx, async (client) => {
+        const res = await client.query(
+          `SELECT inv.id, inv.serial_or_sku AS "serialOrSku", inv.condition, inv.operational_status AS "operationalStatus"
+           FROM inventory_items inv
+           WHERE inv.listing_id::text = $1
+             AND inv.operational_status = 'AVAILABLE'
+             AND NOT EXISTS (
+               SELECT 1 FROM rental_booking_items rbi
+               WHERE rbi.inventory_item_id = inv.id
+                 AND rbi.item_status IN ('pending', 'confirmed', 'active')
+                 AND daterange(rbi.start_date, rbi.end_date, '[)') && daterange($2::date, $3::date, '[)')
+             )`,
+          [listingId, startDate, endDate],
+        );
+        return res.rows;
+      });
+
+      return jsonResponse(
+        {
+          data: {
+            listingId,
+            startDate,
+            endDate,
+            isAvailable: result.length > 0,
+            availableCount: result.length,
+            availableUnits: result,
+          },
+        },
+        200,
+        cors,
+      );
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'QUERY_ERROR' } }, 500, cors);
+    }
+  }
+
+  // 11. Rentals Bookings - Creation
+  if (path === '/rentals/bookings' && method === 'POST') {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+    const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+
+    try {
+      const body = (await request.json()) as any;
+      const { listingId, startDate, endDate, damageWaiver, backupSize } = body;
+      if (!listingId || !startDate || !endDate) {
+        return jsonResponse(
+          { error: { message: 'listingId, startDate, and endDate are required', code: 'INVALID_INPUT' } },
+          400,
+          cors,
+        );
+      }
+
+      if (endDate <= startDate) {
+        return jsonResponse(
+          { error: { message: 'endDate must be after startDate', code: 'INVALID_DATE_RANGE' } },
+          400,
+          cors,
+        );
+      }
+
+      const startMs = Date.parse(`${startDate}T00:00:00Z`);
+      const endMs = Date.parse(`${endDate}T00:00:00Z`);
+      const days = Math.round((endMs - startMs) / 86400000);
+      if (days < 1 || days > 30) {
+        return jsonResponse(
+          { error: { message: 'Rental duration must be between 1 and 30 days', code: 'INVALID_DURATION' } },
+          400,
+          cors,
+        );
+      }
+
+      const bookingResult = await withDb(env, ctx, async (client) => {
+        await client.query('BEGIN');
+        try {
+          const listingRes = await client.query(
+            `SELECT id, is_rental, rental_price_paise, deposit_paise, listing_status, owner_user_id
+             FROM listings
+             WHERE id::text = $1
+             FOR SHARE`,
+            [listingId],
+          );
+          const listing = listingRes.rows[0];
+          if (!listing || listing.listing_status !== 'active' || !listing.is_rental) {
+            throw new Error('Listing is not available for rental');
+          }
+
+          if (listing.owner_user_id === auth.userId) {
+            throw new Error('You cannot rent your own listing');
+          }
+
+          // Concurrency safe unit allocation with row-level lock
+          const unitRes = await client.query(
+            `SELECT inv.id
+             FROM inventory_items inv
+             WHERE inv.listing_id = $1
+               AND inv.operational_status = 'AVAILABLE'
+               AND NOT EXISTS (
+                 SELECT 1 FROM rental_booking_items rbi
+                 WHERE rbi.inventory_item_id = inv.id
+                   AND rbi.item_status IN ('pending', 'confirmed', 'active')
+                   AND daterange(rbi.start_date, rbi.end_date, '[)') && daterange($2::date, $3::date, '[)')
+               )
+             LIMIT 1
+             FOR UPDATE OF inv SKIP LOCKED`,
+            [listing.id, startDate, endDate],
+          );
+
+          if (unitRes.rows.length === 0) {
+            throw new Error('Selected dates are no longer available for this garment');
+          }
+          const unitId = unitRes.rows[0].id;
+
+          const ratePaise = Number(listing.rental_price_paise);
+          const subtotalPaise = ratePaise * days;
+          const depositPaise = Number(listing.deposit_paise ?? 0);
+          const wantsWaiver = Boolean(damageWaiver);
+          const waiverFeePaise = wantsWaiver ? 1250 : 0;
+          const totalPaise = subtotalPaise + depositPaise + waiverFeePaise;
+
+          const headerRes = await client.query(
+            `INSERT INTO rental_bookings (
+               renter_user_id, rental_listing_id, status, start_date, end_date,
+               subtotal_amount_paise, deposit_amount_paise, total_amount_paise, deposit_paid,
+               damage_waiver_selected, damage_waiver_fee_paise, backup_size
+             )
+             VALUES ($1, $2, 'pending', $3, $4, $5, $6, $7, false, $8, $9, $10)
+             RETURNING id, status, created_at AS "createdAt"`,
+            [
+              auth.userId,
+              listing.id,
+              startDate,
+              endDate,
+              subtotalPaise,
+              depositPaise,
+              totalPaise,
+              wantsWaiver,
+              waiverFeePaise,
+              backupSize || null,
+            ],
+          );
+          const header = headerRes.rows[0];
+
+          await client.query(
+            `INSERT INTO rental_booking_items (
+               rental_booking_id, inventory_item_id, item_status, start_date, end_date,
+               daily_rate_paise, line_total_paise, is_backup_size
+             )
+             VALUES ($1, $2, 'pending', $3, $4, $5, $6, false)`,
+            [header.id, unitId, startDate, endDate, ratePaise, subtotalPaise],
+          );
+
+          await client.query(
+            `INSERT INTO rental_booking_status_history (
+               rental_booking_id, from_status, to_status, changed_by_user_id, reason
+             )
+             VALUES ($1, NULL, 'pending', $2, 'Booking created')`,
+            [header.id, auth.userId],
+          );
+
+          await client.query('COMMIT');
+          return {
+            id: header.id,
+            status: header.status,
+            listingId: listing.id,
+            startDate,
+            endDate,
+            days,
+            subtotalPaise,
+            depositPaise,
+            damageWaiverFeePaise,
+            totalPaise,
+            createdAt: header.createdAt,
+          };
+        } catch (txErr) {
+          await client.query('ROLLBACK');
+          throw txErr;
+        }
+      });
+
+      recordEdgeAudit(env, ctx, 'RENTAL_BOOKING_CREATED', auth.userId, clientIp, {
+        bookingId: bookingResult.id,
+        listingId,
+        totalPaise: bookingResult.totalPaise,
+      });
+
+      return jsonResponse({ data: bookingResult }, 201, cors);
+    } catch (err: any) {
+      console.error('[Rentals] Create error:', err);
+      return jsonResponse({ error: { message: err.message, code: 'BOOKING_FAILED' } }, 409, cors);
+    }
+  }
+
+  // 11. Rentals Bookings - List
+  if (path === '/rentals/bookings' && method === 'GET') {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    const page = Math.max(1, parseInt(url.searchParams.get('page') || '1', 10));
+    const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
+    const offset = (page - 1) * limit;
+    const statusFilter = url.searchParams.get('status');
+
+    try {
+      const result = await withDb(env, ctx, async (client) => {
+        let sql = `
+          SELECT 
+            b.id, b.status, b.start_date AS "startDate", b.end_date AS "endDate",
+            b.subtotal_amount_paise AS "subtotalPaise",
+            b.deposit_amount_paise AS "depositPaise",
+            b.total_amount_paise AS "totalPaise",
+            b.damage_waiver_selected AS "damageWaiverSelected",
+            b.created_at AS "createdAt",
+            l.id AS "listingId", l.title AS "listingTitle", l.brand AS "listingBrand",
+            l.rental_price_paise AS "rentalPricePaise",
+            COALESCE(
+              (SELECT object_key FROM listing_images WHERE listing_id = l.id AND is_primary = true LIMIT 1),
+              ''
+            ) AS "primaryImageUrl"
+          FROM rental_bookings b
+          JOIN listings l ON l.id = b.rental_listing_id
+          WHERE (b.renter_user_id::text = $1 OR l.owner_user_id::text = $1)
+        `;
+        const params: any[] = [auth.userId];
+
+        if (statusFilter) {
+          params.push(statusFilter);
+          sql += ` AND b.status = $${params.length}`;
+        }
+
+        sql += ` ORDER BY b.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+        params.push(limit, offset);
+
+        const rowsRes = await client.query(sql, params);
+
+        const countRes = await client.query(
+          `SELECT count(*)::int AS total
+           FROM rental_bookings b
+           JOIN listings l ON l.id = b.rental_listing_id
+           WHERE (b.renter_user_id::text = $1 OR l.owner_user_id::text = $1)` +
+            (statusFilter ? ` AND b.status = $2` : ''),
+          statusFilter ? [auth.userId, statusFilter] : [auth.userId],
+        );
+
+        return { items: rowsRes.rows, total: countRes.rows[0]?.total ?? 0 };
+      });
+
+      return jsonResponse(
+        {
+          data: result.items,
+          pagination: {
+            total: result.total,
+            page,
+            limit,
+            totalPages: Math.ceil(result.total / limit),
+          },
+        },
+        200,
+        cors,
+      );
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'QUERY_ERROR' } }, 500, cors);
+    }
+  }
+
+  // 11. Rentals Bookings - Single Detail
+  if (path.startsWith('/rentals/bookings/') && !path.includes('/cancel') && !path.includes('/accept')) {
+    const bookingId = path.replace('/rentals/bookings/', '');
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    try {
+      const booking = await withDb(env, ctx, async (client) => {
+        const sql = `
+          SELECT 
+            b.id, b.status, b.start_date AS "startDate", b.end_date AS "endDate",
+            b.subtotal_amount_paise AS "subtotalPaise",
+            b.deposit_amount_paise AS "depositPaise",
+            b.total_amount_paise AS "totalPaise",
+            b.deposit_paid AS "depositPaid",
+            b.damage_waiver_selected AS "damageWaiverSelected",
+            b.backup_size AS "backupSize",
+            b.created_at AS "createdAt",
+            l.id AS "listingId", l.title AS "listingTitle", l.brand AS "listingBrand",
+            l.size AS "listingSize", l.condition AS "listingCondition",
+            l.owner_user_id AS "ownerUserId", b.renter_user_id AS "renterUserId",
+            COALESCE(
+              (
+                SELECT json_agg(json_build_object('id', img.id, 'url', img.object_key, 'isPrimary', img.is_primary))
+                FROM listing_images img
+                WHERE img.listing_id = l.id
+              ), '[]'::json
+            ) AS images,
+            COALESCE(
+              (
+                SELECT json_agg(json_build_object(
+                  'id', rbi.id, 'itemId', rbi.inventory_item_id, 'dailyRatePaise', rbi.daily_rate_paise,
+                  'lineTotalPaise', rbi.line_total_paise, 'isBackupSize', rbi.is_backup_size
+                ))
+                FROM rental_booking_items rbi
+                WHERE rbi.rental_booking_id = b.id
+              ), '[]'::json
+            ) AS items
+          FROM rental_bookings b
+          JOIN listings l ON l.id = b.rental_listing_id
+          WHERE b.id::text = $1 AND (b.renter_user_id::text = $2 OR l.owner_user_id::text = $2)
+          LIMIT 1
+        `;
+        const res = await client.query(sql, [bookingId, auth.userId]);
+        return res.rows[0];
+      });
+
+      if (!booking) {
+        return jsonResponse({ error: { message: 'Booking not found', code: 'NOT_FOUND' } }, 404, cors);
+      }
+
+      return jsonResponse({ data: booking }, 200, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'QUERY_ERROR' } }, 500, cors);
+    }
+  }
+
+  // 11. Rentals Bookings - Cancel
+  if (path.match(/^\/rentals\/bookings\/[^/]+\/cancel$/) && method === 'POST') {
+    const bookingId = path.split('/')[3];
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    try {
+      await withDb(env, ctx, async (client) => {
+        await client.query('BEGIN');
+        const check = await client.query(
+          `SELECT b.id, b.status, b.renter_user_id, l.owner_user_id
+           FROM rental_bookings b
+           JOIN listings l ON l.id = b.rental_listing_id
+           WHERE b.id::text = $1 FOR UPDATE`,
+          [bookingId],
+        );
+        const b = check.rows[0];
+        if (!b) throw new Error('Booking not found');
+        if (b.renter_user_id !== auth.userId && b.owner_user_id !== auth.userId) {
+          throw new Error('Not authorized to cancel this booking');
+        }
+        if (b.status !== 'pending' && b.status !== 'confirmed') {
+          throw new Error(`Cannot cancel booking in ${b.status} state`);
+        }
+
+        await client.query(`UPDATE rental_bookings SET status = 'cancelled' WHERE id = $1`, [b.id]);
+        await client.query(`UPDATE rental_booking_items SET item_status = 'cancelled' WHERE rental_booking_id = $1`, [b.id]);
+        await client.query(
+          `INSERT INTO rental_booking_status_history (rental_booking_id, from_status, to_status, changed_by_user_id, reason)
+           VALUES ($1, $2, 'cancelled', $3, 'User cancelled booking')`,
+          [b.id, b.status, auth.userId],
+        );
+        await client.query('COMMIT');
+      });
+
+      recordEdgeAudit(env, ctx, 'RENTAL_BOOKING_CANCELLED', auth.userId, request.headers.get('CF-Connecting-IP'), {
+        bookingId,
+      });
+
+      return jsonResponse({ data: { success: true, status: 'cancelled' } }, 200, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'CANCEL_FAILED' } }, 400, cors);
+    }
+  }
+
+  // 11. Rentals Bookings - Accept (Owner)
+  if (path.match(/^\/rentals\/bookings\/[^/]+\/accept$/) && method === 'POST') {
+    const bookingId = path.split('/')[3];
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    try {
+      await withDb(env, ctx, async (client) => {
+        await client.query('BEGIN');
+        const check = await client.query(
+          `SELECT b.id, b.status, l.owner_user_id
+           FROM rental_bookings b
+           JOIN listings l ON l.id = b.rental_listing_id
+           WHERE b.id::text = $1 FOR UPDATE`,
+          [bookingId],
+        );
+        const b = check.rows[0];
+        if (!b) throw new Error('Booking not found');
+        if (b.owner_user_id !== auth.userId) {
+          throw new Error('Only the listing owner can accept this booking');
+        }
+        if (b.status !== 'pending') {
+          throw new Error(`Cannot accept booking in ${b.status} state`);
+        }
+
+        await client.query(`UPDATE rental_bookings SET status = 'confirmed' WHERE id = $1`, [b.id]);
+        await client.query(`UPDATE rental_booking_items SET item_status = 'confirmed' WHERE rental_booking_id = $1`, [b.id]);
+        await client.query(
+          `INSERT INTO rental_booking_status_history (rental_booking_id, from_status, to_status, changed_by_user_id, reason)
+           VALUES ($1, 'pending', 'confirmed', $2, 'Owner accepted booking')`,
+          [b.id, auth.userId],
+        );
+        await client.query('COMMIT');
+      });
+
+      recordEdgeAudit(env, ctx, 'RENTAL_BOOKING_ACCEPTED', auth.userId, request.headers.get('CF-Connecting-IP'), {
+        bookingId,
+      });
+
+      return jsonResponse({ data: { success: true, status: 'confirmed' } }, 200, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'ACCEPT_FAILED' } }, 400, cors);
+    }
+  }
+
+  // 12. Sales Orders - Creation (Pre-loved Resale Purchases)
+  if (path === '/orders' && method === 'POST') {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    try {
+      const body = (await request.json()) as any;
+      const { listingId } = body;
+      if (!listingId) {
+        return jsonResponse({ error: { message: 'listingId is required', code: 'INVALID_INPUT' } }, 400, cors);
+      }
+
+      const orderResult = await withDb(env, ctx, async (client) => {
+        await client.query('BEGIN');
+        try {
+          const listingRes = await client.query(
+            `SELECT id, is_sale, sale_price_paise, listing_status, owner_user_id
+             FROM listings WHERE id::text = $1 FOR SHARE`,
+            [listingId],
+          );
+          const listing = listingRes.rows[0];
+          if (!listing || listing.listing_status !== 'active' || !listing.is_sale) {
+            throw new Error('Listing is not available for sale');
+          }
+
+          if (listing.owner_user_id === auth.userId) {
+            throw new Error('You cannot buy your own listing');
+          }
+
+          // Allocate physical unit
+          const unitRes = await client.query(
+            `SELECT inv.id FROM inventory_items inv
+             WHERE inv.listing_id = $1 AND inv.operational_status = 'AVAILABLE'
+               AND NOT EXISTS (
+                 SELECT 1 FROM order_items oi WHERE oi.inventory_item_id = inv.id AND oi.status IN ('pending', 'paid')
+               )
+             LIMIT 1 FOR UPDATE OF inv SKIP LOCKED`,
+            [listing.id],
+          );
+
+          if (unitRes.rows.length === 0) {
+            throw new Error('No units available for sale');
+          }
+          const unitId = unitRes.rows[0].id;
+          const salePricePaise = Number(listing.sale_price_paise);
+
+          const orderInsert = await client.query(
+            `INSERT INTO orders (buyer_user_id, status, total_amount_paise)
+             VALUES ($1, 'paid', $2)
+             RETURNING id, status, total_amount_paise AS "totalPaise", created_at AS "createdAt"`,
+            [auth.userId, salePricePaise],
+          );
+          const order = orderInsert.rows[0];
+
+          await client.query(
+            `INSERT INTO order_items (order_id, inventory_item_id, listing_id, unit_price_paise, status)
+             VALUES ($1, $2, $3, $4, 'paid')`,
+            [order.id, unitId, listing.id, salePricePaise],
+          );
+
+          await client.query(
+            `UPDATE inventory_items SET operational_status = 'SOLD' WHERE id = $1`,
+            [unitId],
+          );
+
+          await client.query('COMMIT');
+          return order;
+        } catch (txErr) {
+          await client.query('ROLLBACK');
+          throw txErr;
+        }
+      });
+
+      recordEdgeAudit(env, ctx, 'SALE_ORDER_CREATED', auth.userId, request.headers.get('CF-Connecting-IP'), {
+        orderId: orderResult.id,
+        listingId,
+        totalPaise: orderResult.totalPaise,
+      });
+
+      return jsonResponse({ data: orderResult }, 201, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'ORDER_FAILED' } }, 409, cors);
+    }
+  }
+
+  // 12. Sales Orders - List
+  if (path === '/orders' && method === 'GET') {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    try {
+      const orders = await withDb(env, ctx, async (client) => {
+        const sql = `
+          SELECT 
+            o.id, o.status, o.total_amount_paise AS "totalPaise", o.created_at AS "createdAt",
+            COALESCE(
+              (
+                SELECT json_agg(json_build_object(
+                  'id', oi.id, 'listingId', l.id, 'listingTitle', l.title,
+                  'unitPricePaise', oi.unit_price_paise, 'brand', l.brand,
+                  'primaryImageUrl', COALESCE((SELECT object_key FROM listing_images WHERE listing_id = l.id AND is_primary = true LIMIT 1), '')
+                ))
+                FROM order_items oi
+                JOIN listings l ON l.id = oi.listing_id
+                WHERE oi.order_id = o.id
+              ), '[]'::json
+            ) AS items
+          FROM orders o
+          WHERE o.buyer_user_id::text = $1
+          ORDER BY o.created_at DESC
+        `;
+        const res = await client.query(sql, [auth.userId]);
+        return res.rows;
+      });
+
+      return jsonResponse({ data: orders }, 200, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'QUERY_ERROR' } }, 500, cors);
+    }
+  }
+
+  // 13. Reviews - Listing Reviews or All Reviews
+  if ((path === '/reviews' || path.startsWith('/listings/') && path.endsWith('/reviews')) && method === 'GET') {
+    let listingId = url.searchParams.get('listingId');
+    if (path.startsWith('/listings/') && path.endsWith('/reviews')) {
+      listingId = path.replace('/listings/', '').replace('/reviews', '');
+    }
+
+    try {
+      const reviews = await withDb(env, ctx, async (client) => {
+        let sql = `
+          SELECT 
+            r.id, r.rating, r.comment, r.photos, r.status, r.created_at AS "createdAt",
+            p.display_name AS "reviewerName", p.avatar_url AS "reviewerAvatar"
+          FROM reviews r
+          JOIN users u ON u.id = r.reviewer_user_id
+          LEFT JOIN user_profiles p ON p.user_id = u.id
+          WHERE r.status = 'published'
+        `;
+        const params: any[] = [];
+        if (listingId) {
+          sql += ` AND (
+            r.qualifying_rental_booking_id IN (SELECT id FROM rental_bookings WHERE rental_listing_id::text = $1)
+            OR r.qualifying_order_id IN (SELECT order_id FROM order_items WHERE listing_id::text = $1)
+          )`;
+          params.push(listingId);
+        }
+        sql += ` ORDER BY r.created_at DESC LIMIT 50`;
+        const res = await client.query(sql, params);
+        return res.rows;
+      });
+
+      return jsonResponse({ data: reviews }, 200, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'QUERY_ERROR' } }, 500, cors);
+    }
+  }
+
+  // 13. Reviews - Submit Review
+  if (path === '/reviews' && method === 'POST') {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    try {
+      const body = (await request.json()) as any;
+      const { revieweeUserId, rentalBookingId, orderId, rating, comment, photos } = body;
+      const numRating = Number(rating);
+
+      if (!numRating || numRating < 1 || numRating > 5) {
+        return jsonResponse({ error: { message: 'Rating must be an integer between 1 and 5', code: 'INVALID_INPUT' } }, 400, cors);
+      }
+
+      if (!revieweeUserId || revieweeUserId === auth.userId) {
+        return jsonResponse({ error: { message: 'Self-review is not allowed', code: 'SELF_REVIEW' } }, 400, cors);
+      }
+
+      if ((!rentalBookingId && !orderId) || (rentalBookingId && orderId)) {
+        return jsonResponse({ error: { message: 'Exactly one qualifying booking or order must be provided', code: 'INVALID_TARGET' } }, 400, cors);
+      }
+
+      const review = await withDb(env, ctx, async (client) => {
+        const res = await client.query(
+          `INSERT INTO reviews (
+             reviewer_user_id, reviewee_user_id, qualifying_rental_booking_id, qualifying_order_id,
+             rating, comment, photos, status
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, 'published')
+           RETURNING id, rating, comment, photos, created_at AS "createdAt"`,
+          [
+            auth.userId,
+            revieweeUserId,
+            rentalBookingId || null,
+            orderId || null,
+            numRating,
+            comment ? String(comment).slice(0, 1000) : null,
+            JSON.stringify(Array.isArray(photos) ? photos : []),
+          ],
+        );
+        return res.rows[0];
+      });
+
+      recordEdgeAudit(env, ctx, 'REVIEW_SUBMITTED', auth.userId, request.headers.get('CF-Connecting-IP'), {
+        reviewId: review.id,
+        rating: numRating,
+      });
+
+      return jsonResponse({ data: review }, 201, cors);
+    } catch (err: any) {
+      if (err.message.includes('unique') || err.message.includes('reviews_rental_unique')) {
+        return jsonResponse({ error: { message: 'Review already submitted for this transaction', code: 'DUPLICATE_REVIEW' } }, 409, cors);
+      }
+      return jsonResponse({ error: { message: err.message, code: 'REVIEW_FAILED' } }, 500, cors);
+    }
+  }
+
+  // 14. User Profile (/users/me/profile)
+  if (path === '/users/me/profile' && (method === 'GET' || method === 'PUT' || method === 'PATCH')) {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    if (method === 'GET') {
+      try {
+        const profile = await withDb(env, ctx, async (client) => {
+          const res = await client.query(
+            `SELECT u.id, u.email, p.display_name AS "displayName", p.phone_number AS "phoneNumber",
+                    p.avatar_url AS "avatarUrl", p.bio,
+                    COALESCE(array_agg(r.role_name) FILTER (WHERE r.role_name IS NOT NULL), '{}') AS roles
+             FROM users u
+             LEFT JOIN user_profiles p ON p.user_id = u.id
+             LEFT JOIN user_roles r ON r.user_id = u.id
+             WHERE u.id::text = $1
+             GROUP BY u.id, u.email, p.display_name, p.phone_number, p.avatar_url, p.bio`,
+            [auth.userId],
+          );
+          return res.rows[0];
+        });
+        return jsonResponse({ data: profile }, 200, cors);
+      } catch (err: any) {
+        return jsonResponse({ error: { message: err.message, code: 'QUERY_ERROR' } }, 500, cors);
+      }
+    }
+
+    if (method === 'PUT' || method === 'PATCH') {
+      try {
+        const body = (await request.json()) as any;
+        const { displayName, phoneNumber, bio, avatarUrl } = body;
+
+        const updated = await withDb(env, ctx, async (client) => {
+          const res = await client.query(
+            `INSERT INTO user_profiles (user_id, display_name, phone_number, bio, avatar_url)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (user_id) DO UPDATE SET
+               display_name = COALESCE(EXCLUDED.display_name, user_profiles.display_name),
+               phone_number = COALESCE(EXCLUDED.phone_number, user_profiles.phone_number),
+               bio = COALESCE(EXCLUDED.bio, user_profiles.bio),
+               avatar_url = COALESCE(EXCLUDED.avatar_url, user_profiles.avatar_url),
+               updated_at = now()
+             RETURNING display_name AS "displayName", phone_number AS "phoneNumber", bio, avatar_url AS "avatarUrl"`,
+            [
+              auth.userId,
+              displayName !== undefined ? displayName : null,
+              phoneNumber !== undefined ? phoneNumber : null,
+              bio !== undefined ? bio : null,
+              avatarUrl !== undefined ? avatarUrl : null,
+            ],
+          );
+          return res.rows[0];
+        });
+
+        return jsonResponse({ data: updated }, 200, cors);
+      } catch (err: any) {
+        return jsonResponse({ error: { message: err.message, code: 'UPDATE_FAILED' } }, 500, cors);
+      }
+    }
+  }
+
+  // 14. User Addresses (/users/me/addresses)
+  if (path === '/users/me/addresses' && method === 'GET') {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    try {
+      const addresses = await withDb(env, ctx, async (client) => {
+        const res = await client.query(
+          `SELECT id, address_type AS "addressType", full_name AS "fullName", phone_number AS "phoneNumber",
+                  line1, line2, city, state, postal_code AS "postalCode", country, is_default AS "isDefault"
+           FROM user_addresses
+           WHERE user_id::text = $1
+           ORDER BY is_default DESC, created_at DESC`,
+          [auth.userId],
+        );
+        return res.rows;
+      });
+      return jsonResponse({ data: addresses }, 200, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'QUERY_ERROR' } }, 500, cors);
+    }
+  }
+
+  if (path === '/users/me/addresses' && method === 'POST') {
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    try {
+      const body = (await request.json()) as any;
+      const { addressType, fullName, phoneNumber, line1, line2, city, state, postalCode, country, isDefault } = body;
+      if (!fullName || !phoneNumber || !line1 || !city || !postalCode) {
+        return jsonResponse({ error: { message: 'Full name, phone, line1, city, and postalCode are required', code: 'INVALID_INPUT' } }, 400, cors);
+      }
+
+      const address = await withDb(env, ctx, async (client) => {
+        if (isDefault) {
+          await client.query(`UPDATE user_addresses SET is_default = false WHERE user_id::text = $1`, [auth.userId]);
+        }
+        const res = await client.query(
+          `INSERT INTO user_addresses (
+             user_id, address_type, full_name, phone_number, line1, line2, city, state, postal_code, country, is_default
+           )
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+           RETURNING id, address_type AS "addressType", full_name AS "fullName", phone_number AS "phoneNumber",
+                     line1, line2, city, state, postal_code AS "postalCode", country, is_default AS "isDefault"`,
+          [
+            auth.userId,
+            addressType || 'shipping',
+            fullName,
+            phoneNumber,
+            line1,
+            line2 || null,
+            city,
+            state || null,
+            postalCode,
+            country || 'India',
+            Boolean(isDefault),
+          ],
+        );
+        return res.rows[0];
+      });
+
+      return jsonResponse({ data: address }, 201, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'INSERT_FAILED' } }, 500, cors);
+    }
+  }
+
+  if (path.startsWith('/users/me/addresses/') && method === 'DELETE') {
+    const addressId = path.replace('/users/me/addresses/', '');
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    try {
+      await withDb(env, ctx, async (client) => {
+        await client.query(`DELETE FROM user_addresses WHERE id::text = $1 AND user_id::text = $2`, [addressId, auth.userId]);
+      });
+      return jsonResponse({ data: { success: true } }, 200, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'DELETE_FAILED' } }, 500, cors);
+    }
+  }
+
+  // 15. Inventory Items (/inventory/items)
+  if (path === '/inventory/items' && method === 'GET') {
+    const listingId = url.searchParams.get('listingId');
+    try {
+      const items = await withDb(env, ctx, async (client) => {
+        let sql = `
+          SELECT id, listing_id AS "listingId", condition, operational_status AS "operationalStatus",
+                 serial_or_sku AS "serialOrSku", created_at AS "createdAt"
+          FROM inventory_items
+        `;
+        const params: any[] = [];
+        if (listingId) {
+          sql += ` WHERE listing_id::text = $1`;
+          params.push(listingId);
+        }
+        sql += ` ORDER BY created_at DESC LIMIT 50`;
+        const res = await client.query(sql, params);
+        return res.rows;
+      });
+      return jsonResponse({ data: items }, 200, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'QUERY_ERROR' } }, 500, cors);
+    }
+  }
+
   // Fallback for unhandled API endpoints
   return jsonResponse(
     {
