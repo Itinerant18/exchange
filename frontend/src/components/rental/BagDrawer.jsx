@@ -5,6 +5,8 @@ import { rentalsApi } from '../../api/rentalsApi.js';
 import { formatPaiseToRupees, formatDate } from '../../utils/formatters.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { TurnstileWidget } from '../common/TurnstileWidget.jsx';
+import { AlertBanner } from '../feedback/index.js';
+import { resolveErrorMessage } from '../../config/errorMessages.js';
 import styles from './BagDrawer.module.css';
 
 /**
@@ -100,11 +102,8 @@ export function BagDrawer() {
       clearBag();
       navigate(`/bookings/${res.id}`);
     } catch (err) {
-      if (err?.status === 409 || err?.message?.includes('LOCKED') || err?.code === 'UNIT_LOCKED') {
-        setError('This garment size is currently on a 15-minute checkout hold by another customer. Please select another look or try again shortly.');
-      } else {
-        setError(err.message || 'Failed to reserve your look. Please try again.');
-      }
+      const resolved = resolveErrorMessage(err, 'Failed to reserve your look. Please try again.');
+      setError(resolved);
       setSubmitting(false);
     }
   }
@@ -128,7 +127,14 @@ export function BagDrawer() {
           </button>
         </div>
 
-        {error && <p className={styles.error} role="alert">{error}</p>}
+        {error && (
+          <AlertBanner
+            type="error"
+            title={error.title || 'Reservation Note'}
+            message={error.message || String(error)}
+            onDismiss={() => setError(null)}
+          />
+        )}
 
         {/* ── Draft Rental Line ── */}
         <div className={styles.item}>

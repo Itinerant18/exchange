@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../../../services/apiClient.js';
+import { AlertBanner } from '../../../components/feedback/index.js';
+import { resolveErrorMessage } from '../../../config/errorMessages.js';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -63,7 +65,7 @@ export function DisputesPage() {
 
     const targetId = hasBooking ? bookingId : orderId;
     if (!UUID_REGEX.test(targetId)) {
-      setErr(`Please provide a valid 36-character UUID for the ${hasBooking ? 'Rental Booking ID' : 'Order ID'}.`);
+      setErr(`Please provide a valid ${hasBooking ? 'Rental Booking Reference' : 'Order Reference'} number.`);
       return;
     }
 
@@ -99,7 +101,7 @@ export function DisputesPage() {
       });
       load();
     } catch (e) {
-      setErr(e.message);
+      setErr(resolveErrorMessage(e).message);
     } finally {
       setSubmitting(false);
     }
@@ -108,8 +110,8 @@ export function DisputesPage() {
   return (
     <div className="container" style={{ marginTop: '1.5rem' }}>
       <h1 className="page-title">Disputes & Claims</h1>
-      {err && <div className="alert alert-error" style={{ marginBottom: '1rem' }}>{err}</div>}
-      {msg && <div className="alert alert-success" style={{ marginBottom: '1rem' }}>{msg}</div>}
+      {err && <AlertBanner type="error" message={err} onDismiss={() => setErr('')} />}
+      {msg && <AlertBanner type="success" message={msg} onDismiss={() => setMsg('')} />}
       
       <div className="card" style={{ marginBottom: '1.5rem' }}>
         <h3>Open a Dispute</h3>

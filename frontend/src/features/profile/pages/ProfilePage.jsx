@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiRequest } from '../../../services/apiClient.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { authErrorMessage } from '../../../config/authMessages.js';
+import { AlertBanner } from '../../../components/feedback/index.js';
 
 export function ProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -175,8 +176,8 @@ export function ProfilePage() {
         Manage your contact details, delivery addresses, and trust verification.
       </p>
 
-      {err && <div className="alert alert-error" style={{ marginBottom: '1rem' }}>{err}</div>}
-      {msg && <div className="alert alert-success" style={{ marginBottom: '1rem' }}>{msg}</div>}
+      {err && <AlertBanner type="error" message={err} onDismiss={() => setErr('')} />}
+      {msg && <AlertBanner type="success" message={msg} onDismiss={() => setMsg('')} />}
 
       {/* ── Section 1: Core Account & Profile ── */}
       <div className="card" style={{ marginBottom: '1.5rem' }}>

@@ -7,6 +7,8 @@ import { ConditionRatingScale, CONDITION_TIERS } from '../../../components/renta
 import { CatwalkVideoPlayer } from '../../../components/rental/CatwalkVideoPlayer.jsx';
 import { formatPaiseToRupees } from '../../../utils/formatters.js';
 import { FACET_TAXONOMY } from '../../../components/rental/FilterModal.jsx';
+import { AlertBanner } from '../../../components/feedback/index.js';
+import { resolveErrorMessage } from '../../../config/errorMessages.js';
 import styles from './CreateListingPage.module.css';
 
 const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2', '4', '6', '8', '10', '12', '14', '16'];
@@ -609,7 +611,7 @@ export function CreateListingPage() {
       // 4. Navigate to the newly created listing detail page
       navigate(`/listings/${listing.id}`);
     } catch (err) {
-      setError(err.message || 'Failed to publish listing. Please check the fields and try again.');
+      setError(resolveErrorMessage(err, 'Failed to publish listing. Please check the fields and try again.').message);
     } finally {
       setBusy(false);
     }
@@ -640,14 +642,11 @@ export function CreateListingPage() {
         </div>
 
         {error && (
-          <div className={styles.alertError} role="alert">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>{error}</span>
-          </div>
+          <AlertBanner
+            type="error"
+            message={error}
+            onDismiss={() => setError('')}
+          />
         )}
 
         {/* ── 2-Column Layout: Form (Left) & Live Preview (Right) ── */}

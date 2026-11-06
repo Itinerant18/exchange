@@ -1,0 +1,312 @@
+/* ── Feedback & Toast System Design System Styles ── */
+
+/* Toast Container: fixed viewport position */
+.toastContainer {
+  position: fixed;
+  bottom: var(--space-6, 24px);
+  right: var(--space-6, 24px);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3, 12px);
+  max-width: 420px;
+  width: calc(100vw - 32px);
+  pointer-events: none;
+}
+
+@media (max-width: 48rem) {
+  .toastContainer {
+    top: var(--space-4, 16px);
+    bottom: auto;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+  }
+}
+
+/* Toast Card */
+.toastCard {
+  pointer-events: auto;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3, 12px);
+  padding: 14px 18px;
+  background: rgba(22, 22, 24, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #FFFFFF;
+  border: 1px solid rgba(200, 162, 81, 0.3);
+  border-radius: var(--radius-sm, 16px);
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.35);
+  animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.toastDismissing {
+  animation: toastSlideOut 0.2s ease forwards;
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.95);
+  }
+}
+
+/* Type variations */
+.toastError {
+  border-left: 3px solid #BA2222;
+}
+
+.toastSuccess {
+  border-left: 3px solid #1B663E;
+}
+
+.toastWarning {
+  border-left: 3px solid #C8A251;
+}
+
+.toastInfo {
+  border-left: 3px solid #C8A251;
+}
+
+/* Toast Icon */
+.toastIcon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.toastError .toastIcon {
+  color: #E65C5C;
+}
+
+.toastSuccess .toastIcon {
+  color: #34D399;
+}
+
+.toastWarning .toastIcon {
+  color: #FBBF24;
+}
+
+.toastInfo .toastIcon {
+  color: #C8A251;
+}
+
+/* Toast Body */
+.toastBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.toastTitle {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  margin: 0 0 2px 0;
+}
+
+.toastMessage {
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.4;
+  color: #E2E2E2;
+  margin: 0;
+}
+
+.toastActionRow {
+  margin-top: var(--space-2, 8px);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2, 8px);
+}
+
+.toastActionBtn {
+  background: transparent;
+  border: 1px solid rgba(200, 162, 81, 0.5);
+  color: #C8A251;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: var(--radius-full, 9999px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.toastActionBtn:hover {
+  background: #C8A251;
+  color: #1A1A1A;
+}
+
+.toastCloseBtn {
+  background: transparent;
+  border: none;
+  color: #888888;
+  font-size: 16px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.15s ease;
+  margin-top: -2px;
+}
+
+.toastCloseBtn:hover {
+  color: #FFFFFF;
+}
+
+/* Progress bar inside toast */
+.toastProgress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: rgba(200, 162, 81, 0.4);
+  width: 100%;
+  animation: toastProgress linear forwards;
+}
+
+@keyframes toastProgress {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+/* ── Luxury Alert Banner (In-Card / In-Page) ── */
+.alertBanner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3, 12px);
+  padding: 14px 18px;
+  border-radius: var(--radius-xs, 12px);
+  margin-bottom: var(--space-4, 16px);
+  position: relative;
+  animation: bannerFadeIn 0.2s ease-out;
+}
+
+@keyframes bannerFadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.alertError {
+  background: #FBEBF0;
+  border: 1px solid rgba(186, 34, 34, 0.25);
+  color: #570020;
+}
+
+.alertError .alertTitle {
+  color: #BA2222;
+}
+
+.alertSuccess {
+  background: #F0FDF4;
+  border: 1px solid rgba(27, 102, 62, 0.25);
+  color: #14532D;
+}
+
+.alertSuccess .alertTitle {
+  color: #1B663E;
+}
+
+.alertWarning {
+  background: #FFFBEB;
+  border: 1px solid rgba(200, 162, 81, 0.35);
+  color: #78350F;
+}
+
+.alertWarning .alertTitle {
+  color: #B45309;
+}
+
+.alertInfo {
+  background: #F8F9FA;
+  border: 1px solid rgba(200, 162, 81, 0.25);
+  color: #1A1A1A;
+}
+
+.alertInfo .alertTitle {
+  color: #570020;
+}
+
+.alertIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.alertBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.alertTitle {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 3px 0;
+}
+
+.alertMessage {
+  font-size: 13px;
+  font-weight: 300;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.alertAction {
+  margin-top: var(--space-2, 8px);
+  font-size: 12px;
+  font-weight: 500;
+  color: #570020;
+}
+
+/* ── Inline Form Field Error ── */
+.fieldError {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #BA2222;
+  margin-top: 4px;
+  animation: fieldErrorFadeIn 0.15s ease-out;
+}
+
+@keyframes fieldErrorFadeIn {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.fieldErrorIcon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}

@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, Link, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useBag } from '../../context/BagContext.jsx';
 import { useFavorites } from '../../context/FavoritesContext.jsx';
 import { appConfig } from '../../config/appConfig.js';
 import { BagDrawer } from '../rental/BagDrawer.jsx';
+import { ToastContainer } from '../feedback/index.js';
 import styles from './AppLayout.module.css';
 
 export function AppLayout() {
@@ -13,7 +14,23 @@ export function AppLayout() {
   const { favoriteIds } = useFavorites();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isOnline, setIsOnline] = useState(
+    typeof navigator !== 'undefined' ? navigator.onLine : true,
+  );
   const year = new Date().getFullYear();
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   async function handleLogout() {
     await logout();
@@ -22,6 +39,31 @@ export function AppLayout() {
 
   return (
     <div className={styles.shell}>
+      {/* ── Offline Reassurance Banner ── */}
+      {!isOnline && (
+        <div
+          style={{
+            backgroundColor: '#BA2222',
+            color: '#FFFFFF',
+            padding: '8px 16px',
+            textAlign: 'center',
+            fontSize: '12px',
+            fontWeight: 500,
+            letterSpacing: '0.04em',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            zIndex: 10000,
+          }}
+          role="status"
+        >
+          <span>✦</span>
+          <span>You are currently browsing offline. Live reservations and checkout will resume once reconnected.</span>
+          <span>✦</span>
+        </div>
+      )}
+
       {/* ── Top Announcement Bar ── */}
       <div className={styles.topBar}>
         <div className={styles.topBarInner}>
@@ -227,6 +269,9 @@ export function AppLayout() {
 
       {/* ── Global Slide-Out Rental Bag (RTR CEBagComponent analogue) ── */}
       <BagDrawer />
+
+      {/* ── Global Luxury Toast Notifications ── */}
+      <ToastContainer />
     </div>
   );
 }

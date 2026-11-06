@@ -18,6 +18,8 @@ import { PincodeTransitCalculator } from '../../../components/rental/PincodeTran
 import { SterilizationGuaranteeInfographic } from '../../../components/rental/SterilizationGuaranteeInfographic.jsx';
 import { SustainabilityImpactCalculator } from '../../../components/rental/SustainabilityImpactCalculator.jsx';
 import { CatwalkVideoPlayer } from '../../../components/rental/CatwalkVideoPlayer.jsx';
+import { AlertBanner } from '../../../components/feedback/index.js';
+import { resolveErrorMessage } from '../../../config/errorMessages.js';
 import styles from './ListingDetailPage.module.css';
 
 const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL'];
@@ -322,7 +324,7 @@ export function ListingDetailPage() {
       });
       navigate('/orders');
     } catch (err) {
-      setError(err.message || 'Failed to create purchase order.');
+      setError(resolveErrorMessage(err, 'Failed to create purchase order.').message);
     } finally {
       setSubmitting(false);
     }
@@ -338,11 +340,13 @@ export function ListingDetailPage() {
   }
 
   if (error && !listing) {
+    const is404 = typeof error === 'string' && (error.includes('404') || error.includes('not found'));
+    const resolved = resolveErrorMessage(error, 'This designer piece is currently unavailable.');
     return (
       <div className={styles.errorPage}>
-        <h2>Item not found</h2>
-        <p>{error}</p>
-        <Link to="/listings" className="btn btn-primary">Back to Catalog</Link>
+        <h2>{is404 ? 'Look Not Found' : resolved.title}</h2>
+        <p>{resolved.message}</p>
+        <Link to="/listings" className="btn btn-primary">Return to Catalog</Link>
       </div>
     );
   }
@@ -568,9 +572,11 @@ export function ListingDetailPage() {
             </div>
 
             {error && (
-              <div className={styles.alertError} role="alert">
-                {error}
-              </div>
+              <AlertBanner
+                type="error"
+                message={typeof error === 'string' ? error : error?.message}
+                onDismiss={() => setError('')}
+              />
             )}
 
             {isRental && isSale && (

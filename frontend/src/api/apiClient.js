@@ -86,13 +86,28 @@ export async function apiRequest(path, { method = 'GET', body, headers = {}, sig
       ? body
       : JSON.stringify(body);
 
-  const response = await fetch(`${appConfig.apiBaseUrl}${path}`, {
-    method,
-    credentials: 'include',
-    headers: requestHeaders,
-    body: serializedBody,
-    signal,
-  });
+  let response;
+  try {
+    response = await fetch(`${appConfig.apiBaseUrl}${path}`, {
+      method,
+      credentials: 'include',
+      headers: requestHeaders,
+      body: serializedBody,
+      signal,
+    });
+  } catch (networkErr) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new ApiError('You appear to be offline. Please check your internet connection.', {
+        status: 0,
+        code: 'NETWORK_OFFLINE',
+      });
+    }
+    throw new ApiError('Unable to connect to Exchange24. Please verify your connection and try again.', {
+      status: 0,
+      code: 'NETWORK_OFFLINE',
+      details: { originalError: networkErr?.message },
+    });
+  }
 
   // Handle silent token refresh on 401 if refresh cookie is valid and not already retried
   if (response.status === 401 && !_isRetry && !shouldSkipRefresh(path)) {
