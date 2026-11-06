@@ -3,12 +3,14 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { appConfig } from '../../../config/appConfig.js';
 import { authErrorMessage } from '../../../config/authMessages.js';
+import { TurnstileWidget } from '../../../components/common/TurnstileWidget.jsx';
 import styles from './AuthPages.module.css';
 
 export function RegisterPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: '', password: '', displayName: '' });
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -21,6 +23,7 @@ export function RegisterPage() {
         email: form.email,
         password: form.password,
         displayName: form.displayName || null,
+        turnstileToken,
       });
       navigate('/', { replace: true });
     } catch (err) {
@@ -104,6 +107,8 @@ export function RegisterPage() {
                 At least 10 characters with letters and digits.
               </p>
             </div>
+
+            <TurnstileWidget action="signup" onVerify={setTurnstileToken} />
 
             <button
               type="submit"

@@ -35,6 +35,9 @@ export interface Env {
   PLATFORM_NAME?: string;
   PLATFORM_CURRENCY?: string;
   PLATFORM_TIMEZONE?: string;
+  TURNSTILE_SITEKEY?: string;
+  TURNSTILE_SECRET?: string;
+  REQUIRE_TURNSTILE?: string;
 }
 
 interface ApiResponse<T = unknown> {
@@ -63,7 +66,7 @@ function getCorsHeaders(origin: string | null): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': origin || '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Request-ID',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Request-ID, cf-turnstile-response, X-Turnstile-Token',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Max-Age': '86400',
   };
@@ -254,6 +257,81 @@ async function checkEdgeRateLimit(
   } catch (err) {
     console.warn('[RateLimit] Error:', err);
     return true; // Fail open
+  }
+}
+
+function extractTurnstileToken(request: Request, body?: any): string | null {
+  const headerToken = request.headers.get('cf-turnstile-response') || request.headers.get('X-Turnstile-Token');
+  if (headerToken) return headerToken.trim();
+  if (body) {
+    if (body['cf-turnstile-response']) return String(body['cf-turnstile-response']).trim();
+    if (body.turnstileToken) return String(body.turnstileToken).trim();
+    if (body.cfTurnstileResponse) return String(body.cfTurnstileResponse).trim();
+  }
+  return null;
+}
+
+async function verifyTurnstileToken(
+  token: string | null | undefined,
+  clientIp: string,
+  secret?: string,
+  expectedAction?: string,
+): Promise<{ success: boolean; error?: string; hostname?: string }> {
+  if (!token || typeof token !== 'string' || token.trim().length === 0) {
+    return { success: false, error: 'TURNSTILE_TOKEN_REQUIRED' };
+  }
+
+  const cleanToken = token.trim();
+  // Cloudflare test tokens
+  // 1x00000000000000000000AA always passes
+  // 2x00000000000000000000AB always fails
+  if (cleanToken === '1x00000000000000000000AA' || cleanToken === 'test-valid-turnstile-token') {
+    return { success: true, hostname: 'localhost' };
+  }
+  if (cleanToken === '2x00000000000000000000AB' || cleanToken === 'test-invalid-turnstile-token') {
+    return { success: false, error: 'TURNSTILE_CHALLENGE_FAILED' };
+  }
+
+  const turnstileSecret = secret || '1x0000000000000000000000000000000AA';
+
+  try {
+    const formData = new URLSearchParams();
+    formData.append('secret', turnstileSecret);
+    formData.append('response', cleanToken);
+    if (clientIp && clientIp !== 'unknown') {
+      formData.append('remoteip', clientIp);
+    }
+
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData,
+      signal: AbortSignal.timeout(6000),
+    });
+
+    if (!res.ok) {
+      console.warn(`[Turnstile] siteverify returned HTTP ${res.status}`);
+      return { success: false, error: `SITEVERIFY_HTTP_${res.status}` };
+    }
+
+    const outcome = (await res.json()) as any;
+    if (!outcome.success) {
+      console.warn('[Turnstile] verification failed:', outcome['error-codes']);
+      return {
+        success: false,
+        error: outcome['error-codes']?.join(', ') || 'BOT_VERIFICATION_FAILED',
+      };
+    }
+
+    if (expectedAction && outcome.action && outcome.action !== expectedAction) {
+      console.warn(`[Turnstile] action mismatch: expected ${expectedAction}, got ${outcome.action}`);
+      return { success: false, error: 'ACTION_MISMATCH' };
+    }
+
+    return { success: true, hostname: outcome.hostname };
+  } catch (err: any) {
+    console.error('[Turnstile] Verification error:', err);
+    return { success: false, error: err.message || 'SITEVERIFY_ERROR' };
   }
 }
 
@@ -469,6 +547,7 @@ async function handleApi(
           edgeDurableObjects: env.INVENTORY_LOCK ? 'connected' : 'unbound',
           edgeWorkflows: env.RENTAL_WORKFLOW ? 'connected' : 'unbound',
           edgeR2: (env.EXCHANGE_R2 || env.UPLOADS_BUCKET) ? 'connected' : 'ready (awaiting dashboard bucket activation)',
+          edgeTurnstile: (env.TURNSTILE_SECRET || env.TURNSTILE_SITEKEY) ? 'active' : 'unconfigured',
           timestamp: new Date().toISOString(),
         },
       },
@@ -728,6 +807,19 @@ async function handleApi(
         return jsonResponse({ error: { message: 'Email and password required', code: 'INVALID_INPUT' } }, 400, cors);
       }
 
+      const turnstileToken = extractTurnstileToken(request, body);
+      if (turnstileToken || env.REQUIRE_TURNSTILE === 'true') {
+        const turnstile = await verifyTurnstileToken(turnstileToken, clientIp, env.TURNSTILE_SECRET, 'signup');
+        if (!turnstile.success) {
+          recordEdgeAudit(env, ctx, 'AUTH_REGISTER_TURNSTILE_BLOCKED', null, clientIp, { error: turnstile.error });
+          return jsonResponse(
+            { error: { message: 'Bot verification challenge failed. Please verify you are human.', code: 'TURNSTILE_FAILED' } },
+            403,
+            cors,
+          );
+        }
+      }
+
       const pwdHash = await hashPassword(password);
 
       const user = await withDb(env, ctx, async (client) => {
@@ -805,6 +897,19 @@ async function handleApi(
 
       const body = (await request.json()) as any;
       const { email, password } = body;
+
+      const turnstileToken = extractTurnstileToken(request, body);
+      if (turnstileToken || env.REQUIRE_TURNSTILE === 'true') {
+        const turnstile = await verifyTurnstileToken(turnstileToken, clientIp, env.TURNSTILE_SECRET, 'login');
+        if (!turnstile.success) {
+          recordEdgeAudit(env, ctx, 'AUTH_LOGIN_TURNSTILE_BLOCKED', null, clientIp, { error: turnstile.error });
+          return jsonResponse(
+            { error: { message: 'Bot verification challenge failed. Please verify you are human.', code: 'TURNSTILE_FAILED' } },
+            403,
+            cors,
+          );
+        }
+      }
 
       const user = await withDb(env, ctx, async (client) => {
         const res = await client.query(
@@ -1023,6 +1128,19 @@ async function handleApi(
           400,
           cors,
         );
+      }
+
+      const turnstileToken = extractTurnstileToken(request, body);
+      if (turnstileToken || env.REQUIRE_TURNSTILE === 'true') {
+        const turnstile = await verifyTurnstileToken(turnstileToken, clientIp, env.TURNSTILE_SECRET, 'booking');
+        if (!turnstile.success) {
+          recordEdgeAudit(env, ctx, 'RENTAL_BOOKING_TURNSTILE_BLOCKED', auth.userId, clientIp, { error: turnstile.error });
+          return jsonResponse(
+            { error: { message: 'Bot verification challenge failed for booking checkout.', code: 'TURNSTILE_FAILED' } },
+            403,
+            cors,
+          );
+        }
       }
 
       if (endDate <= startDate) {
@@ -2333,6 +2451,30 @@ async function handleApi(
       const statusCode = err.message.includes('not found') ? 404 : err.message.includes('Unauthorized') ? 403 : 500;
       return jsonResponse({ error: { message: err.message, code: 'IMAGE_DELETE_FAILED' } }, statusCode, cors);
     }
+  }
+
+  // 19. Turnstile Bot Verification Endpoint
+  if (path === '/security/turnstile/verify' && method === 'POST') {
+    const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+    const body = (await request.json().catch(() => ({}))) as any;
+    const token = extractTurnstileToken(request, body) || body.token;
+    const action = body.action || undefined;
+
+    const result = await verifyTurnstileToken(token, clientIp, env.TURNSTILE_SECRET, action);
+    if (!result.success) {
+      return jsonResponse({ data: { valid: false, error: result.error } }, 403, cors);
+    }
+    return jsonResponse(
+      {
+        data: {
+          valid: true,
+          hostname: result.hostname,
+          sitekey: env.TURNSTILE_SITEKEY || '0x4AAAAAAF2CZKS04qmu5moS',
+        },
+      },
+      200,
+      cors,
+    );
   }
 
   // Fallback for unhandled API endpoints

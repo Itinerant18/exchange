@@ -31,8 +31,11 @@ export function AuthProvider({ children }) {
     })();
   }, [accessToken, fetchMe]);
 
-  const login = useCallback(async (email, password) => {
-    const data = await apiRequest('/auth/login', { method: 'POST', body: { email, password } });
+  const login = useCallback(async (email, password, turnstileToken) => {
+    const data = await apiRequest('/auth/login', {
+      method: 'POST',
+      body: { email, password, turnstileToken },
+    });
     localStorage.setItem(STORAGE_KEY, data.accessToken);
     setAccessToken(data.accessToken);
     setUser(data.user);

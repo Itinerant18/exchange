@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { appConfig } from '../../../config/appConfig.js';
 import { authErrorMessage } from '../../../config/authMessages.js';
+import { TurnstileWidget } from '../../../components/common/TurnstileWidget.jsx';
 import styles from './AuthPages.module.css';
 
 export function LoginPage() {
@@ -10,6 +11,7 @@ export function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -18,7 +20,7 @@ export function LoginPage() {
     setError('');
     setBusy(true);
     try {
-      await login(email, password);
+      await login(email, password, turnstileToken);
       navigate('/', { replace: true });
     } catch (err) {
       setError(authErrorMessage(err));
@@ -88,6 +90,8 @@ export function LoginPage() {
                 required
               />
             </div>
+
+            <TurnstileWidget action="login" onVerify={setTurnstileToken} />
 
             <button
               type="submit"

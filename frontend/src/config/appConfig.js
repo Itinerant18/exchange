@@ -26,6 +26,7 @@ export const appConfig = Object.freeze({
   name: readValue(import.meta.env.VITE_PLATFORM_NAME, 'Exchnage'),
   currency: readValue(import.meta.env.VITE_PLATFORM_CURRENCY, 'INR'),
   timezone: readValue(import.meta.env.VITE_PLATFORM_TIMEZONE, 'Asia/Kolkata'),
+  turnstileSiteKey: readValue(import.meta.env.VITE_TURNSTILE_SITEKEY, '0x4AAAAAAF2CZKS04qmu5moS'),
   apiBaseUrl,
   mode: import.meta.env.MODE,
 });
