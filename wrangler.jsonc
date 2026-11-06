@@ -12,6 +12,19 @@
       "id": "a4afb8c876024fbd84041b2933a8951e"
     }
   ],
+  "d1_databases": [
+    {
+      "binding": "EXCHANGE_D1",
+      "database_name": "exchange-edge-db",
+      "database_id": "179e39fb-5b84-4f29-9604-02ffcd9b0a0e"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "EXCHANGE_KV",
+      "id": "1696f5ff60834a79875234539dd39cd2"
+    }
+  ],
   "assets": {
     "directory": "./frontend/dist",
     "binding": "ASSETS",

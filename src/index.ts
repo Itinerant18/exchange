@@ -14,6 +14,8 @@ const scrypt = promisify(scryptCallback);
 export interface Env {
   ASSETS: Fetcher;
   HYPERDRIVE?: Hyperdrive;
+  EXCHANGE_D1?: D1Database;
+  EXCHANGE_KV?: KVNamespace;
   UPLOADS_BUCKET?: R2Bucket;
   AUTH_JWT_SECRET?: string;
   API_PREFIX?: string;
@@ -171,6 +173,77 @@ async function withDb<T>(env: Env, ctx: ExecutionContext, fn: (client: Client) =
   }
 }
 
+// ---------------------------------------------------------------------- Edge D1 & KV Helpers
+
+function hashToken(token: string, secret: string): string {
+  return createHmac('sha256', secret).update(token).digest('hex');
+}
+
+function recordEdgeAudit(
+  env: Env,
+  ctx: ExecutionContext,
+  eventType: string,
+  userId: string | null,
+  ip: string | null,
+  payload: Record<string, unknown> = {},
+): void {
+  if (!env.EXCHANGE_D1) return;
+  ctx.waitUntil(
+    env.EXCHANGE_D1.prepare(
+      'INSERT INTO edge_audit_logs (id, event_type, user_id, ip_address, payload, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    )
+      .bind(
+        crypto.randomUUID(),
+        eventType,
+        userId,
+        ip || 'unknown',
+        JSON.stringify(payload),
+        Date.now(),
+      )
+      .run()
+      .catch((err) => console.error('[EdgeAudit] Failed to log:', err)),
+  );
+}
+
+async function checkEdgeRateLimit(
+  env: Env,
+  ip: string,
+  maxAttempts = 20,
+  windowSeconds = 60,
+): Promise<boolean> {
+  if (!env.EXCHANGE_D1 || !ip) return true;
+  try {
+    const key = `ratelimit:auth:${ip}`;
+    const now = Date.now();
+    const existing = await env.EXCHANGE_D1.prepare(
+      'SELECT count, reset_at FROM edge_rate_limits WHERE key = ?',
+    )
+      .bind(key)
+      .first<{ count: number; reset_at: number }>();
+
+    if (!existing || existing.reset_at < now) {
+      await env.EXCHANGE_D1.prepare(
+        'INSERT OR REPLACE INTO edge_rate_limits (key, count, reset_at) VALUES (?, 1, ?)',
+      )
+        .bind(key, now + windowSeconds * 1000)
+        .run();
+      return true;
+    }
+
+    if (existing.count >= maxAttempts) {
+      return false; // Rate limit reached
+    }
+
+    await env.EXCHANGE_D1.prepare('UPDATE edge_rate_limits SET count = count + 1 WHERE key = ?')
+      .bind(key)
+      .run();
+    return true;
+  } catch (err) {
+    console.warn('[RateLimit] Error:', err);
+    return true; // Fail open
+  }
+}
+
 // ---------------------------------------------------------------------- API Request Handler
 
 async function handleApi(
@@ -205,6 +278,33 @@ async function handleApi(
       }
     }
 
+    let d1Status = 'disconnected';
+    let d1LatencyMs = 0;
+    let d1Sessions = 0;
+    if (env.EXCHANGE_D1) {
+      try {
+        const start = Date.now();
+        const d1Res = await env.EXCHANGE_D1.prepare('SELECT count(*) AS total FROM edge_sessions').first<{ total: number }>();
+        d1Sessions = d1Res?.total ?? 0;
+        d1LatencyMs = Date.now() - start;
+        d1Status = 'connected';
+      } catch (err) {
+        console.error('[Health] D1 probe error:', err);
+        d1Status = 'error';
+      }
+    }
+
+    let kvStatus = 'disconnected';
+    if (env.EXCHANGE_KV) {
+      try {
+        await env.EXCHANGE_KV.get('health_probe');
+        kvStatus = 'connected';
+      } catch (err) {
+        console.error('[Health] KV probe error:', err);
+        kvStatus = 'error';
+      }
+    }
+
     return jsonResponse(
       {
         data: {
@@ -216,6 +316,10 @@ async function handleApi(
           database: dbStatus,
           databaseLatencyMs: dbLatencyMs,
           migrationsApplied,
+          edgeD1: d1Status,
+          edgeD1LatencyMs: d1LatencyMs,
+          edgeD1Sessions: d1Sessions,
+          edgeKV: kvStatus,
           timestamp: new Date().toISOString(),
         },
       },
@@ -224,9 +328,16 @@ async function handleApi(
     );
   }
 
-  // 2. Categories
+  // 2. Categories (with KV caching)
   if (path === '/categories' || path === '/categories/tree') {
     try {
+      if (env.EXCHANGE_KV) {
+        const cached = await env.EXCHANGE_KV.get('cache:categories:tree', 'json');
+        if (cached) {
+          return jsonResponse({ data: cached }, 200, { ...cors, 'X-Cache': 'HIT' });
+        }
+      }
+
       const categories = await withDb(env, ctx, async (client) => {
         const res = await client.query(
           `SELECT id, name, slug, is_active
@@ -236,7 +347,16 @@ async function handleApi(
         );
         return res.rows;
       });
-      return jsonResponse({ data: categories }, 200, cors);
+
+      if (env.EXCHANGE_KV) {
+        ctx.waitUntil(
+          env.EXCHANGE_KV.put('cache:categories:tree', JSON.stringify(categories), {
+            expirationTtl: 3600,
+          }),
+        );
+      }
+
+      return jsonResponse({ data: categories }, 200, { ...cors, 'X-Cache': 'MISS' });
     } catch (err: any) {
       return jsonResponse({ error: { message: err.message, code: 'DB_ERROR' } }, 500, cors);
     }
@@ -443,6 +563,16 @@ async function handleApi(
   // 6. Auth Register & Login
   if (path === '/auth/register' && method === 'POST') {
     try {
+      const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const allowed = await checkEdgeRateLimit(env, clientIp, 15, 60);
+      if (!allowed) {
+        return jsonResponse(
+          { error: { message: 'Too many registration attempts. Please wait a minute.', code: 'RATE_LIMITED' } },
+          429,
+          cors,
+        );
+      }
+
       const body = (await request.json()) as any;
       const { email, password, displayName } = body;
       if (!email || !password) {
@@ -481,6 +611,28 @@ async function handleApi(
       });
 
       const accessToken = signJwt({ sub: user.id, email: user.email }, jwtSecret);
+
+      if (env.EXCHANGE_D1) {
+        const sessionTokenHash = hashToken(accessToken, jwtSecret);
+        ctx.waitUntil(
+          env.EXCHANGE_D1.prepare(
+            'INSERT OR REPLACE INTO edge_sessions (session_id, user_id, email, roles, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
+          )
+            .bind(
+              sessionTokenHash,
+              user.id,
+              user.email,
+              JSON.stringify(user.roles),
+              Date.now(),
+              Date.now() + 86400 * 30 * 1000,
+            )
+            .run()
+            .catch((e) => console.error('[EdgeSession] Failed to store session:', e)),
+        );
+      }
+
+      recordEdgeAudit(env, ctx, 'AUTH_REGISTER_SUCCESS', user.id, clientIp, { email: user.email });
+
       return jsonResponse({ data: { user, accessToken } }, 201, cors);
     } catch (err: any) {
       if (err.message.includes('unique constraint') || err.message.includes('users_email_key')) {
@@ -492,6 +644,16 @@ async function handleApi(
 
   if (path === '/auth/login' && method === 'POST') {
     try {
+      const clientIp = request.headers.get('CF-Connecting-IP') || 'unknown';
+      const allowed = await checkEdgeRateLimit(env, clientIp, 20, 60);
+      if (!allowed) {
+        return jsonResponse(
+          { error: { message: 'Too many login attempts. Please wait a minute.', code: 'RATE_LIMITED' } },
+          429,
+          cors,
+        );
+      }
+
       const body = (await request.json()) as any;
       const { email, password } = body;
 
@@ -510,11 +672,13 @@ async function handleApi(
       });
 
       if (!user) {
+        recordEdgeAudit(env, ctx, 'AUTH_LOGIN_FAILED_USER_NOT_FOUND', null, clientIp, { email: email.trim() });
         return jsonResponse({ error: { message: 'Invalid credentials', code: 'INVALID_CREDENTIALS' } }, 401, cors);
       }
 
       const valid = await verifyPassword(password, user.password_hash);
       if (!valid) {
+        recordEdgeAudit(env, ctx, 'AUTH_LOGIN_FAILED_WRONG_PASSWORD', user.id, clientIp, { email: user.email });
         return jsonResponse({ error: { message: 'Invalid credentials', code: 'INVALID_CREDENTIALS' } }, 401, cors);
       }
 
@@ -526,6 +690,28 @@ async function handleApi(
       };
 
       const accessToken = signJwt({ sub: user.id, email: user.email }, jwtSecret);
+
+      if (env.EXCHANGE_D1) {
+        const sessionTokenHash = hashToken(accessToken, jwtSecret);
+        ctx.waitUntil(
+          env.EXCHANGE_D1.prepare(
+            'INSERT OR REPLACE INTO edge_sessions (session_id, user_id, email, roles, created_at, expires_at) VALUES (?, ?, ?, ?, ?, ?)',
+          )
+            .bind(
+              sessionTokenHash,
+              user.id,
+              user.email,
+              JSON.stringify(userData.roles),
+              Date.now(),
+              Date.now() + 86400 * 30 * 1000,
+            )
+            .run()
+            .catch((e) => console.error('[EdgeSession] Failed to write session:', e)),
+        );
+      }
+
+      recordEdgeAudit(env, ctx, 'AUTH_LOGIN_SUCCESS', user.id, clientIp, { email: user.email });
+
       return jsonResponse({ data: { user: userData, accessToken } }, 200, cors);
     } catch (err: any) {
       return jsonResponse({ error: { message: err.message, code: 'LOGIN_FAILED' } }, 500, cors);
@@ -580,6 +766,17 @@ async function handleApi(
 
   // 8. Auth Logout & Refresh
   if (path === '/auth/logout') {
+    const authHeader = request.headers.get('Authorization') || '';
+    if (authHeader.startsWith('Bearer ') && env.EXCHANGE_D1) {
+      const token = authHeader.substring(7).trim();
+      const tokenHash = hashToken(token, jwtSecret);
+      ctx.waitUntil(
+        env.EXCHANGE_D1.prepare('DELETE FROM edge_sessions WHERE session_id = ?')
+          .bind(tokenHash)
+          .run()
+          .catch(() => {}),
+      );
+    }
     return jsonResponse({ data: { success: true } }, 200, cors);
   }
   if (path === '/auth/refresh' && method === 'POST') {
