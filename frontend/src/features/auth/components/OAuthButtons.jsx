@@ -202,19 +202,21 @@ export function OAuthButtons({ onGoogleSuccess, onAppleSuccess, onError, turnsti
 
         <button
           type="button"
-          className={`${styles.oauthBtn} ${styles.oauthBtnApple}`}
-          onClick={handleAppleClick}
-          disabled={googleBusy || appleBusy}
-          aria-label="Continue with Apple"
+          className={`${styles.oauthBtn} ${styles.oauthBtnApple} ${styles.oauthBtnDisabled}`}
+          disabled
+          aria-label="Continue with Apple (Coming Soon)"
+          title="Sign in with Apple is coming soon"
         >
           <span className={styles.oauthBtnIcon}>
             <svg width="18" height="18" viewBox="0 0 170 170" fill="currentColor" aria-hidden="true">
               <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.69-3.04-7.59-7.71-11.72-14-4.89-7.4-8.87-15.66-11.95-24.76-3.08-9.11-4.63-18.06-4.63-26.85 0-12.72 3.18-23.47 9.53-32.23 6.35-8.77 14.36-13.24 24.03-13.43 4.89 0 10.23 1.25 16.02 3.76 5.79 2.5 9.73 3.82 11.83 3.94 1.89-.12 6.08-1.5 12.59-4.14 6.51-2.64 12.18-3.79 17.01-3.46 12.7.63 22.75 5.25 30.15 13.88-11.05 6.74-16.45 16.05-16.19 27.93.26 9.4 3.84 17.27 10.74 23.6 6.9 6.33 15.08 10.02 24.54 11.07-2.01 6.13-4.55 12.28-7.61 18.46zM119.22 31.86c0-7.39 2.65-14.28 7.95-20.67 5.3-6.4 11.8-10.42 19.5-12.07.13 1.14.2 2.16.2 3.06 0 7.39-2.78 14.45-8.34 21.18-5.56 6.73-12.19 10.63-19.89 11.7-.13-1.01-.2-2.08-.2-3.2z" />
             </svg>
           </span>
-          <span>{appleBusy ? 'Connecting to Apple…' : 'Continue with Apple'}</span>
+          <span className={styles.oauthBtnLabel}>Continue with Apple</span>
+          <span className={styles.comingSoonBadge}>Coming Soon</span>
         </button>
       </div>
     </div>
   );
 }
+

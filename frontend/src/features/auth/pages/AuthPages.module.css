@@ -439,6 +439,30 @@
   border-color: #1F1F1F;
 }
 
+.oauthBtnApple.oauthBtnDisabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+  border-color: #000000;
+}
+
+.oauthBtnLabel {
+  display: inline-block;
+}
+
+.comingSoonBadge {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
+  padding: 3px 8px;
+  border-radius: var(--radius-full, 9999px);
+  margin-left: var(--space-2);
+  font-weight: 500;
+  line-height: 1;
+}
+
 .oauthBtnIcon {
   width: 18px;
   height: 18px;
