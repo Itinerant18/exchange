@@ -7,10 +7,15 @@
 
 import { Client } from 'pg';
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
-import { promisify } from 'node:util';
 import { DurableObject, WorkflowEntrypoint, WorkflowStep, type WorkflowEvent } from 'cloudflare:workers';
 
-const scrypt = promisify(scryptCallback);
+const scryptAsync = (password: string | Buffer, salt: string | Buffer, keylen: number, options: any) =>
+  new Promise<Buffer>((resolve, reject) => {
+    scryptCallback(password, salt, keylen, options, (err, derivedKey) => {
+      if (err) reject(err);
+      else resolve(derivedKey as Buffer);
+    });
+  });
 
 export type RentalWorkflowParams = {
   bookingId: string;
@@ -43,15 +48,18 @@ export interface Env {
 interface ApiResponse<T = unknown> {
   data?: T;
   pagination?: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
+    total?: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+    cursor?: string | null;
+    truncated?: boolean;
   };
   error?: {
     message: string;
     code: string;
   };
+  message?: string;
 }
 
 const SECURITY_HEADERS: Record<string, string> = {
@@ -95,12 +103,12 @@ const SCRYPT_MAXMEM = 128 * 1024 * 1024;
 
 async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16);
-  const derived = (await scrypt(password, salt, SCRYPT_KEY_LENGTH, {
+  const derived = await scryptAsync(password, salt, SCRYPT_KEY_LENGTH, {
     N: SCRYPT_PARAMS.N,
     r: SCRYPT_PARAMS.r,
     p: SCRYPT_PARAMS.p,
     maxmem: SCRYPT_MAXMEM,
-  })) as Buffer;
+  });
 
   return [
     'scrypt',
@@ -120,12 +128,12 @@ async function verifyPassword(password: string, storedHash: string): Promise<boo
   const [, n, r, p, saltB64, hashB64] = parts;
   const expected = Buffer.from(hashB64, 'base64url');
   try {
-    const derived = (await scrypt(password, Buffer.from(saltB64, 'base64url'), expected.length, {
+    const derived = await scryptAsync(password, Buffer.from(saltB64, 'base64url'), expected.length, {
       N: Number(n),
       r: Number(r),
       p: Number(p),
       maxmem: SCRYPT_MAXMEM,
-    })) as Buffer;
+    });
     return timingSafeEqual(derived, expected);
   } catch {
     return false;
@@ -165,13 +173,16 @@ function verifyJwt(token: string, secret: string): Record<string, unknown> | nul
   }
 }
 
-function extractBearerUser(request: Request, secret: string): { userId: string } | null {
+function extractBearerUser(request: Request, secret: string): { userId: string; role?: string } | null {
   const authHeader = request.headers.get('Authorization') || '';
   if (!authHeader.startsWith('Bearer ')) return null;
   const token = authHeader.substring(7).trim();
   const payload = verifyJwt(token, secret);
   if (!payload || !payload.sub) return null;
-  return { userId: String(payload.sub) };
+  return {
+    userId: String(payload.sub),
+    role: payload.role ? String(payload.role) : undefined,
+  };
 }
 
 // ---------------------------------------------------------------------- Database Helper
@@ -2088,7 +2099,7 @@ async function handleApi(
 
     const doId = env.INVENTORY_LOCK.idFromName(unitId);
     const stub = env.INVENTORY_LOCK.get(doId);
-    const status = await stub.getHoldStatus();
+    const status = (await stub.getHoldStatus()) as { isHeld: boolean; heldBy?: string; expiresAt?: number };
 
     return jsonResponse({ data: { unitId, ...status } }, 200, cors);
   }
@@ -2311,7 +2322,7 @@ async function handleApi(
             url: `${url.protocol}//${request.headers.get('host') || ''}/uploads/${k.name.replace(/^r2_cache:/, '')}`,
           })),
           pagination: {
-            cursor: listed.list_complete ? null : listed.cursor,
+            cursor: listed.list_complete ? null : (listed as any).cursor,
             truncated: !listed.list_complete,
           },
         },
