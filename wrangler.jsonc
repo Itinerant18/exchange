@@ -6,6 +6,16 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "routes": [
+    {
+      "pattern": "exchange24.site",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.exchange24.site",
+      "custom_domain": true
+    }
+  ],
   "hyperdrive": [
     {
       "binding": "HYPERDRIVE",
