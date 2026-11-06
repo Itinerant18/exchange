@@ -993,7 +993,7 @@ async function handleApi(
             days,
             subtotalPaise,
             depositPaise,
-            damageWaiverFeePaise,
+            damageWaiverFeePaise: waiverFeePaise,
             totalPaise,
             createdAt: header.createdAt,
           };
