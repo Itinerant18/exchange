@@ -359,9 +359,9 @@ export class RentalLifecycleWorkflow extends WorkflowEntrypoint<Env, RentalWorkf
     const returnTimestamp = new Date(`${endDate}T00:00:00Z`).getTime();
     const reminderTarget = returnTimestamp - 24 * 60 * 60 * 1000;
     const now = Date.now();
-    const waitSeconds = Math.max(3, Math.min(10, Math.floor((reminderTarget - now) / 1000)));
+    const waitMs = Math.max(3000, Math.min(10000, reminderTarget - now));
 
-    await step.sleep('wait-for-return-window', `${waitSeconds} seconds`);
+    await step.sleep('wait-for-return-window', waitMs);
 
     // Step 3: Return Reminder Notice
     const reminder = await step.do('send-return-reminder', async () => {
@@ -370,7 +370,7 @@ export class RentalLifecycleWorkflow extends WorkflowEntrypoint<Env, RentalWorkf
     });
 
     // Step 4: Atelier Garment Return & Inspection Hold
-    await step.sleep('inspection-window-hold', '3 seconds');
+    await step.sleep('inspection-window-hold', 3000);
 
     // Step 5: Deposit Settlement Assessment
     const settlement = await step.do('deposit-settlement', async () => {
