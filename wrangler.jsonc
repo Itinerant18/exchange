@@ -6,6 +6,12 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "a4afb8c876024fbd84041b2933a8951e"
+    }
+  ],
   "assets": {
     "directory": "./frontend/dist",
     "binding": "ASSETS",
@@ -15,11 +21,11 @@
     "API_PREFIX": "/api/v1",
     "PLATFORM_NAME": "Exchnage",
     "PLATFORM_CURRENCY": "INR",
-    "PLATFORM_TIMEZONE": "Asia/Kolkata"
+    "PLATFORM_TIMEZONE": "Asia/Kolkata",
+    "AUTH_JWT_SECRET": "8e4952aca2775546fd924ece45df134ec1d71603407b66c00c1aaaa4c738e979e8d66292fe29f5b4ea6b71bb25a6b663"
   },
   "observability": {
     "enabled": true,
     "head_sampling_rate": 1
   }
 }
-

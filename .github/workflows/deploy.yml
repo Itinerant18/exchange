@@ -35,6 +35,9 @@ jobs:
         working-directory: frontend
         run: npm run build
 
+      - name: Install Worker Dependencies
+        run: npm install
+
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:

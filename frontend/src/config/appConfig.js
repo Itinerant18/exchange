@@ -1,8 +1,15 @@
 const readValue = (value, fallback) => value?.trim() || fallback;
 
+const getFallbackApiUrl = () => {
+  if (typeof window !== 'undefined' && window.location && window.location.origin) {
+    return `${window.location.origin}/api/v1`;
+  }
+  return 'http://127.0.0.1:5000/api/v1';
+};
+
 const apiBaseUrl = readValue(
   import.meta.env.VITE_API_BASE_URL,
-  'http://127.0.0.1:5000/api/v1',
+  getFallbackApiUrl(),
 ).replace(/\/+$/, '');
 
 try {
