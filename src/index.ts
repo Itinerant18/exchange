@@ -8,9 +8,17 @@
 import { Client } from 'pg';
 import { createHmac, randomBytes, scrypt as scryptCallback, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
-import { DurableObject } from 'cloudflare:workers';
+import { DurableObject, WorkflowEntrypoint, WorkflowStep, type WorkflowEvent } from 'cloudflare:workers';
 
 const scrypt = promisify(scryptCallback);
+
+export type RentalWorkflowParams = {
+  bookingId: string;
+  renterUserId: string;
+  startDate: string;
+  endDate: string;
+  totalPaise: number;
+};
 
 export interface Env {
   ASSETS: Fetcher;
@@ -19,6 +27,7 @@ export interface Env {
   EXCHANGE_KV?: KVNamespace;
   EVENT_QUEUE?: Queue<any>;
   INVENTORY_LOCK?: DurableObjectNamespace<InventoryLockDO>;
+  RENTAL_WORKFLOW?: Workflow<RentalWorkflowParams>;
   UPLOADS_BUCKET?: R2Bucket;
   AUTH_JWT_SECRET?: string;
   API_PREFIX?: string;
@@ -334,6 +343,51 @@ export class InventoryLockDO extends DurableObject {
   }
 }
 
+// ---------------------------------------------------------------------- Cloudflare Workflow: RentalLifecycleWorkflow
+
+export class RentalLifecycleWorkflow extends WorkflowEntrypoint<Env, RentalWorkflowParams> {
+  async run(event: WorkflowEvent<RentalWorkflowParams>, step: WorkflowStep) {
+    const { bookingId, renterUserId, startDate, endDate, totalPaise } = event.payload;
+
+    // Step 1: Booking Confirmation & Logistics Dispatch
+    const confirmation = await step.do('confirm-and-dispatch-courier', async () => {
+      console.log(`[Workflow:Step 1] Rental booking ${bookingId} confirmed. Dispatching courier logistics.`);
+      return { status: 'DISPATCHED', dispatchedAt: new Date().toISOString() };
+    });
+
+    // Step 2: Sleep until return window (simulated durable sleep)
+    const returnTimestamp = new Date(`${endDate}T00:00:00Z`).getTime();
+    const reminderTarget = returnTimestamp - 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const waitSeconds = Math.max(3, Math.min(10, Math.floor((reminderTarget - now) / 1000)));
+
+    await step.sleep('wait-for-return-window', `${waitSeconds} seconds`);
+
+    // Step 3: Return Reminder Notice
+    const reminder = await step.do('send-return-reminder', async () => {
+      console.log(`[Workflow:Step 3] Emitting return reminder notice for renter ${renterUserId} on booking ${bookingId}`);
+      return { reminded: true, remindedAt: new Date().toISOString() };
+    });
+
+    // Step 4: Atelier Garment Return & Inspection Hold
+    await step.sleep('inspection-window-hold', '3 seconds');
+
+    // Step 5: Deposit Settlement Assessment
+    const settlement = await step.do('deposit-settlement', async () => {
+      console.log(`[Workflow:Step 5] Finalizing deposit settlement for booking ${bookingId}`);
+      return { settled: true, settledAt: new Date().toISOString(), depositAction: 'RELEASED' };
+    });
+
+    return {
+      bookingId,
+      confirmation,
+      reminder,
+      settlement,
+      status: 'COMPLETED',
+    };
+  }
+}
+
 // ---------------------------------------------------------------------- API Request Handler
 
 async function handleApi(
@@ -412,6 +466,7 @@ async function handleApi(
           edgeKV: kvStatus,
           edgeQueue: env.EVENT_QUEUE ? 'connected' : 'unbound',
           edgeDurableObjects: env.INVENTORY_LOCK ? 'connected' : 'unbound',
+          edgeWorkflows: env.RENTAL_WORKFLOW ? 'connected' : 'unbound',
           timestamp: new Date().toISOString(),
         },
       },
@@ -1322,10 +1377,11 @@ async function handleApi(
     }
 
     try {
+      let bookingDetails: any = null;
       await withDb(env, ctx, async (client) => {
         await client.query('BEGIN');
         const check = await client.query(
-          `SELECT b.id, b.status, l.owner_user_id
+          `SELECT b.id, b.status, b.renter_user_id, b.start_date, b.end_date, b.total_amount_paise, l.owner_user_id
            FROM rental_bookings b
            JOIN listings l ON l.id = b.rental_listing_id
            WHERE b.id::text = $1 FOR UPDATE`,
@@ -1348,15 +1404,108 @@ async function handleApi(
           [b.id, auth.userId],
         );
         await client.query('COMMIT');
+        bookingDetails = b;
       });
 
       recordEdgeAudit(env, ctx, 'RENTAL_BOOKING_ACCEPTED', auth.userId, request.headers.get('CF-Connecting-IP'), {
         bookingId,
       });
 
-      return jsonResponse({ data: { success: true, status: 'confirmed' } }, 200, cors);
+      let workflowStarted = false;
+      let workflowInstanceId: string | null = null;
+      if (env.RENTAL_WORKFLOW && bookingDetails) {
+        try {
+          workflowInstanceId = `wf-${bookingDetails.id}-${Date.now()}`;
+          await env.RENTAL_WORKFLOW.create({
+            id: workflowInstanceId,
+            params: {
+              bookingId: bookingDetails.id,
+              renterUserId: bookingDetails.renter_user_id,
+              startDate: bookingDetails.start_date,
+              endDate: bookingDetails.end_date,
+              totalPaise: Number(bookingDetails.total_amount_paise),
+            },
+          });
+          workflowStarted = true;
+        } catch (wfErr) {
+          console.warn('[Workflow] Auto-trigger error:', wfErr);
+        }
+      }
+
+      return jsonResponse(
+        { data: { success: true, status: 'confirmed', workflowStarted, workflowInstanceId } },
+        200,
+        cors,
+      );
     } catch (err: any) {
       return jsonResponse({ error: { message: err.message, code: 'ACCEPT_FAILED' } }, 400, cors);
+    }
+  }
+
+  // 11. Rentals Bookings - Workflow Trigger & Status
+  if (path.match(/^\/rentals\/bookings\/[^/]+\/workflow\/trigger$/) && method === 'POST') {
+    const bookingId = path.split('/')[3];
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    if (!env.RENTAL_WORKFLOW) {
+      return jsonResponse({ error: { message: 'Workflows binding is unavailable', code: 'UNAVAILABLE' } }, 503, cors);
+    }
+
+    try {
+      const booking = await withDb(env, ctx, async (client) => {
+        const res = await client.query(
+          `SELECT b.id, b.status, b.renter_user_id, b.start_date, b.end_date, b.total_amount_paise, l.owner_user_id
+           FROM rental_bookings b
+           JOIN listings l ON l.id = b.rental_listing_id
+           WHERE b.id::text = $1 AND (b.renter_user_id::text = $2 OR l.owner_user_id::text = $2)`,
+          [bookingId, auth.userId],
+        );
+        return res.rows[0];
+      });
+
+      if (!booking) {
+        return jsonResponse({ error: { message: 'Booking not found or unauthorized', code: 'NOT_FOUND' } }, 404, cors);
+      }
+
+      const instanceId = `rental-wf-${booking.id}-${Date.now()}`;
+      const instance = await env.RENTAL_WORKFLOW.create({
+        id: instanceId,
+        params: {
+          bookingId: booking.id,
+          renterUserId: booking.renter_user_id,
+          startDate: booking.start_date,
+          endDate: booking.end_date,
+          totalPaise: Number(booking.total_amount_paise),
+        },
+      });
+
+      return jsonResponse({ data: { instanceId, status: await instance.status() } }, 202, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'WORKFLOW_TRIGGER_FAILED' } }, 500, cors);
+    }
+  }
+
+  if (path.match(/^\/rentals\/bookings\/[^/]+\/workflow$/) && method === 'GET') {
+    const bookingId = path.split('/')[3];
+    const auth = extractBearerUser(request, jwtSecret);
+    if (!auth) {
+      return jsonResponse({ error: { message: 'Unauthorized', code: 'UNAUTHORIZED' } }, 401, cors);
+    }
+
+    const instanceId = url.searchParams.get('instanceId') || `wf-${bookingId}`;
+    if (!env.RENTAL_WORKFLOW) {
+      return jsonResponse({ error: { message: 'Workflows unavailable', code: 'UNAVAILABLE' } }, 503, cors);
+    }
+
+    try {
+      const instance = await env.RENTAL_WORKFLOW.get(instanceId);
+      const status = await instance.status();
+      return jsonResponse({ data: { instanceId, ...status } }, 200, cors);
+    } catch (err: any) {
+      return jsonResponse({ error: { message: err.message, code: 'WORKFLOW_STATUS_ERROR' } }, 404, cors);
     }
   }
 

@@ -56,6 +56,13 @@
       ]
     }
   ],
+  "workflows": [
+    {
+      "name": "rental-lifecycle",
+      "binding": "RENTAL_WORKFLOW",
+      "class_name": "RentalLifecycleWorkflow"
+    }
+  ],
   "assets": {
     "directory": "./frontend/dist",
     "binding": "ASSETS",
