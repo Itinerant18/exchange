@@ -8,6 +8,8 @@ const PUBLIC_ROUTES = [
   '/reset-password',
   '/listings',
   '/lend',
+  '/blog',
+  '/blog/sustainable-couture-rental-revolution',
 ];
 
 test.describe('Mobile Foundation & Viewport Tests', () => {
