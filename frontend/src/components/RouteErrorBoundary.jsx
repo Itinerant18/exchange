@@ -45,15 +45,18 @@ export function RouteErrorBoundary() {
         to="/"
         style={{
           textDecoration: 'none',
-          color: '#C8A251',
-          fontSize: '0.8125rem',
-          letterSpacing: '0.22em',
-          textTransform: 'uppercase',
           marginBottom: '1.25rem',
-          fontWeight: 600,
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
+        aria-label={`${appConfig.name} Home`}
       >
-        ✦ {appConfig.name} ✦
+        <img
+          src="/logo-dark.png"
+          alt="Exchange24 - Rent Wear Repeat"
+          style={{ height: '48px', width: 'auto', maxWidth: '160px', objectFit: 'contain' }}
+        />
       </Link>
 
       {/* Editorial Headline */}

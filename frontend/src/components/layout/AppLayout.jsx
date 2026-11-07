@@ -216,10 +216,13 @@ export function AppLayout() {
             </svg>
           </button>
 
-          {/* Brand Logo Wordmark */}
+          {/* Brand Logo */}
           <Link to="/" className={styles.brand} aria-label={`${appConfig.name} Home`}>
-            <span className={styles.brandName}>{appConfig.name}</span>
-            <span className={styles.brandSubtitle}>THE CLOSET IN THE CLOUD</span>
+            <img
+              src="/logo-dark.png"
+              alt="Exchange24 - Rent Wear Repeat"
+              className={styles.brandLogoImg}
+            />
           </Link>
 
           {/* Primary Navigation Links (Desktop) */}
@@ -346,10 +349,18 @@ export function AppLayout() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className={styles.menuDrawerHeader}>
-              <div className={styles.menuDrawerBrand}>
-                <span className={styles.brandName}>{appConfig.name}</span>
-                <span className={styles.brandSubtitle}>THE CLOSET IN THE CLOUD</span>
-              </div>
+              <Link
+                to="/"
+                className={styles.menuDrawerBrand}
+                onClick={() => setMenuOpen(false)}
+                aria-label={`${appConfig.name} Home`}
+              >
+                <img
+                  src="/logo-dark.png"
+                  alt="Exchange24 - Rent Wear Repeat"
+                  className={styles.drawerBrandLogoImg}
+                />
+              </Link>
               <button
                 type="button"
                 className={styles.menuCloseBtn}
@@ -560,7 +571,13 @@ export function AppLayout() {
 
         <div className={styles.footerGrid}>
           <div className={styles.footerBrandCol}>
-            <Link to="/" className={styles.footerBrandTitle}>{appConfig.name}</Link>
+            <Link to="/" className={styles.footerBrandTitle} aria-label={`${appConfig.name} Home`}>
+              <img
+                src="/logo-dark.png"
+                alt="Exchange24 - Rent Wear Repeat"
+                className={styles.footerBrandLogoImg}
+              />
+            </Link>
             <p className={styles.footerDesc}>
               The luxury circular fashion and designer rental platform. Wear extraordinary pieces for milestone moments without the closet footprint.
             </p>

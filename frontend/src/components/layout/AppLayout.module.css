@@ -141,12 +141,27 @@
   }
 }
 
-/* Brand Wordmark */
+/* Brand Wordmark & Logo */
 .brand {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   text-decoration: none;
   flex-shrink: 0;
+}
+
+.brandLogoImg {
+  height: 38px;
+  width: auto;
+  max-width: 130px;
+  object-fit: contain;
+  display: block;
+}
+
+@media (min-width: 768px) {
+  .brandLogoImg {
+    height: 44px;
+    max-width: 150px;
+  }
 }
 
 .brandName {
@@ -507,7 +522,16 @@
 
 .menuDrawerBrand {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+}
+
+.drawerBrandLogoImg {
+  height: 42px;
+  width: auto;
+  max-width: 140px;
+  object-fit: contain;
+  display: block;
 }
 
 .menuCloseBtn {
@@ -872,6 +896,15 @@
   letter-spacing: -0.02em;
   color: #FFFFFF;
   text-decoration: none;
+  display: inline-block;
+}
+
+.footerBrandLogoImg {
+  height: 48px;
+  width: auto;
+  max-width: 170px;
+  object-fit: contain;
+  display: block;
 }
 
 .footerDesc {

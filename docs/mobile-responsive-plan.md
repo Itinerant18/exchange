@@ -12,7 +12,7 @@
 The plan below assumes these defaults. If you change one, only the section it points to changes.
 
 | # | Decision | Recommended default | Alternative | Affects |
-|---|----------|---------------------|-------------|---------|
+| --- | ---------- | --------------------- | ------------- | --------- |
 | D1 | Phone primary navigation | **Bottom tab bar** (Home · Browse · Saved · Bag · Account) plus the existing hamburger for secondary links | Keep the hamburger only | §3 |
 | D2 | PWA / offline support | **Out of scope for v1.** Keep the existing offline banner. Add a manifest and icons only, so "Add to Home Screen" looks right | Full service worker with a cached catalog | §8 |
 | D3 | Admin suite on phones | **Usable but not optimised.** Tables become stacked cards and every action is reachable. No phone-specific redesign | Full phone redesign / desktop only | §4.12 |
@@ -34,7 +34,7 @@ The plan below assumes these defaults. If you change one, only the section it po
 ### 1.2 Problems found
 
 | # | Problem | Evidence | Mobile impact | Priority |
-|---|---------|----------|---------------|----------|
+| --- | --------- | ---------- | --------------- | ---------- |
 | A1 | **About 15 different breakpoints**, mixing `min-width` and `max-width` | 480, 500, 540, 640, 700, 719, 768, 860, 900, 960, 1024, 1100, 1200px and 48/64/72rem across 25 files | Layouts break unevenly between breakpoints, and fixes conflict | P0 |
 | A2 | **`100vh` on full-height surfaces** | `BagDrawer.module.css:13`, `FilterModal.module.css:17-18`, `AppLayout.module.css:2`, `ListingDetailPage.module.css:869,885`, `CreateListingPage.module.css:1380`, `LendPage.module.css:3`, `AuthPages.module.css:3`, `RouteErrorBoundary.jsx:14` | iOS Safari's URL bar hides the bottom of drawers, including the "Show looks" and "Checkout" buttons | P0 |
 | A3 | **Inputs below 16px** | `global.css:231` (14px), `CreateListingPage.module.css:221` (14px), `AdminPage.module.css:175` (0.85rem), `BackupSizeSelector.module.css:34`, `CoutureFittingEngine.module.css:143`, `Feedback.module.css:297` (12px) | iOS zooms the page when a field gets focus, and the layout jumps | P0 |
@@ -69,7 +69,7 @@ Everything else depends on this phase. All of these are edits to existing files;
 ### 2.1 Canonical breakpoints (mobile-first)
 
 | Token (comment only) | Value | Meaning |
-|----------------------|-------|---------|
+| ---------------------- | ------- | --------- |
 | `--bp-sm` | `min-width: 480px` | Large phones (Plus/Max), landscape phones |
 | `--bp-md` | `min-width: 768px` | Tablet portrait. The bottom tab bar hides and two-column layouts begin |
 | `--bp-lg` | `min-width: 1024px` | Tablet landscape and small laptops. Full desktop navigation appears |
@@ -84,22 +84,26 @@ Everything else depends on this phase. All of these are edits to existing files;
 
 - `index.html`: `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`.
 - Add these tokens in `variables.css`:
+
   ```css
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left: env(safe-area-inset-left, 0px);
   --safe-right: env(safe-area-inset-right, 0px);
   ```
+
 - Apply them to the sticky header (`padding-top`), the bottom tab bar, sticky CTAs, drawer footers, toasts and the offline banner.
 - **Ship the meta change and the padding in the same commit.** `viewport-fit=cover` without the padding puts content under the notch.
 
 ### 2.3 Dynamic viewport height
 
 Replace each `100vh` listed in A2 with:
+
 ```css
 height: 100vh;          /* fallback */
 height: 100dvh;         /* tracks the iOS/Android URL bar */
 ```
+
 For `calc(100vh - X)`, use `calc(100dvh - X)` with the same fallback line before it.
 
 ### 2.4 Input sizing (stops iOS zoom on focus)
@@ -124,7 +128,7 @@ For `calc(100vh - X)`, use `calc(100dvh - X)` with the same fallback line before
 ### 2.7 Mobile type and spacing scale
 
 | Token | Current | Phone (base) | ≥1024px |
-|-------|---------|--------------|---------|
+| ------- | --------- | -------------- | --------- |
 | `--text-base` | 14px | **16px** | 15px |
 | Body weight | 300 | **400** | 300 (editorial look kept) |
 | `--text-micro` / eyebrows | 11px | 11px minimum, **never smaller** | 11px |
@@ -160,6 +164,7 @@ Update BagDrawer (`1000`), FilterModal (`9011`) and the offline banner (`10000`)
 Leave `:root { color-scheme: dark light; }` in place, but set `color-scheme: light` on every light surface: cards, drawers, forms and the date picker. Native controls then render in light mode regardless of the phone's theme. Check this by emulating `prefers-color-scheme: dark`.
 
 **Phase 0 acceptance criteria**
+
 - [ ] No horizontal overflow on any route at 320, 360, 390 or 414px (`scrollWidth <= innerWidth`).
 - [ ] No iOS zoom when focusing any field.
 - [ ] No interactive element smaller than 44×44px (automated scan, §9).
@@ -188,6 +193,7 @@ Leave `:root { color-scheme: dark light; }` in place, but set `color-scheme: lig
 ```
 
 **Header (56px, sticky, `--z-sticky-header`)**
+
 - Left: hamburger (44×44).
 - Center: the brand wordmark. Hide the "THE CLOSET IN THE CLOUD" subtitle below 480px.
 - Right: Search (44×44) and Bag (44×44, with an indicator dot).
@@ -196,6 +202,7 @@ Leave `:root { color-scheme: dark light; }` in place, but set `color-scheme: lig
 - Optional: hide the header on scroll down and show it on scroll up, using transform only. Only do this if the bottom bar exists.
 
 **Bottom tab bar (new, phones only, D1)**
+
 - Five destinations: Home `/`, Browse `/listings`, Saved `/favorites`, Bag (opens `BagDrawer`), Account (`/profile` when signed in, `/login` when not).
 - Each tab is at least 44px tall with icon and label, and the bar is 56px plus `--safe-bottom`.
 - The active tab uses the gold `#C8A251` icon and label; inactive tabs use `rgba(255,255,255,0.7)`.
@@ -204,6 +211,7 @@ Leave `:root { color-scheme: dark light; }` in place, but set `color-scheme: lig
 - Add `padding-bottom: calc(56px + var(--safe-bottom))` to `.main` so content isn't hidden behind the bar.
 
 **Hamburger menu → full-height sheet from the left**
+
 - Contents: Rent for Events · Weddings · Cocktail & Gala · Buy Pre-Loved · Lend Couture, then a divider, then My Rentals · Orders · Disputes · Admin (if admin), then Sign out (moved here from the header).
 - Behaviour:
   - Set `aria-expanded` and `aria-controls` on the button.
@@ -213,23 +221,28 @@ Leave `:root { color-scheme: dark light; }` in place, but set `color-scheme: lig
 - Rows are 52px tall with 16px side padding, 18px Playfair labels and gold dividers.
 
 **Announcement bar**
+
 - On phones, show one message at a time, rotating every 5 seconds with a crossfade. Respect `prefers-reduced-motion` (no rotation; show the first message only). A tap pauses it.
 - Height is 32px. Truncate with an ellipsis rather than wrapping.
 
 **Search**
+
 - The search icon opens a full-screen search overlay containing an autofocused input (16px, `type="search"`, `enterkeyhint="search"`), recent searches, popular designers and occasion chips.
 - Submitting goes to `/listings?q=…`. If `q` is not supported yet, link to `/listings` for now and note this as a backend follow-up.
 
 **Footer (phone)**
+
 - Keep the guarantees as one column (already done).
 - Turn the link columns into **accordions** (`<details>`/`<summary>`, native and no JS), each row 48px tall.
 - Add `padding-bottom` so the footer clears the bottom bar.
 
 **Offline banner**
+
 - Move the inline styles into `AppLayout.module.css` and give it `top: var(--safe-top)` and `--z-offline`.
 - Shorten the text on phones: "Offline — reservations resume when you reconnect."
 
 **Global overlays (shared rules)**
+
 - On phones, every drawer or modal is **full-screen or a bottom sheet** with:
   - A grab handle.
   - A sticky header with a 44px close button.
@@ -247,7 +260,7 @@ Priority order: **renter flow (4.1–4.5) → lender flow (4.6–4.7) → accoun
 ### 4.1 Home `/` — `HomePage`, `HeroVideoShowcase`, `BrandTicker`, `MoleculeVisualNav`, `SlidingValueProps`, `CustomerFitGallery`, `MoleculeComparisonTable`, `HeroWithExpandableTextPills`
 
 | Section | Phone (<768) | Tablet (768–1023) |
-|---------|--------------|-------------------|
+| --------- | -------------- | ------------------- |
 | Hero video | **Portrait crop (4:5 or 9:16) through `<source media="(max-width: 767px)">` plus a portrait poster.** Headline sits over a bottom gradient scrim, with one gold primary CTA "Rent for an Event" (full width, 52px) and a secondary text link. Play/pause button 44px (WCAG 2.2.2). | 16:9 crop |
 | Brand ticker | Keep the marquee. Pause it under `prefers-reduced-motion` and when off-screen | Same |
 | Occasion carousel | Horizontal `scroll-snap-type: x mandatory`, cards about 72vw wide with a 3:4 aspect and the next card peeking 16px. No arrows; add a "View all" link | 3 visible cards |
@@ -358,7 +371,7 @@ Priority order: **renter flow (4.1–4.5) → lender flow (4.6–4.7) → accoun
 - Field attributes:
 
   | Field | `type` | `autocomplete` | `inputmode` | `enterkeyhint` |
-  |-------|--------|----------------|-------------|----------------|
+  | ------- | -------- | ---------------- | ------------- | ---------------- |
   | Email | `email` | `email` (`username` on login) | `email` | `next` |
   | Password (login) | `password` | `current-password` | — | `go` |
   | Password (register/reset) | `password` | `new-password` | — | `next`/`done` |
@@ -445,7 +458,7 @@ The biggest mobile risk is a long single page with STEP 01–0N sections.
 ✓ = covered by this plan · — = not applicable
 
 | Route / component | Breakpoints | Safe area | dvh | 16px inputs | 44px targets | Hover gate | Sheet/drawer | Sticky CTA | Media loading | States (load/empty/error) |
-|-------------------|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| ------------------- | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: | :-: |
 | AppLayout (header/nav/footer) | ✓ | ✓ | ✓ | — | ✓ | ✓ | ✓ menu | — | — | ✓ offline |
 | `/` Home | ✓ | — | — | — | ✓ | ✓ | — | — | ✓ | ✓ |
 | `/listings` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ filter/sort | ✓ filter | ✓ | ✓ |
@@ -472,7 +485,7 @@ The biggest mobile risk is a long single page with STEP 01–0N sections.
 ## 6. Interaction, gesture and accessibility rules
 
 | Rule | Spec |
-|------|------|
+| ------ | ------ |
 | Thumb zone | The primary CTA on every transactional screen sits in the bottom third (sticky bar). Destructive actions go to the top or left, never next to the primary action |
 | Gestures | Swipe is always optional. Every swipe (gallery, sheet dismiss, menu close, reorder) has a visible button equivalent |
 | Tap feedback | `:active` gives a scale of 0.98 or an opacity of 0.85 within 100ms. Remove `-webkit-tap-highlight-color` and replace it with brand feedback |
@@ -489,7 +502,7 @@ The biggest mobile risk is a long single page with STEP 01–0N sections.
 ## 7. Performance and network (Tier 2/3 India)
 
 | Metric (mid-range Android, Moto G-class, Fast 4G, Lighthouse mobile) | Budget |
-|--------------------------------------------------------------------|--------|
+| -------------------------------------------------------------------- | -------- |
 | LCP (Home, `/listings`, PDP) | ≤ 2.5s |
 | INP | ≤ 200ms |
 | CLS | ≤ 0.1 (reserve aspect ratios on all media using `aspect-ratio` tokens) |
@@ -517,7 +530,7 @@ The biggest mobile risk is a long single page with STEP 01–0N sections.
 `@playwright/test` is already a devDependency. Add `frontend/playwright.mobile.config.js` with device projects:
 
 | Project | Device | Viewport |
-|---------|--------|----------|
+| --------- | -------- | ---------- |
 | `android-small` | Custom (Galaxy A-series class) | 360×640, DPR 3, touch |
 | `iphone-se` | `devices['iPhone SE']` | 320 CSS px wide (worst case) |
 | `iphone-15` | `devices['iPhone 15']` | 393×852 |
@@ -525,6 +538,7 @@ The biggest mobile risk is a long single page with STEP 01–0N sections.
 | `desktop` | Desktop Chrome | 1440×900 (regression guard) |
 
 **One spec, `tests/mobile/responsive.spec.mjs`, run against every route in §1.1:**
+
 1. **No horizontal overflow:** `expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)`.
 2. **Tap-target scan:** query `a, button, input, select, textarea, [role=button], [tabindex]:not([tabindex="-1"])`, filter to visible elements, and fail if any `getBoundingClientRect()` is smaller than 44×44 (with an allowlist for inline text links inside paragraphs).
 3. **Input font size:** every visible `input/select/textarea` has a computed `font-size` of at least 16px on phone projects.
@@ -534,6 +548,7 @@ The biggest mobile risk is a long single page with STEP 01–0N sections.
 Protected routes use a seeded test user from the existing `tests/integration` helpers.
 
 **Manual checks (real devices, release gate):**
+
 - An iPhone with a notch, in Safari and as a home-screen app (safe areas, URL bar collapse, date picker, upload with camera).
 - A mid-range Android in Chrome (scroll jank on the sticky header, video data use, back-button behaviour closing sheets).
 - Dark-mode phone (native controls render light), 200% text size, VoiceOver and TalkBack on the PDP and Bag.
@@ -546,7 +561,7 @@ Protected routes use a seeded test user from the existing `tests/integration` he
 ## 10. Delivery roadmap
 
 | Phase | Scope | Main files | Estimate | Exit criteria |
-|-------|-------|------------|----------|---------------|
+| ------- | ------- | ------------ | ---------- | --------------- |
 | **P0 Foundations** | §2: breakpoints doc, safe areas, dvh, 16px inputs, tap tokens, hover gating helper, type and spacing scale, z-index, media rules | `index.html`, `styles/variables.css`, `styles/global.css`, `styles/reset.css` | 2–3 days | Phase 0 checklist passes, Playwright overflow and font-size checks pass on all routes |
 | **P1 Shell** | §3: header, bottom tab bar, menu sheet, announcement, search overlay, footer accordions, offline banner, shared sheet pattern | `AppLayout.jsx/.module.css`, new `BottomNav` inside AppLayout (no new file unless it exceeds about 80 lines), `BagDrawer`, `FilterModal` | 3–4 days | Shell works at 320–1440px; menu accessible; no overlap with the bottom bar |
 | **P2a Renter flow** | §4.1–4.5: Home, Listings, PDP, Bag, Auth | Home components, `ListingsPage`, `ListingCard`, `ListingDetailPage` and rental components, `AuthPages`, `TurnstileWidget` | 6–8 days | Critical-flow E2E passes on phones; LCP budget met |
@@ -558,6 +573,7 @@ Protected routes use a seeded test user from the existing `tests/integration` he
 **Total: about 22–29 working days for one frontend engineer.** Do P0 and P1 first, in order. P2a–P2d can run in parallel across engineers once P1 has landed.
 
 **Working rules for implementation**
+
 - Migrate each CSS Module **once**: breakpoints, hover gating, tap targets and dvh together, to avoid touching 13.7k lines repeatedly.
 - Keep the desktop look identical. The desktop Playwright project's screenshot diff must stay at zero unless a change is intended.
 - No new runtime dependencies are needed. Scroll-snap, `<details>`, native date/file inputs, `matchMedia`, `IntersectionObserver` and `dvh` cover everything here.

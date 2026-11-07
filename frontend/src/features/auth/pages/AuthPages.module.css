@@ -36,18 +36,16 @@
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
   text-decoration: none;
-  color: var(--color-on-surface);
-  font-family: var(--font-display);
-  font-size: var(--text-lg);
-  font-weight: 300;
-  letter-spacing: -0.02em;
   margin-bottom: var(--space-6);
 }
 
-.logo svg {
-  color: var(--color-on-surface);
+.authLogoImg {
+  height: 48px;
+  width: auto;
+  max-width: 170px;
+  object-fit: contain;
+  display: block;
 }
 
 .title {

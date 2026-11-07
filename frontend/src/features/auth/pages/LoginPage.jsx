@@ -66,12 +66,12 @@ export function LoginPage() {
       <div className={styles.pageInner}>
         <div className={styles.formSection}>
           <div className={styles.formHeader}>
-            <Link to="/" className={styles.logo}>
-              <svg width="32" height="32" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-                <circle cx="14" cy="14" r="12" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M14 6v16M6 14h16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <span>{appConfig.name}</span>
+            <Link to="/" className={styles.logo} aria-label={`${appConfig.name} Home`}>
+              <img
+                src="/logo-light.png"
+                alt="Exchange24 - Rent Wear Repeat"
+                className={styles.authLogoImg}
+              />
             </Link>
             <h1 className={styles.title}>Welcome back</h1>
             <p className={styles.subtitle}>
