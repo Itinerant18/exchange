@@ -55,7 +55,7 @@ export function RouteErrorBoundary() {
         <img
           src="/logo-dark.png"
           alt="Exchange24 - Rent Wear Repeat"
-          style={{ height: '48px', width: 'auto', maxWidth: '160px', objectFit: 'contain' }}
+          style={{ height: '60px', width: 'auto', maxWidth: '180px', objectFit: 'contain' }}
         />
       </Link>
 

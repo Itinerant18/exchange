@@ -41,9 +41,9 @@
 }
 
 .authLogoImg {
-  height: 48px;
+  height: 60px;
   width: auto;
-  max-width: 170px;
+  max-width: 180px;
   object-fit: contain;
   display: block;
 }

@@ -105,12 +105,19 @@
 .headerInner {
   max-width: var(--content-width);
   margin: 0 auto;
-  padding: 0.5rem var(--space-4);
-  min-height: 56px;
+  padding: 0.4rem var(--space-4);
+  min-height: 58px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .headerInner {
+    min-height: 64px;
+    padding: 0.5rem var(--space-4);
+  }
 }
 
 /* Hamburger button (44x44 minimum hit target) */
@@ -150,17 +157,17 @@
 }
 
 .brandLogoImg {
-  height: 38px;
+  height: 44px;
   width: auto;
-  max-width: 165px;
+  max-width: 140px;
   object-fit: contain;
   display: block;
 }
 
 @media (min-width: 768px) {
   .brandLogoImg {
-    height: 44px;
-    max-width: 190px;
+    height: 52px;
+    max-width: 160px;
   }
 }
 
@@ -539,9 +546,9 @@
 }
 
 .drawerBrandLogoImg {
-  height: 44px;
+  height: 52px;
   width: auto;
-  max-width: 190px;
+  max-width: 160px;
   object-fit: contain;
   display: block;
 }
@@ -912,9 +919,9 @@
 }
 
 .footerBrandLogoImg {
-  height: 52px;
+  height: 56px;
   width: auto;
-  max-width: 210px;
+  max-width: 180px;
   object-fit: contain;
   display: block;
 }
