@@ -12,6 +12,10 @@ export function MyOrdersPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [actionMessage, setActionMessage] = useState('');
+  const [expandedOrderId, setExpandedOrderId] = useState(null);
+  const [orderDetails, setOrderDetails] = useState({});
+  const [loadingDetailId, setLoadingDetailId] = useState(null);
+  const [confirmCancelId, setConfirmCancelId] = useState(null);
 
   const loadOrders = useCallback(async () => {
     setLoading(true);
@@ -31,12 +35,33 @@ export function MyOrdersPage() {
     loadOrders();
   }, [loadOrders]);
 
+  async function handleToggleOrder(orderId) {
+    if (expandedOrderId === orderId) {
+      setExpandedOrderId(null);
+      return;
+    }
+    setExpandedOrderId(orderId);
+    if (!orderDetails[orderId]) {
+      setLoadingDetailId(orderId);
+      try {
+        const detail = await ordersApi.getOrderById(orderId);
+        setOrderDetails((prev) => ({ ...prev, [orderId]: detail?.data ?? detail }));
+      } catch (err) {
+        setError(err.message || 'Failed to fetch order details.');
+      } finally {
+        setLoadingDetailId(null);
+      }
+    }
+  }
+
   async function handleOpenDetail(orderId) {
     setDetailLoading(true);
     setActionMessage('');
     try {
       const detail = await ordersApi.getOrderById(orderId);
-      setSelectedOrder(detail?.data ?? detail);
+      const data = detail?.data ?? detail;
+      setSelectedOrder(data);
+      setOrderDetails((prev) => ({ ...prev, [orderId]: data }));
     } catch (err) {
       setError(err.message || 'Failed to fetch order details.');
     } finally {
@@ -45,16 +70,17 @@ export function MyOrdersPage() {
   }
 
   async function handleCancelOrder(orderId) {
-    if (!window.confirm('Are you sure you want to cancel this pending order?')) return;
     setCancelling(true);
     setActionMessage('');
     try {
       await ordersApi.cancelOrder(orderId, 'Buyer requested cancellation');
       setActionMessage('Order was successfully cancelled.');
+      setConfirmCancelId(null);
       await loadOrders();
-      // Update modal view
       const updated = await ordersApi.getOrderById(orderId);
-      setSelectedOrder(updated?.data ?? updated);
+      const data = updated?.data ?? updated;
+      setSelectedOrder(data);
+      setOrderDetails((prev) => ({ ...prev, [orderId]: data }));
     } catch (err) {
       setError(err.message || 'Failed to cancel order.');
     } finally {
@@ -96,28 +122,135 @@ export function MyOrdersPage() {
         </div>
       ) : (
         <div className={styles.ordersGrid}>
-          {orders.map((order) => (
-            <div key={order.id} className={styles.orderCard} onClick={() => handleOpenDetail(order.id)}>
-              <div className={styles.orderTop}>
-                <div>
-                  <span className={styles.orderId}>Order #{order.id.slice(0, 8).toUpperCase()}</span>
-                  <div className={styles.orderDate}>{formatDate(order.createdAt)}</div>
+          {orders.map((order) => {
+            const isExpanded = expandedOrderId === order.id;
+            const details = orderDetails[order.id];
+            const isLoadingThis = loadingDetailId === order.id;
+
+            return (
+              <div
+                key={order.id}
+                className={`${styles.orderCard} ${isExpanded ? styles.orderCardExpanded : ''}`}
+                onClick={() => {
+                  if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                    handleToggleOrder(order.id);
+                  } else {
+                    handleOpenDetail(order.id);
+                  }
+                }}
+              >
+                <div className={styles.orderTop}>
+                  <div>
+                    <span className={styles.orderId}>Order #{order.id.slice(0, 8).toUpperCase()}</span>
+                    <div className={styles.orderDate}>{formatDate(order.createdAt)}</div>
+                  </div>
+                  <span className={`${styles.badge} ${getBadgeClass(order.status)}`}>
+                    {order.status}
+                  </span>
                 </div>
-                <span className={`${styles.badge} ${getBadgeClass(order.status)}`}>
-                  {order.status}
-                </span>
-              </div>
 
-              <div className={styles.orderSummary}>
-                <div>Total Items: {order.itemCount ?? 1}</div>
-                <div className={styles.orderAmount}>{formatPaiseToRupees(order.totalAmountPaise)}</div>
-              </div>
+                <div className={styles.orderSummary}>
+                  <div>Total Items: {order.itemCount ?? 1}</div>
+                  <div className={styles.orderAmount}>{formatPaiseToRupees(order.totalAmountPaise)}</div>
+                </div>
 
-              <button type="button" className={styles.viewDetailsBtn}>
-                View Order Details
-              </button>
-            </div>
-          ))}
+                <button
+                  type="button"
+                  className={styles.viewDetailsBtn}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+                      handleToggleOrder(order.id);
+                    } else {
+                      handleOpenDetail(order.id);
+                    }
+                  }}
+                  aria-expanded={isExpanded}
+                >
+                  {isExpanded ? 'Hide Order Details ▲' : 'View Order Details ▼'}
+                </button>
+
+                {/* Inline Accordion Details on Mobile */}
+                {isExpanded && (
+                  <div className={styles.inlineAccordion} onClick={(e) => e.stopPropagation()}>
+                    {isLoadingThis ? (
+                      <p className="muted" style={{ padding: '1rem', textAlign: 'center' }}>Loading items…</p>
+                    ) : details ? (
+                      <div className={styles.accordionContent}>
+                        <div className={styles.accordionHeaderMeta}>
+                          <span>Status: <strong className={`${styles.badge} ${getBadgeClass(details.status)}`}>{details.status}</strong></span>
+                          <span>Total: <strong>{formatPaiseToRupees(details.totalAmountPaise)}</strong></span>
+                        </div>
+
+                        <h4 className={styles.itemsHeading}>
+                          Purchased Items ({details.items?.length ?? 1})
+                        </h4>
+
+                        <div className={styles.itemList}>
+                          {(details.items || []).map((item) => (
+                            <div key={item.id} className={styles.itemRow}>
+                              {item.media && item.media[0] ? (
+                                <img src={item.media[0].url || item.media[0]} alt={item.title} className={styles.itemImage} />
+                              ) : (
+                                <div className={styles.itemImage} />
+                              )}
+                              <div className={styles.itemInfo}>
+                                <div className={styles.itemBrand}>{item.brand || 'DESIGNER PIECE'}</div>
+                                <div className={styles.itemTitle}>{item.title}</div>
+                                <div className={styles.itemSize}>Size: {item.size || 'Standard'}</div>
+                              </div>
+                              <div className={styles.itemPrice}>
+                                {formatPaiseToRupees(item.salePricePaise || details.totalAmountPaise)}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className={styles.accordionActions}>
+                          <Link to={`/disputes?orderId=${order.id}`} className={styles.disputeLink}>
+                            Raise Dispute / Claim
+                          </Link>
+                          {details.status === 'pending' && (
+                            confirmCancelId === order.id ? (
+                              <div className={styles.cancelConfirmBox}>
+                                <span>Cancel order?</span>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                  <button
+                                    type="button"
+                                    className={styles.cancelBtn}
+                                    onClick={() => handleCancelOrder(order.id)}
+                                    disabled={cancelling}
+                                  >
+                                    {cancelling ? 'Cancelling…' : 'Yes, Cancel'}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={styles.viewDetailsBtn}
+                                    onClick={() => setConfirmCancelId(null)}
+                                  >
+                                    Keep
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                className={styles.cancelBtn}
+                                onClick={() => setConfirmCancelId(order.id)}
+                                disabled={cancelling}
+                              >
+                                Cancel Order
+                              </button>
+                            )
+                          )}
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -171,14 +304,37 @@ export function MyOrdersPage() {
                     Raise Dispute / Resolution
                   </Link>
                   {selectedOrder.status === 'pending' && (
-                    <button
-                      type="button"
-                      className={styles.cancelBtn}
-                      onClick={() => handleCancelOrder(selectedOrder.id)}
-                      disabled={cancelling}
-                    >
-                      {cancelling ? 'Cancelling…' : 'Cancel Order'}
-                    </button>
+                    confirmCancelId === selectedOrder.id ? (
+                      <div className={styles.cancelConfirmBox}>
+                        <span>Cancel order?</span>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            type="button"
+                            className={styles.cancelBtn}
+                            onClick={() => handleCancelOrder(selectedOrder.id)}
+                            disabled={cancelling}
+                          >
+                            {cancelling ? 'Cancelling…' : 'Yes, Cancel'}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.viewDetailsBtn}
+                            onClick={() => setConfirmCancelId(null)}
+                          >
+                            Keep
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className={styles.cancelBtn}
+                        onClick={() => setConfirmCancelId(selectedOrder.id)}
+                        disabled={cancelling}
+                      >
+                        Cancel Order
+                      </button>
+                    )
                   )}
                 </div>
               </>

@@ -3,6 +3,7 @@ import { apiRequest } from '../../../services/apiClient.js';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { authErrorMessage } from '../../../config/authMessages.js';
 import { AlertBanner } from '../../../components/feedback/index.js';
+import styles from './ProfilePage.module.css';
 
 export function ProfilePage() {
   const { user, refreshUser } = useAuth();
@@ -20,6 +21,7 @@ export function ProfilePage() {
 
   // Address create state
   const [addingAddress, setAddingAddress] = useState(false);
+  const [deleteAddressId, setDeleteAddressId] = useState(null);
   const [addressForm, setAddressForm] = useState({
     label: 'Home',
     fullName: '',
@@ -35,6 +37,7 @@ export function ProfilePage() {
 
   // KYC state
   const [submittingKyc, setSubmittingKyc] = useState(false);
+  const [kycFile, setKycFile] = useState(null);
   const [kycForm, setKycForm] = useState({
     documentType: 'aadhaar',
     documentNumber: '',
@@ -132,11 +135,11 @@ export function ProfilePage() {
     }
   }
 
-  async function handleDeleteAddress(id) {
-    if (!window.confirm('Delete this saved delivery address?')) return;
+  async function executeDeleteAddress(id) {
     try {
       await apiRequest(`/users/me/addresses/${id}`, { method: 'DELETE' });
       setMsg('Address removed.');
+      setDeleteAddressId(null);
       const res = await apiRequest('/users/me/addresses');
       setAddresses(Array.isArray(res) ? res : (res?.data ?? []));
     } catch (e) {
@@ -154,11 +157,12 @@ export function ProfilePage() {
         body: {
           documentType: kycForm.documentType,
           documentNumber: kycForm.documentNumber.trim(),
-          documentFrontObjectKey: `kyc-front-${Date.now()}.jpg`,
+          documentFrontObjectKey: kycFile?.name || `kyc-front-${Date.now()}.jpg`,
         },
       });
       setSubmittingKyc(false);
       setKycForm({ documentType: 'aadhaar', documentNumber: '' });
+      setKycFile(null);
       setMsg('Identity verification documents submitted! Our concierge team will review shortly.');
       const k = await apiRequest('/kyc');
       setKycAttempts(Array.isArray(k) ? k : (k?.data ?? []));
@@ -170,9 +174,9 @@ export function ProfilePage() {
   const latestKyc = kycAttempts[0];
 
   return (
-    <div className="container" style={{ marginTop: '1.5rem', marginBottom: '3rem', maxWidth: '800px' }}>
-      <h1 className="page-title">Member Profile & Sizing Settings</h1>
-      <p className="muted" style={{ marginBottom: '1.5rem' }}>
+    <div className={styles.container}>
+      <h1 className={styles.pageTitle}>Member Profile & Sizing Settings</h1>
+      <p className={styles.pageSubtitle}>
         Manage your contact details, delivery addresses, and trust verification.
       </p>
 
@@ -180,14 +184,13 @@ export function ProfilePage() {
       {msg && <AlertBanner type="success" message={msg} onDismiss={() => setMsg('')} />}
 
       {/* ── Section 1: Core Account & Profile ── */}
-      <div className="card" style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ margin: 0 }}>Account Profile</h2>
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={styles.cardTitle}>Account Profile</h2>
           {!editingProfile && (
             <button
               type="button"
-              className="btn btn-secondary"
-              style={{ minHeight: '34px', padding: '0 0.85rem' }}
+              className={styles.btnSecondary}
               onClick={() => setEditingProfile(true)}
             >
               Edit Profile
@@ -200,7 +203,7 @@ export function ProfilePage() {
             <div className="form-row">
               <label className="label">Display Name</label>
               <input
-                className="input"
+                className={`input ${styles.inputField}`}
                 value={profileForm.displayName}
                 onChange={(e) => setProfileForm({ ...profileForm, displayName: e.target.value })}
                 placeholder="e.g. Natasha Mehta"
@@ -209,7 +212,10 @@ export function ProfilePage() {
             <div className="form-row">
               <label className="label">Phone Number (E.164 format, e.g. +919876543210)</label>
               <input
-                className="input"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                className={`input ${styles.inputField}`}
                 value={profileForm.phoneNumber}
                 onChange={(e) => setProfileForm({ ...profileForm, phoneNumber: e.target.value })}
                 placeholder="+919876543210"
@@ -218,7 +224,7 @@ export function ProfilePage() {
             <div className="form-row">
               <label className="label">Style Bio / Renter Notes</label>
               <textarea
-                className="input"
+                className={`input ${styles.inputField}`}
                 rows={2}
                 value={profileForm.bio}
                 onChange={(e) => setProfileForm({ ...profileForm, bio: e.target.value })}
@@ -226,31 +232,52 @@ export function ProfilePage() {
               />
             </div>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-              <button type="submit" className="btn btn-primary">Save Changes</button>
-              <button type="button" className="btn btn-secondary" onClick={() => setEditingProfile(false)}>Cancel</button>
+              <button type="submit" className={styles.btnPrimary}>Save Changes</button>
+              <button type="button" className={styles.btnSecondary} onClick={() => setEditingProfile(false)}>Cancel</button>
             </div>
           </form>
         ) : (
-          <div>
-            <p><strong>Email:</strong> {user?.email}</p>
-            <p><strong>Display Name:</strong> {profile?.displayName || user?.displayName || 'Not specified'}</p>
-            <p><strong>Phone:</strong> {profile?.phoneNumber || 'None provided'}</p>
-            {profile?.bio && <p><strong>Bio:</strong> {profile.bio}</p>}
-            <p><strong>Platform Roles:</strong> {(user?.roles || []).join(', ') || 'customer'}</p>
-            <p><strong>Account Status:</strong> <span className="badge badge-success">{user?.status || 'Active'}</span></p>
+          <div className={styles.settingsList}>
+            <div className={styles.rowItem}>
+              <span className={styles.rowLabel}>Email</span>
+              <span className={styles.rowValue}>{user?.email}</span>
+            </div>
+            <div className={styles.rowItem}>
+              <span className={styles.rowLabel}>Display Name</span>
+              <span className={styles.rowValue}>{profile?.displayName || user?.displayName || 'Not specified'}</span>
+            </div>
+            <div className={styles.rowItem}>
+              <span className={styles.rowLabel}>Phone</span>
+              <span className={styles.rowValue}>{profile?.phoneNumber || 'None provided'}</span>
+            </div>
+            {profile?.bio && (
+              <div className={styles.rowItem}>
+                <span className={styles.rowLabel}>Style Bio</span>
+                <span className={styles.rowValue}>{profile.bio}</span>
+              </div>
+            )}
+            <div className={styles.rowItem}>
+              <span className={styles.rowLabel}>Platform Roles</span>
+              <span className={styles.rowValue}>{(user?.roles || []).join(', ') || 'customer'}</span>
+            </div>
+            <div className={styles.rowItem}>
+              <span className={styles.rowLabel}>Account Status</span>
+              <span className={styles.rowValue}>
+                <span className="badge badge-success">{user?.status || 'Active'}</span>
+              </span>
+            </div>
           </div>
         )}
       </div>
 
       {/* ── Section 2: Saved Delivery Addresses ── */}
-      <div className="card" style={{ marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ margin: 0 }}>Delivery Addresses</h2>
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
+          <h2 className={styles.cardTitle}>Delivery Addresses</h2>
           {!addingAddress && (
             <button
               type="button"
-              className="btn btn-primary"
-              style={{ minHeight: '34px', padding: '0 0.85rem' }}
+              className={styles.btnPrimary}
               onClick={() => setAddingAddress(true)}
             >
               + Add Address
@@ -261,11 +288,11 @@ export function ProfilePage() {
         {addingAddress && (
           <form onSubmit={handleCreateAddress} style={{ background: 'var(--color-surface-hover, #f8fafc)', padding: '1rem', borderRadius: '6px', marginBottom: '1.25rem' }}>
             <h4 style={{ marginTop: 0 }}>New Shipping Address</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div className={styles.formGrid}>
               <div className="form-row">
                 <label className="label">Label (e.g. Home, Office)</label>
                 <input
-                  className="input"
+                  className={`input ${styles.inputField}`}
                   value={addressForm.label}
                   onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })}
                 />
@@ -273,7 +300,7 @@ export function ProfilePage() {
               <div className="form-row">
                 <label className="label">Recipient Full Name *</label>
                 <input
-                  className="input"
+                  className={`input ${styles.inputField}`}
                   required
                   value={addressForm.fullName}
                   onChange={(e) => setAddressForm({ ...addressForm, fullName: e.target.value })}
@@ -284,7 +311,10 @@ export function ProfilePage() {
             <div className="form-row">
               <label className="label">Phone Number *</label>
               <input
-                className="input"
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                className={`input ${styles.inputField}`}
                 required
                 placeholder="+919876543210"
                 value={addressForm.phoneNumber}
@@ -295,7 +325,7 @@ export function ProfilePage() {
             <div className="form-row">
               <label className="label">Street Address (Line 1) *</label>
               <input
-                className="input"
+                className={`input ${styles.inputField}`}
                 required
                 placeholder="Flat / Building / Street"
                 value={addressForm.line1}
@@ -306,18 +336,18 @@ export function ProfilePage() {
             <div className="form-row">
               <label className="label">Apartment, Suite, Unit (Line 2)</label>
               <input
-                className="input"
+                className={`input ${styles.inputField}`}
                 placeholder="Optional"
                 value={addressForm.line2}
                 onChange={(e) => setAddressForm({ ...addressForm, line2: e.target.value })}
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
+            <div className={styles.formGrid3}>
               <div className="form-row">
                 <label className="label">City *</label>
                 <input
-                  className="input"
+                  className={`input ${styles.inputField}`}
                   required
                   value={addressForm.city}
                   onChange={(e) => setAddressForm({ ...addressForm, city: e.target.value })}
@@ -326,7 +356,7 @@ export function ProfilePage() {
               <div className="form-row">
                 <label className="label">State</label>
                 <input
-                  className="input"
+                  className={`input ${styles.inputField}`}
                   value={addressForm.state}
                   onChange={(e) => setAddressForm({ ...addressForm, state: e.target.value })}
                 />
@@ -334,7 +364,10 @@ export function ProfilePage() {
               <div className="form-row">
                 <label className="label">Postal Code *</label>
                 <input
-                  className="input"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  className={`input ${styles.inputField}`}
                   required
                   value={addressForm.postalCode}
                   onChange={(e) => setAddressForm({ ...addressForm, postalCode: e.target.value })}
@@ -343,7 +376,7 @@ export function ProfilePage() {
             </div>
 
             <div style={{ margin: '0.75rem 0' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', minHeight: '44px' }}>
                 <input
                   type="checkbox"
                   checked={addressForm.isDefault}
@@ -354,8 +387,8 @@ export function ProfilePage() {
             </div>
 
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.75rem' }}>
-              <button type="submit" className="btn btn-primary">Save Address</button>
-              <button type="button" className="btn btn-secondary" onClick={() => setAddingAddress(false)}>Cancel</button>
+              <button type="submit" className={styles.btnPrimary}>Save Address</button>
+              <button type="button" className={styles.btnSecondary} onClick={() => setAddingAddress(false)}>Cancel</button>
             </div>
           </form>
         )}
@@ -365,14 +398,7 @@ export function ProfilePage() {
             {addresses.map((a) => (
               <li
                 key={a.id}
-                style={{
-                  border: '1px solid var(--color-border, #e2e8f0)',
-                  borderRadius: '6px',
-                  padding: '1rem',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
+                className={styles.addressCard}
               >
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
@@ -386,14 +412,36 @@ export function ProfilePage() {
                     {a.line1}{a.line2 ? `, ${a.line2}` : ''}, {a.city}, {a.state} {a.postalCode}
                   </p>
                 </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  style={{ minHeight: '30px', padding: '0 0.6rem', fontSize: '0.8rem' }}
-                  onClick={() => handleDeleteAddress(a.id)}
-                >
-                  Delete
-                </button>
+                {deleteAddressId === a.id ? (
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.85rem', color: '#C62828' }}>Delete?</span>
+                    <button
+                      type="button"
+                      className={styles.btnDanger}
+                      style={{ minHeight: '38px', padding: '0 0.8rem' }}
+                      onClick={() => executeDeleteAddress(a.id)}
+                    >
+                      Yes, Delete
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.btnSecondary}
+                      style={{ minHeight: '38px', padding: '0 0.8rem' }}
+                      onClick={() => setDeleteAddressId(null)}
+                    >
+                      Keep
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.btnSecondary}
+                    style={{ minHeight: '44px', padding: '0 1rem', fontSize: '0.85rem' }}
+                    onClick={() => setDeleteAddressId(a.id)}
+                  >
+                    Delete
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -403,10 +451,10 @@ export function ProfilePage() {
       </div>
 
       {/* ── Section 3: Identity Verification (KYC) ── */}
-      <div className="card">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+      <div className={styles.card}>
+        <div className={styles.cardHeader}>
           <div>
-            <h2 style={{ margin: 0 }}>Identity Verification (KYC)</h2>
+            <h2 className={styles.cardTitle}>Identity Verification (KYC)</h2>
             <p className="muted" style={{ fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>
               Required to rent high-value couture pieces and list personal garments for lending.
             </p>
@@ -414,8 +462,7 @@ export function ProfilePage() {
           {(!latestKyc || latestKyc.status === 'rejected') && !submittingKyc && (
             <button
               type="button"
-              className="btn btn-primary"
-              style={{ minHeight: '34px', padding: '0 0.85rem' }}
+              className={styles.btnPrimary}
               onClick={() => setSubmittingKyc(true)}
             >
               Verify Identity
@@ -447,7 +494,7 @@ export function ProfilePage() {
             <div className="form-row">
               <label className="label">Government ID Type *</label>
               <select
-                className="input"
+                className={`input ${styles.inputField}`}
                 value={kycForm.documentType}
                 onChange={(e) => setKycForm({ ...kycForm, documentType: e.target.value })}
               >
@@ -460,16 +507,26 @@ export function ProfilePage() {
             <div className="form-row">
               <label className="label">Document ID Number *</label>
               <input
-                className="input"
+                className={`input ${styles.inputField}`}
                 required
                 placeholder="e.g. 1234 5678 9012"
                 value={kycForm.documentNumber}
                 onChange={(e) => setKycForm({ ...kycForm, documentNumber: e.target.value })}
               />
             </div>
+            <div className="form-row">
+              <label className="label">Capture or Upload ID Document Photo</label>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className={styles.fileInput}
+                onChange={(e) => setKycFile(e.target.files?.[0] || null)}
+              />
+            </div>
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
-              <button type="submit" className="btn btn-primary">Submit for Review</button>
-              <button type="button" className="btn btn-secondary" onClick={() => setSubmittingKyc(false)}>Cancel</button>
+              <button type="submit" className={styles.btnPrimary}>Submit for Review</button>
+              <button type="button" className={styles.btnSecondary} onClick={() => setSubmittingKyc(false)}>Cancel</button>
             </div>
           </form>
         )}

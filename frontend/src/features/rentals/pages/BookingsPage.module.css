@@ -84,6 +84,144 @@
   transform: none;
 }
 
+/* ── Role Segmented Control (Sticky on Mobile) ── */
+.roleSegmentedControl {
+  display: flex;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--color-hairline, rgba(255, 255, 255, 0.1));
+  border-radius: 999px;
+  padding: 4px;
+  gap: 4px;
+  margin-bottom: var(--space-4);
+  position: relative;
+  z-index: 10;
+}
+
+@media (max-width: 767px) {
+  .roleSegmentedControl {
+    position: sticky;
+    top: calc(var(--header-height, 56px) + 8px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    background: rgba(26, 26, 26, 0.92);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  }
+}
+
+.roleBtn {
+  flex: 1;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: #999999;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-editorial);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.roleBtnActive {
+  background: var(--color-surface, #FFFFFF);
+  color: var(--color-on-surface, #111111);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .roleBtn:hover:not(.roleBtnActive) {
+    color: #FFFFFF;
+  }
+}
+
+/* ── Filter Toolbar ── */
+.filterToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.statusFilterBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 4px 0;
+  flex: 1;
+}
+
+.statusFilterBar::-webkit-scrollbar {
+  display: none;
+}
+
+.statusChip {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--color-hairline, rgba(255, 255, 255, 0.15));
+  background: transparent;
+  color: #999999;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: capitalize;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-editorial);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statusChipActive {
+  background: var(--color-primary-gold, #C8A251);
+  color: #111111;
+  border-color: var(--color-primary-gold, #C8A251);
+  font-weight: 600;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .statusChip:hover:not(.statusChipActive) {
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #FFFFFF;
+  }
+}
+
+.refreshBtn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: 1px solid var(--color-hairline, rgba(255, 255, 255, 0.15));
+  background: transparent;
+  color: #999999;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration-fast) var(--ease-editorial);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .refreshBtn:hover {
+    color: #FFFFFF;
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: rotate(30deg);
+  }
+}
+
 .bookingHeader {
   display: flex;
   align-items: flex-start;
@@ -203,13 +341,25 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 48rem) {
+@media (max-width: 767px) {
+  .page {
+    padding: var(--space-4) var(--space-3) var(--space-12);
+  }
+
   .pageHeader {
     flex-direction: column;
     gap: var(--space-4);
   }
 
+  .pageTitle {
+    font-size: 28px;
+  }
+
   .bookingDetails {
     gap: var(--space-4);
+  }
+
+  .bookingCard {
+    padding: var(--space-4);
   }
 }

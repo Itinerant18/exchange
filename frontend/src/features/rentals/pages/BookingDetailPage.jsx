@@ -34,6 +34,17 @@ export function BookingDetailPage() {
   const [extensionDate, setExtensionDate] = useState('');
   const [extensionReason, setExtensionReason] = useState('');
   const [lateFeeQuote, setLateFeeQuote] = useState(null);
+  const [copied, setCopied] = useState(false);
+  const [confirmState, setConfirmState] = useState(null);
+  const [confirmReason, setConfirmReason] = useState('');
+
+  function handleCopyBookingId() {
+    if (booking?.id && navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(booking.id);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }
 
   useEffect(() => {
     if (!id) return;
@@ -72,14 +83,12 @@ export function BookingDetailPage() {
     }
   }
 
-  async function handleReject() {
-    const reason = window.prompt('Please enter the reason for declining this rental request:');
-    if (reason === null) return;
+  async function executeReject(reason) {
     setActionBusy(true);
     setError('');
     setActionSuccess('');
     try {
-      await rentalsApi.rejectBooking(id, reason.trim() || undefined);
+      await rentalsApi.rejectBooking(id, (reason || '').trim() || undefined);
       setActionSuccess('Rental request declined.');
       const updated = await rentalsApi.getBookingById(id);
       setBooking(updated?.data ?? updated);
@@ -90,8 +99,7 @@ export function BookingDetailPage() {
     }
   }
 
-  async function handleStart() {
-    if (!window.confirm('Confirm that the garment has been handed over or dispatched for courier pickup?')) return;
+  async function executeStart() {
     setActionBusy(true);
     setError('');
     setActionSuccess('');
@@ -132,8 +140,7 @@ export function BookingDetailPage() {
     }
   }
 
-  async function handleCancel() {
-    if (!window.confirm('Are you sure you want to cancel this booking?')) return;
+  async function executeCancel() {
     setActionBusy(true);
     setError('');
     setActionSuccess('');
@@ -149,8 +156,7 @@ export function BookingDetailPage() {
     }
   }
 
-  async function handleReturn() {
-    if (!window.confirm('Confirm that you are returning this rental in the prepaid garment bag?')) return;
+  async function executeReturn() {
     setActionBusy(true);
     setError('');
     setActionSuccess('');
@@ -228,7 +234,25 @@ export function BookingDetailPage() {
 
       <header className={styles.header}>
         <div className={styles.headerTop}>
-          <span className={styles.bookingId}>Booking #{booking.id.slice(0, 8)}</span>
+          <div className={styles.bookingIdRow}>
+            <span className={styles.bookingId}>Booking #{booking.id.slice(0, 8)}</span>
+            <button
+              type="button"
+              className={styles.copyBtn}
+              onClick={handleCopyBookingId}
+              aria-label="Copy booking reference ID"
+              title="Copy booking reference ID"
+            >
+              {copied ? (
+                <span className={styles.copiedText}>Copied!</span>
+              ) : (
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+              )}
+            </button>
+          </div>
           <span className={`badge ${statusMeta.phase}`}>
             {statusMeta.label}
           </span>
@@ -240,6 +264,44 @@ export function BookingDetailPage() {
           Reserved on {formatDate(booking.createdAt || booking.created_at)}
         </p>
       </header>
+
+      {/* ── Lifecycle Stepper ── */}
+      <section className={styles.lifecycleSection} aria-label="Rental timeline progress">
+        <div className={styles.stepper}>
+          {[
+            { key: 'created', label: 'Requested' },
+            { key: 'confirmed', label: 'Confirmed' },
+            { key: 'active', label: 'In Rental' },
+            { key: 'completed', label: 'Returned' },
+          ].map((step, idx) => {
+            const stageOrder = ['created', 'pending', 'confirmed', 'active', 'running', 'completed'];
+            const currentIdx = stageOrder.indexOf(booking.status);
+            const stepIdx = stageOrder.indexOf(step.key);
+            const isCompleted = currentIdx > stepIdx && !['cancelled', 'declined', 'expired'].includes(booking.status);
+            const isCurrent = booking.status === step.key ||
+              (step.key === 'created' && booking.status === 'pending') ||
+              (step.key === 'active' && booking.status === 'running');
+            const isCancelled = ['cancelled', 'declined', 'expired'].includes(booking.status);
+
+            return (
+              <div
+                key={step.key}
+                className={`${styles.stepperStep} ${isCompleted ? styles.stepCompleted : ''} ${isCurrent ? styles.stepCurrent : ''} ${isCancelled ? styles.stepCancelled : ''}`}
+              >
+                <div className={styles.stepIndicator}>
+                  {isCompleted ? '✓' : idx + 1}
+                </div>
+                <div className={styles.stepContent}>
+                  <div className={styles.stepTitle}>{step.label}</div>
+                  <div className={styles.stepSub}>
+                    {isCurrent ? statusMeta.label : isCompleted ? 'Completed' : 'Pending'}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {error && (
         <div className="alert alert-error" role="alert" style={{ marginBottom: 'var(--space-4)' }}>
@@ -343,102 +405,126 @@ export function BookingDetailPage() {
             </section>
           )}
 
-          {/* ── Lifecycle & Management Actions ── */}
+          {/* ── Lifecycle & Management Actions (Sticky Bar on Mobile) ── */}
           {hasActions && (
-            <section className={styles.section}>
-              <h2 className={styles.sectionTitle}>Booking Actions</h2>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-3)' }}>
-                {canProviderAccept && (
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    disabled={actionBusy}
-                    onClick={handleAccept}
-                  >
-                    {actionBusy ? 'Accepting…' : '✓ Accept Rental Request'}
-                  </button>
-                )}
-                {canProviderReject && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={actionBusy}
-                    onClick={handleReject}
-                  >
-                    {actionBusy ? 'Declining…' : '✕ Decline Request'}
-                  </button>
-                )}
-                {canProviderStart && (
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    disabled={actionBusy}
-                    onClick={handleStart}
-                  >
-                    {actionBusy ? 'Starting…' : '📦 Hand Over / Dispatch Garment'}
-                  </button>
-                )}
-                {canProviderReturn && (
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    disabled={actionBusy}
-                    onClick={handleReturn}
-                  >
-                    {actionBusy ? 'Processing Return…' : 'Record Return & Inspection'}
-                  </button>
-                )}
-                {canRequestExtension && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={actionBusy}
-                    onClick={() => setExtensionModalOpen(true)}
-                  >
-                    Extend Rental Dates
-                  </button>
-                )}
-                {canCancel && (
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    disabled={actionBusy}
-                    onClick={handleCancel}
-                  >
-                    {actionBusy ? 'Cancelling…' : 'Cancel Booking'}
-                  </button>
-                )}
+            <section className={styles.actionBar} aria-label="Booking actions">
+              <div className={styles.actionBarInner}>
+                <div className={styles.secondaryActions}>
+                  {canCancel && (
+                    <button
+                      type="button"
+                      className={`${styles.actionBtn} ${styles.actionDestructive}`}
+                      disabled={actionBusy}
+                      onClick={() => setConfirmState({
+                        title: 'Cancel Booking',
+                        message: 'Are you sure you want to cancel this booking? This action cannot be reversed.',
+                        confirmText: 'Cancel Booking',
+                        isDestructive: true,
+                        onConfirm: () => executeCancel(),
+                      })}
+                    >
+                      {actionBusy ? 'Cancelling…' : 'Cancel Booking'}
+                    </button>
+                  )}
+                  {canProviderReject && (
+                    <button
+                      type="button"
+                      className={`${styles.actionBtn} ${styles.actionDestructive}`}
+                      disabled={actionBusy}
+                      onClick={() => setConfirmState({
+                        title: 'Decline Rental Request',
+                        message: 'Please provide a reason for declining this rental request for the member:',
+                        promptInput: true,
+                        confirmText: 'Decline Request',
+                        isDestructive: true,
+                        onConfirm: (reason) => executeReject(reason),
+                      })}
+                    >
+                      {actionBusy ? 'Declining…' : '✕ Decline Request'}
+                    </button>
+                  )}
+                  {canRequestExtension && (
+                    <button
+                      type="button"
+                      className={`${styles.actionBtn} ${styles.actionSecondary}`}
+                      disabled={actionBusy}
+                      onClick={() => setExtensionModalOpen(true)}
+                    >
+                      Extend Dates
+                    </button>
+                  )}
+                </div>
+
+                <div className={styles.primaryActions}>
+                  {canProviderAccept && (
+                    <button
+                      type="button"
+                      className={`${styles.actionBtn} ${styles.actionPrimary}`}
+                      disabled={actionBusy}
+                      onClick={handleAccept}
+                    >
+                      {actionBusy ? 'Accepting…' : '✓ Accept Rental'}
+                    </button>
+                  )}
+                  {canProviderStart && (
+                    <button
+                      type="button"
+                      className={`${styles.actionBtn} ${styles.actionPrimary}`}
+                      disabled={actionBusy}
+                      onClick={() => setConfirmState({
+                        title: 'Dispatch Garment',
+                        message: 'Confirm that the garment has been handed over to the courier or dispatched for pickup?',
+                        confirmText: 'Confirm Dispatch',
+                        isDestructive: false,
+                        onConfirm: () => executeStart(),
+                      })}
+                    >
+                      {actionBusy ? 'Starting…' : '📦 Hand Over / Dispatch'}
+                    </button>
+                  )}
+                  {canProviderReturn && (
+                    <button
+                      type="button"
+                      className={`${styles.actionBtn} ${styles.actionPrimary}`}
+                      disabled={actionBusy}
+                      onClick={() => setConfirmState({
+                        title: 'Record Garment Return',
+                        message: 'Confirm that you are returning this rental in the prepaid garment bag and inspection has been recorded?',
+                        confirmText: 'Record Return',
+                        isDestructive: false,
+                        onConfirm: () => executeReturn(),
+                      })}
+                    >
+                      {actionBusy ? 'Processing…' : 'Record Return'}
+                    </button>
+                  )}
+                </div>
               </div>
             </section>
           )}
 
-          {/* ── Extension Request Modal ── */}
+          {/* ── Extension Request Modal / Sheet ── */}
           {extensionModalOpen && (
             <div
-              style={{
-                position: 'fixed',
-                inset: 0,
-                backgroundColor: 'rgba(0,0,0,0.6)',
-                zIndex: 1000,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '1rem',
-              }}
+              className={styles.modalBackdrop}
               onClick={() => setExtensionModalOpen(false)}
             >
               <div
-                style={{
-                  background: 'var(--color-surface, #fff)',
-                  borderRadius: '8px',
-                  padding: '2rem',
-                  maxWidth: '480px',
-                  width: '100%',
-                }}
+                className={styles.modalSheet}
                 onClick={(e) => e.stopPropagation()}
               >
-                <h3 style={{ marginTop: 0 }}>Request Rental Extension</h3>
-                <p style={{ fontSize: '0.9rem', color: 'var(--color-muted)' }}>
+                <div className={styles.modalHeader}>
+                  <h3 className={styles.modalTitle}>Request Rental Extension</h3>
+                  <button
+                    type="button"
+                    className={styles.modalClose}
+                    onClick={() => setExtensionModalOpen(false)}
+                    aria-label="Close extension modal"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className={styles.modalDesc}>
                   Need more time with your designer piece? Request a new return date. Our atelier will verify availability and confirm.
                 </p>
                 <form onSubmit={handleSubmitExtension}>
@@ -453,6 +539,7 @@ export function BookingDetailPage() {
                       min={booking.endDate || booking.end_date}
                       onChange={(e) => setExtensionDate(e.target.value)}
                       required
+                      style={{ fontSize: '16px', minHeight: '44px', width: '100%' }}
                     />
                   </div>
                   <div style={{ marginBottom: '1.25rem' }}>
@@ -465,13 +552,15 @@ export function BookingDetailPage() {
                       placeholder="e.g. Wedding events extended, second reception day added..."
                       value={extensionReason}
                       onChange={(e) => setExtensionReason(e.target.value)}
+                      style={{ fontSize: '16px', width: '100%' }}
                     />
                   </div>
-                  <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                  <div className={styles.modalActions}>
                     <button
                       type="button"
                       className="btn btn-secondary"
                       onClick={() => setExtensionModalOpen(false)}
+                      style={{ minHeight: '44px', flex: 1 }}
                     >
                       Cancel
                     </button>
@@ -479,11 +568,69 @@ export function BookingDetailPage() {
                       type="submit"
                       className="btn btn-primary"
                       disabled={actionBusy}
+                      style={{ minHeight: '44px', flex: 1 }}
                     >
                       {actionBusy ? 'Submitting…' : 'Submit Extension'}
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* ── Confirmation Bottom Sheet ── */}
+          {confirmState && (
+            <div className={styles.confirmBackdrop} onClick={() => setConfirmState(null)}>
+              <div className={styles.confirmSheet} onClick={(e) => e.stopPropagation()}>
+                <div className={styles.confirmHeader}>
+                  <h3 className={styles.confirmTitle}>{confirmState.title}</h3>
+                  <button
+                    type="button"
+                    className={styles.confirmClose}
+                    onClick={() => setConfirmState(null)}
+                    aria-label="Close dialog"
+                  >
+                    ✕
+                  </button>
+                </div>
+                <p className={styles.confirmMessage}>{confirmState.message}</p>
+                {confirmState.promptInput && (
+                  <div className={styles.promptInputWrap}>
+                    <textarea
+                      className="input"
+                      rows={3}
+                      placeholder="Enter reason..."
+                      value={confirmReason}
+                      onChange={(e) => setConfirmReason(e.target.value)}
+                      style={{ fontSize: '16px', width: '100%', marginBottom: '1rem' }}
+                    />
+                  </div>
+                )}
+                <div className={styles.confirmActions}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setConfirmState(null);
+                      setConfirmReason('');
+                    }}
+                    style={{ minHeight: '44px', flex: 1 }}
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${confirmState.isDestructive ? 'btn-danger' : 'btn-primary'}`}
+                    style={{ minHeight: '44px', flex: 1 }}
+                    onClick={() => {
+                      confirmState.onConfirm(confirmReason);
+                      setConfirmState(null);
+                      setConfirmReason('');
+                    }}
+                  >
+                    {confirmState.confirmText}
+                  </button>
+                </div>
               </div>
             </div>
           )}

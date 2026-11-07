@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext.jsx';
 import { appConfig } from '../../../config/appConfig.js';
 import { authErrorMessage } from '../../../config/authMessages.js';
@@ -10,6 +10,10 @@ import styles from './AuthPages.module.css';
 export function LoginPage() {
   const { login, loginWithGoogle, loginWithApple } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const redirectUrl = location.state?.from
+    ? `${location.state.from.pathname || '/'}${location.state.from.search || ''}`
+    : '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -23,7 +27,7 @@ export function LoginPage() {
     setBusy(true);
     try {
       await login(email, password, turnstileToken);
-      navigate('/', { replace: true });
+      navigate(redirectUrl, { replace: true });
     } catch (err) {
       setError(authErrorMessage(err));
     } finally {
@@ -36,7 +40,7 @@ export function LoginPage() {
     setBusy(true);
     try {
       await loginWithGoogle(credential, turnstileToken);
-      navigate('/', { replace: true });
+      navigate(redirectUrl, { replace: true });
     } catch (err) {
       setError(authErrorMessage(err));
     } finally {
@@ -49,7 +53,7 @@ export function LoginPage() {
     setBusy(true);
     try {
       await loginWithApple(payload);
-      navigate('/', { replace: true });
+      navigate(redirectUrl, { replace: true });
     } catch (err) {
       setError(authErrorMessage(err));
     } finally {

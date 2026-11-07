@@ -6,12 +6,14 @@ import styles from './BookingsPage.module.css';
 
 export function MyBookingsPage() {
   const [role, setRole] = useState('renter'); // 'renter' | 'provider'
+  const [statusFilter, setStatusFilter] = useState('all');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
+  const fetchBookings = () => {
     setLoading(true);
+    setError('');
     rentalsApi.getMyBookings({ role })
       .then((res) => {
         const data = Array.isArray(res) ? res : (res?.data ?? []);
@@ -19,6 +21,10 @@ export function MyBookingsPage() {
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchBookings();
   }, [role]);
 
   function formatDate(dateStr) {
@@ -40,6 +46,8 @@ export function MyBookingsPage() {
     expired: 'danger',
   };
 
+  const displayedRows = statusFilter === 'all' ? rows : rows.filter((r) => r.status === statusFilter);
+
   return (
     <div className={styles.page}>
       <div className={styles.pageHeader}>
@@ -56,20 +64,54 @@ export function MyBookingsPage() {
         </Link>
       </div>
 
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--color-border, #e2e8f0)', paddingBottom: '0.75rem' }}>
+      {/* ── Role Segmented Control (Sticky on Mobile) ── */}
+      <div className={styles.roleSegmentedControl} role="tablist" aria-label="Role selector">
         <button
           type="button"
-          className={`btn ${role === 'renter' ? 'btn-primary' : 'btn-secondary'}`}
+          role="tab"
+          aria-selected={role === 'renter'}
+          className={`${styles.roleBtn} ${role === 'renter' ? styles.roleBtnActive : ''}`}
           onClick={() => setRole('renter')}
         >
-          My Rentals (As Renter)
+          My Rentals (Renter)
         </button>
         <button
           type="button"
-          className={`btn ${role === 'provider' ? 'btn-primary' : 'btn-secondary'}`}
+          role="tab"
+          aria-selected={role === 'provider'}
+          className={`${styles.roleBtn} ${role === 'provider' ? styles.roleBtnActive : ''}`}
           onClick={() => setRole('provider')}
         >
-          Incoming Orders (As Garment Owner)
+          Incoming Orders (Owner)
+        </button>
+      </div>
+
+      {/* ── Status Filter Chips & Refresh Toolbar ── */}
+      <div className={styles.filterToolbar}>
+        <div className={styles.statusFilterBar}>
+          {['all', 'pending', 'active', 'completed', 'cancelled'].map((status) => (
+            <button
+              key={status}
+              type="button"
+              className={`${styles.statusChip} ${statusFilter === status ? styles.statusChipActive : ''}`}
+              onClick={() => setStatusFilter(status)}
+            >
+              {status === 'all' ? 'All Bookings' : status}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          className={styles.refreshBtn}
+          onClick={fetchBookings}
+          title="Refresh bookings"
+          aria-label="Refresh bookings"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <polyline points="23 4 23 10 17 10"/>
+            <polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+          </svg>
         </button>
       </div>
 
@@ -84,9 +126,9 @@ export function MyBookingsPage() {
           <div className={styles.spinner} aria-hidden="true" />
           <p>Loading your bookings…</p>
         </div>
-      ) : rows.length > 0 ? (
+      ) : displayedRows.length > 0 ? (
         <div className={styles.bookingsList}>
-          {rows.map((booking) => (
+          {displayedRows.map((booking) => (
             <Link
               key={booking.id}
               to={`/bookings/${booking.id}`}

@@ -51,7 +51,11 @@
 }
 
 .tab {
-  padding: 8px 18px;
+  padding: 10px 18px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 500;
@@ -71,7 +75,7 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: var(--space-4, 1rem);
+  gap: var(--space-3, 0.75rem);
 }
 
 @media (min-width: 768px) {
@@ -81,7 +85,7 @@
   }
 }
 
-@media (min-width: 1100px) {
+@media (min-width: 1024px) {
   .grid {
     grid-template-columns: repeat(4, 1fr);
     gap: var(--space-6, 1.5rem);
@@ -118,8 +122,10 @@
 .browseBtn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   padding: 12px 24px;
+  min-height: 44px;
   border-radius: 999px;
   background: var(--color-on-surface);
   color: var(--color-surface);
@@ -129,8 +135,10 @@
   transition: opacity var(--duration-fast) var(--ease-editorial);
 }
 
-.browseBtn:hover {
-  opacity: 0.85;
+@media (hover: hover) and (pointer: fine) {
+  .browseBtn:hover {
+    opacity: 0.85;
+  }
 }
 
 .shortlistsSection {
@@ -144,18 +152,27 @@
   max-width: 500px;
 }
 
+@media (max-width: 767px) {
+  .createShortlistForm {
+    flex-direction: column;
+    max-width: 100%;
+  }
+}
+
 .shortlistInput {
   flex: 1;
   padding: 10px 16px;
+  min-height: 44px;
   border: 1px solid var(--color-border);
   border-radius: 999px;
-  font-size: 13px;
+  font-size: 16px;
   background: var(--color-surface);
   outline: none;
 }
 
 .createBtn {
   padding: 10px 20px;
+  min-height: 44px;
   border-radius: 999px;
   background: var(--color-on-surface);
   color: var(--color-surface);
@@ -163,6 +180,12 @@
   font-weight: 500;
   border: none;
   cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .createBtn:hover {
+    opacity: 0.85;
+  }
 }
 
 .shortlistGrid {
@@ -217,13 +240,16 @@
   color: #555;
   font-weight: 600;
   padding: 0;
+  min-height: 44px;
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
 }
 
-.backBtn:hover {
-  color: #000;
+@media (hover: hover) and (pointer: fine) {
+  .backBtn:hover {
+    color: #000;
+  }
 }
 
 .cardContainer {
@@ -236,19 +262,25 @@
   background: #FAFAFA;
   border: 1px solid #E5E5E5;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #444;
-  padding: 0.4rem 0.6rem;
+  padding: 0.5rem 0.75rem;
+  min-height: 44px;
   cursor: pointer;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.15s ease;
 }
 
-.addToShortlistBtn:hover {
-  background: #111;
-  color: #FFF;
-  border-color: #111;
+@media (hover: hover) and (pointer: fine) {
+  .addToShortlistBtn:hover {
+    background: #111;
+    color: #FFF;
+    border-color: #111;
+  }
 }
 
 .removeFromShortlistBtn {
@@ -256,17 +288,23 @@
   background: #FFF5F5;
   border: 1px solid #FED7D7;
   border-radius: 4px;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: #C53030;
-  padding: 0.4rem 0.6rem;
+  padding: 0.5rem 0.75rem;
+  min-height: 44px;
   cursor: pointer;
   text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.15s ease;
 }
 
-.removeFromShortlistBtn:hover {
-  background: #FEB2B2;
+@media (hover: hover) and (pointer: fine) {
+  .removeFromShortlistBtn:hover {
+    background: #FEB2B2;
+  }
 }
 
 /* Modal styles for shortlist assignment */
@@ -278,13 +316,14 @@
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 1rem;
 }
 
 .modalBox {
   background: #FFF;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 1.5rem;
-  width: 90%;
+  width: 100%;
   max-width: 400px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
@@ -308,6 +347,15 @@
   font-size: 1.25rem;
   cursor: pointer;
   color: #777;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0;
 }
 
 .shortlistSelectList {
@@ -321,6 +369,7 @@
 
 .shortlistSelectItem {
   padding: 0.75rem 1rem;
+  min-height: 48px;
   border: 1px solid #EEE;
   border-radius: 6px;
   background: #FDFDFD;
@@ -334,9 +383,17 @@
   transition: all 0.15s ease;
 }
 
-.shortlistSelectItem:hover {
-  background: #111;
-  color: #FFF;
-  border-color: #111;
+@media (hover: hover) and (pointer: fine) {
+  .shortlistSelectItem:hover {
+    background: #111;
+    color: #FFF;
+    border-color: #111;
+  }
+}
+
+@media (max-width: 767px) {
+  .favoritesPage {
+    padding: var(--space-4) var(--space-3) var(--space-12);
+  }
 }
 

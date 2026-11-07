@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiRequest } from '../../../services/apiClient.js';
 import { AlertBanner } from '../../../components/feedback/index.js';
 import { resolveErrorMessage } from '../../../config/errorMessages.js';
+import styles from './DisputesPage.module.css';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -108,40 +109,38 @@ export function DisputesPage() {
   }
 
   return (
-    <div className="container" style={{ marginTop: '1.5rem' }}>
-      <h1 className="page-title">Disputes & Claims</h1>
+    <div className={styles.container}>
+      <h1 className={styles.pageTitle}>Disputes & Claims</h1>
       {err && <AlertBanner type="error" message={err} onDismiss={() => setErr('')} />}
       {msg && <AlertBanner type="success" message={msg} onDismiss={() => setMsg('')} />}
       
-      <div className="card" style={{ marginBottom: '1.5rem' }}>
-        <h3>Open a Dispute</h3>
-        <p className="muted" style={{ fontSize: '0.9rem', marginBottom: '1rem' }}>
+      <div className={styles.card}>
+        <h2 className={styles.cardTitle}>Open a Dispute</h2>
+        <p className={styles.cardSubtitle}>
           File a dispute for an active or completed rental booking or sales order. Our resolution team arbitrates according to platform policy.
         </p>
         <form onSubmit={submit}>
           <div className="form-row">
             <label className="label">Reference Item Type</label>
-            <div style={{ display: 'flex', gap: '1rem', marginTop: '0.25rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="refType"
-                  value="rental"
-                  checked={refType === 'rental'}
-                  onChange={() => setRefType('rental')}
-                />
+            <div className={styles.segmentedControl} role="tablist" aria-label="Reference type">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={refType === 'rental'}
+                className={`${styles.segmentBtn} ${refType === 'rental' ? styles.segmentBtnActive : ''}`}
+                onClick={() => setRefType('rental')}
+              >
                 Rental Booking
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="refType"
-                  value="order"
-                  checked={refType === 'order'}
-                  onChange={() => setRefType('order')}
-                />
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={refType === 'order'}
+                className={`${styles.segmentBtn} ${refType === 'order' ? styles.segmentBtnActive : ''}`}
+                onClick={() => setRefType('order')}
+              >
                 Sales Order
-              </label>
+              </button>
             </div>
           </div>
 
@@ -152,7 +151,7 @@ export function DisputesPage() {
             <input
               id="refId"
               name={refType === 'rental' ? 'rentalBookingId' : 'orderId'}
-              className="input"
+              className={`input ${styles.inputField}`}
               placeholder={`Paste the 36-character ${refType === 'rental' ? 'rental booking' : 'sales order'} UUID`}
               value={refType === 'rental' ? (form.rentalBookingId || form.refId) : (form.orderId || form.refId)}
               onChange={(e) => {
@@ -169,7 +168,7 @@ export function DisputesPage() {
           <div className="form-row">
             <label className="label">Dispute Reason / Category *</label>
             <select
-              className="input"
+              className={`input ${styles.selectField}`}
               value={form.disputeType}
               onChange={(e) => setForm({ ...form, disputeType: e.target.value })}
             >
@@ -185,7 +184,7 @@ export function DisputesPage() {
           <div className="form-row">
             <label className="label">Detailed Explanation *</label>
             <textarea
-              className="input"
+              className={`input ${styles.textareaField}`}
               rows={4}
               placeholder="Describe the issue in detail (min 5 characters)..."
               value={form.description}
@@ -196,22 +195,43 @@ export function DisputesPage() {
           <div className="form-row">
             <label className="label">Photo Evidence URLs (Optional, comma-separated)</label>
             <input
-              className="input"
+              className={`input ${styles.inputField}`}
               placeholder="https://example.com/photo1.jpg, https://example.com/photo2.jpg"
               value={form.evidenceUrls}
               onChange={(e) => setForm({ ...form, evidenceUrls: e.target.value })}
             />
           </div>
 
-          <button className="btn btn-primary" type="submit" disabled={submitting} style={{ marginTop: '0.75rem' }}>
+          <div className="form-row">
+            <label className="label">Or Capture / Upload Evidence Photo</label>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className={styles.fileInput}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setForm((prev) => ({
+                    ...prev,
+                    evidenceUrls: prev.evidenceUrls ? `${prev.evidenceUrls}, ${file.name}` : file.name,
+                  }));
+                }
+              }}
+            />
+          </div>
+
+          <button className={styles.submitBtn} type="submit" disabled={submitting}>
             {submitting ? 'Submitting Claim…' : 'Submit Dispute'}
           </button>
         </form>
       </div>
 
-      <div className="table-container">
-        <h3>My Filed Disputes</h3>
-        <table className="table" style={{ marginTop: '0.5rem' }}>
+      <div className={styles.tableContainer}>
+        <h2 className={styles.tableTitle}>My Filed Disputes</h2>
+        
+        {/* Desktop Table View */}
+        <table className={styles.desktopTable}>
           <thead>
             <tr>
               <th>ID</th>
@@ -241,13 +261,46 @@ export function DisputesPage() {
             ))}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={5} className="muted" style={{ textAlign: 'center', padding: '1rem' }}>
+                <td colSpan={5} className="muted" style={{ textAlign: 'center', padding: '1.5rem' }}>
                   No active or past disputes found.
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+
+        {/* Mobile Cards View (<768px) */}
+        <div className={styles.mobileCardsList}>
+          {rows.map((d) => (
+            <div key={d.id} className={styles.disputeCard}>
+              <div className={styles.disputeCardHeader}>
+                <span className={styles.disputeId}>Dispute #{d.id.slice(0, 8).toUpperCase()}</span>
+                <span className={`badge ${d.status === 'resolved' ? 'badge-success' : d.status === 'open' ? 'badge-warning' : 'badge-neutral'}`}>
+                  {d.status}
+                </span>
+              </div>
+              <div className={styles.disputeDetailRow}>
+                <span className={styles.detailLabel}>Reference</span>
+                <span className={styles.detailValue}>
+                  {d.rentalBookingId ? `Booking #${d.rentalBookingId.slice(0, 8)}` : d.orderId ? `Order #${d.orderId.slice(0, 8)}` : '—'}
+                </span>
+              </div>
+              <div className={styles.disputeDetailRow}>
+                <span className={styles.detailLabel}>Category</span>
+                <span className={styles.detailValue}>{d.type || d.disputeType}</span>
+              </div>
+              <div className={styles.disputeDetailRow}>
+                <span className={styles.detailLabel}>Resolution</span>
+                <span className={styles.detailValue}>{d.resolution || 'Pending review'}</span>
+              </div>
+            </div>
+          ))}
+          {rows.length === 0 && (
+            <p className="muted" style={{ textAlign: 'center', padding: '1rem' }}>
+              No active or past disputes found.
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
