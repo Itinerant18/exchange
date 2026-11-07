@@ -1,0 +1,18 @@
+{
+  "name": "Exchange — Luxury Fashion Rental & Resale",
+  "short_name": "Exchange",
+  "description": "India's premier circular wardrobe for bridal, festive, and archive couture.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#570020",
+  "background_color": "#570020",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

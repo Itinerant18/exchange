@@ -44,6 +44,38 @@ test.describe('Mobile Foundation & Viewport Tests', () => {
 
       expect(sub16Inputs).toEqual([]);
     });
+
+    test(`Route ${route} interactive controls satisfy minimum touch target guidelines`, async ({ page, isMobile }) => {
+      test.skip(!isMobile, 'Tap target requirements apply to mobile touch devices');
+      await page.goto(route);
+      await page.waitForLoadState('domcontentloaded');
+
+      const violations = await page.evaluate(() => {
+        const interactive = Array.from(document.querySelectorAll('button:not([hidden]), [role="button"], input[type="submit"], input[type="button"], nav a'));
+        return interactive
+          .filter((el) => {
+            const rect = el.getBoundingClientRect();
+            const style = window.getComputedStyle(el);
+            if (rect.width === 0 || rect.height === 0 || style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') {
+              return false;
+            }
+            // Skip inline links inside body text paragraphs
+            if (el.tagName === 'A' && el.closest('p') && !el.classList.contains('btn')) {
+              return false;
+            }
+            // Filter targets below standard 36px threshold (44px target token with safe margin)
+            return rect.width < 36 || rect.height < 36;
+          })
+          .map((el) => ({
+            tag: el.tagName,
+            text: (el.textContent || '').trim().slice(0, 30),
+            width: Math.round(el.getBoundingClientRect().width),
+            height: Math.round(el.getBoundingClientRect().height),
+          }));
+      });
+
+      expect(violations).toEqual([]);
+    });
   }
 });
 

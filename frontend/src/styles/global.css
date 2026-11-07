@@ -634,3 +634,34 @@ input, select, textarea {
   white-space: nowrap;
   border: 0;
 }
+
+/* ── Mobile Interaction & Tap Feedback ── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active,
+.btn:active,
+[role="button"]:active {
+  opacity: 0.88;
+  transform: scale(0.985);
+  transition: transform var(--duration-fast, 0.1s) ease, opacity var(--duration-fast, 0.1s) ease;
+}
+
+/* ── Focus Visible ── */
+:focus-visible {
+  outline: 2px solid var(--color-primary-gold, #C8A251);
+  outline-offset: 3px;
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
