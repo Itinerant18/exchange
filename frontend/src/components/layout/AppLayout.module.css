@@ -152,7 +152,7 @@
 .brandLogoImg {
   height: 38px;
   width: auto;
-  max-width: 130px;
+  max-width: 165px;
   object-fit: contain;
   display: block;
 }
@@ -160,7 +160,7 @@
 @media (min-width: 768px) {
   .brandLogoImg {
     height: 44px;
-    max-width: 150px;
+    max-width: 190px;
   }
 }
 
@@ -539,9 +539,9 @@
 }
 
 .drawerBrandLogoImg {
-  height: 42px;
+  height: 44px;
   width: auto;
-  max-width: 140px;
+  max-width: 190px;
   object-fit: contain;
   display: block;
 }
@@ -912,9 +912,9 @@
 }
 
 .footerBrandLogoImg {
-  height: 48px;
+  height: 52px;
   width: auto;
-  max-width: 170px;
+  max-width: 210px;
   object-fit: contain;
   display: block;
 }
