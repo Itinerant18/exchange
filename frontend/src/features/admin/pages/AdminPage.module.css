@@ -40,15 +40,24 @@
   padding-bottom: 0.75rem;
   margin-bottom: 2rem;
   overflow-x: auto;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabsBar::-webkit-scrollbar {
+  display: none;
 }
 
 .tabBtn {
   background: transparent;
   border: 1px solid transparent;
   border-radius: 6px;
-  padding: 0.6rem 1rem;
-  font-size: 0.85rem;
+  padding: 0.6rem 1.1rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.88rem;
   font-weight: 500;
   color: #555;
   cursor: pointer;
@@ -259,8 +268,8 @@
 
 /* Actions */
 .actionBtn {
-  padding: 0.35rem 0.75rem;
-  font-size: 0.8rem;
+  padding: 0.5rem 0.85rem;
+  font-size: 0.82rem;
   font-weight: 500;
   border-radius: 4px;
   border: 1px solid #D1D5DB;
@@ -268,6 +277,10 @@
   cursor: pointer;
   transition: all 0.15s ease;
   margin-right: 0.35rem;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .actionBtn:hover {
@@ -301,6 +314,8 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -329,4 +344,129 @@
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 1.5rem;
+}
+
+/* ── Responsive Card Presentation for Tables (<768px) ── */
+@media (max-width: 767px) {
+  .adminContainer {
+    padding: var(--space-4) var(--space-3) var(--space-12);
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .card {
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .tabsBar {
+    position: sticky;
+    top: calc(var(--header-height, 56px) + 8px);
+    z-index: 25;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    margin-left: -0.75rem;
+    margin-right: -0.75rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #E5E5E5;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Table becomes stacked cards */
+  .responsiveTable thead {
+    display: none;
+  }
+
+  .responsiveTable,
+  .responsiveTable tbody,
+  .responsiveTable tr,
+  .responsiveTable td {
+    display: block;
+    width: 100%;
+  }
+
+  .responsiveTable tr {
+    background: #FAFAFA;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 0.85rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .responsiveTable td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.45rem 0;
+    border-bottom: 1px solid #F3F4F6;
+    font-size: 0.85rem;
+    word-break: break-word;
+  }
+
+  .responsiveTable td:last-child {
+    border-bottom: none;
+    padding-top: 0.75rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+  }
+
+  .responsiveTable td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: #6B7280;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .responsiveTable td:last-child::before {
+    width: 100%;
+    margin-bottom: 0.25rem;
+  }
+
+  /* Stacked action buttons on phone */
+  .actionBtn {
+    width: 100%;
+    margin-right: 0;
+    margin-bottom: 0.35rem;
+  }
+
+  /* Bottom sheet modal on phone */
+  .modalBackdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modalContent {
+    max-width: 100%;
+    border-radius: 16px 16px 0 0;
+    max-height: 85dvh;
+    overflow-y: auto;
+    padding: 1.25rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .modalActions {
+    position: sticky;
+    bottom: 0;
+    background: #FFF;
+    padding-top: 0.75rem;
+    border-top: 1px solid #EEE;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .modalActions button {
+    width: 100%;
+    min-height: 44px;
+  }
 }

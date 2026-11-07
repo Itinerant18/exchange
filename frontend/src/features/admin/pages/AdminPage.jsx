@@ -1077,7 +1077,7 @@ export function AdminPage() {
           </div>
 
           <div className={styles.tableWrapper}>
-            <table className={styles.table}>
+            <table className={`${styles.table} ${styles.responsiveTable}`}>
               <thead>
                 <tr>
                   <th>Dispute ID</th>
@@ -1092,21 +1092,21 @@ export function AdminPage() {
               <tbody>
                 {disputes.map((d) => (
                   <tr key={d.id}>
-                    <td><code>{d.id.slice(0, 8)}</code></td>
-                    <td>
+                    <td data-label="Dispute ID"><code>{d.id.slice(0, 8)}</code></td>
+                    <td data-label="Ref ID">
                       <code>{(d.rentalBookingId || d.orderId || d.rental_booking_id || d.order_id || '').slice(0, 8)}</code>
                     </td>
-                    <td><span className={`${styles.badge} ${styles.badgeNeutral}`}>{d.disputeType || d.dispute_type}</span></td>
-                    <td style={{ maxWidth: '300px' }}>{d.description}</td>
-                    <td>
+                    <td data-label="Type"><span className={`${styles.badge} ${styles.badgeNeutral}`}>{d.disputeType || d.dispute_type}</span></td>
+                    <td data-label="Description" style={{ maxWidth: '300px' }}>{d.description}</td>
+                    <td data-label="Status">
                       <span className={`${styles.badge} ${
                         d.status === 'resolved' ? styles.badgeSuccess : d.status === 'open' ? styles.badgeWarning : styles.badgeDanger
                       }`}>
                         {d.status}
                       </span>
                     </td>
-                    <td>{formatDate(d.createdAt || d.created_at)}</td>
-                    <td>
+                    <td data-label="Opened">{formatDate(d.createdAt || d.created_at)}</td>
+                    <td data-label="Action">
                       {d.status === 'open' ? (
                         <button
                           type="button"
@@ -1149,7 +1149,7 @@ export function AdminPage() {
           </div>
 
           <div className={styles.tableWrapper}>
-            <table className={styles.table}>
+            <table className={`${styles.table} ${styles.responsiveTable}`}>
               <thead>
                 <tr>
                   <th>Verification ID</th>
@@ -1164,19 +1164,19 @@ export function AdminPage() {
               <tbody>
                 {kycQueue.map((k) => (
                   <tr key={k.id}>
-                    <td><code>{k.id.slice(0, 8)}</code></td>
-                    <td><code>{k.userId || k.user_id}</code></td>
-                    <td>{k.documentType || k.document_type}</td>
-                    <td><code>{k.documentNumber || k.document_number}</code></td>
-                    <td>
+                    <td data-label="Verification ID"><code>{k.id.slice(0, 8)}</code></td>
+                    <td data-label="User ID"><code>{k.userId || k.user_id}</code></td>
+                    <td data-label="Document Type">{k.documentType || k.document_type}</td>
+                    <td data-label="Document Number"><code>{k.documentNumber || k.document_number}</code></td>
+                    <td data-label="Status">
                       <span className={`${styles.badge} ${
                         k.status === 'verified' ? styles.badgeSuccess : k.status === 'pending' ? styles.badgeWarning : styles.badgeDanger
                       }`}>
                         {k.status}
                       </span>
                     </td>
-                    <td>{formatDate(k.createdAt || k.created_at)}</td>
-                    <td>
+                    <td data-label="Submitted">{formatDate(k.createdAt || k.created_at)}</td>
+                    <td data-label="Actions">
                       {k.status === 'pending' ? (
                         <>
                           <button
