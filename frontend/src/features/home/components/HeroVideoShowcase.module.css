@@ -252,10 +252,15 @@
   background: rgba(0, 0, 0, 0.4);
   color: rgba(255, 255, 255, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 4px 10px;
+  padding: 8px 14px;
+  min-height: 38px;
+  min-width: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: var(--radius-full);
   font-family: var(--font-extended);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.05em;
   text-transform: capitalize;
   cursor: pointer;

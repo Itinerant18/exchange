@@ -306,7 +306,7 @@ input, select, textarea {
   padding: 0.625rem var(--space-4);
   border: 1px solid #DDDDDD;
   border-radius: var(--radius-xs);
-  font-size: 14px;
+  font-size: max(16px, 1rem);
   font-weight: 300;
   background: #FFFFFF;
   color: #000000;

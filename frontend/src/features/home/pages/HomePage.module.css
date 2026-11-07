@@ -526,6 +526,11 @@
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 4px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
   transition: color 0.2s ease, opacity 0.2s ease;
 }
 
