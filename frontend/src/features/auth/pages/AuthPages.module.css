@@ -41,11 +41,18 @@
 }
 
 .authLogoImg {
-  height: 60px;
+  height: 56px;
   width: auto;
-  max-width: 180px;
+  max-width: 160px;
   object-fit: contain;
   display: block;
+}
+
+@media (min-width: 768px) {
+  .authLogoImg {
+    height: 64px;
+    max-width: 180px;
+  }
 }
 
 .title {
