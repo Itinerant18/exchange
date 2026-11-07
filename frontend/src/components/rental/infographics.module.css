@@ -610,12 +610,16 @@
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-spring);
   text-align: center;
-  min-width: 110px;
+  min-width: 90px;
+  min-height: 48px;
+  justify-content: center;
 }
 
-.tierTab:hover {
-  background: var(--color-brand-burgundy-subtle);
-  border-color: rgba(87, 0, 32, 0.2);
+@media (hover: hover) and (pointer: fine) {
+  .tierTab:hover {
+    background: var(--color-brand-burgundy-subtle);
+    border-color: rgba(87, 0, 32, 0.2);
+  }
 }
 
 .tierTabActive {
@@ -741,6 +745,27 @@
   .calcControlsRow,
   .checklistGrid {
     grid-template-columns: 1fr;
+  }
+
+  .tierTabsTrack {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+    scrollbar-width: none;
+  }
+
+  .tierTabsTrack::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tierTab {
+    flex: 0 0 100px;
+    scroll-snap-align: start;
+    min-height: 48px;
+    min-width: 90px;
   }
 
   .stepperTrack {

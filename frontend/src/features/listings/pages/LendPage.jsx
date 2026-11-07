@@ -1,14 +1,30 @@
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { LenderIncomeCalculator } from '../../../components/rental/LenderIncomeCalculator.jsx';
 import styles from './LendPage.module.css';
 
 export function LendPage() {
   const navigate = useNavigate();
+  const [showStickyCta, setShowStickyCta] = useState(false);
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+    const heroEl = heroRef.current;
+    if (!heroEl) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowStickyCta(!entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(heroEl);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <div className={styles.page}>
       {/* ── 1. High-Fashion Editorial Hero ── */}
-      <section className={styles.heroSection}>
+      <section ref={heroRef} className={styles.heroSection}>
         <div className={styles.heroContainer}>
           <span className={styles.heroBadge}>✦ Monétize Your Atelier Wardrobe</span>
           <h1 className={styles.heroHeading}>Turn Unworn Couture Into Recurring Passive Income</h1>
@@ -35,6 +51,68 @@ export function LendPage() {
           compact={false}
           onListGarment={() => navigate('/listings/new')}
         />
+      </section>
+
+      {/* ── How It Works Timeline ── */}
+      <section className={styles.timelineSection}>
+        <div className={styles.sectionHeader}>
+          <span className={styles.timelineBadge}>CONCIERGE PROCESS</span>
+          <h2 className={styles.sectionHeading}>How Lending Works</h2>
+          <p className={styles.sectionSub}>Four simple steps from closet archive to recurring passive yield.</p>
+        </div>
+
+        <div className={styles.timelineList}>
+          <div className={styles.timelineItem}>
+            <div className={styles.timelineMarker}>
+              <span className={styles.timelineStepNumber}>01</span>
+              <div className={styles.timelineLine} />
+            </div>
+            <div className={styles.timelineContent}>
+              <h3 className={styles.timelineTitle}>List in Under 3 Minutes</h3>
+              <p className={styles.timelineDesc}>
+                Take photos or upload your outfit's photos and video. Set your custom rental fee or accept our algorithmic recommendation.
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.timelineItem}>
+            <div className={styles.timelineMarker}>
+              <span className={styles.timelineStepNumber}>02</span>
+              <div className={styles.timelineLine} />
+            </div>
+            <div className={styles.timelineContent}>
+              <h3 className={styles.timelineTitle}>White-Glove Courier Pickup</h3>
+              <p className={styles.timelineDesc}>
+                When booked, our insured courier collects the outfit in a custom garment box. We perform 365nm optical inspection before handover.
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.timelineItem}>
+            <div className={styles.timelineMarker}>
+              <span className={styles.timelineStepNumber}>03</span>
+              <div className={styles.timelineLine} />
+            </div>
+            <div className={styles.timelineContent}>
+              <h3 className={styles.timelineTitle}>Hospital-Grade Cleaning</h3>
+              <p className={styles.timelineDesc}>
+                After the event, we retrieve the piece and perform 7-stage eco-hydrocarbon dry cleaning and 140°C ozone sanitization.
+              </p>
+            </div>
+          </div>
+
+          <div className={styles.timelineItem}>
+            <div className={styles.timelineMarker}>
+              <span className={styles.timelineStepNumber}>04</span>
+            </div>
+            <div className={styles.timelineContent}>
+              <h3 className={styles.timelineTitle}>80% Direct Bank Payout</h3>
+              <p className={styles.timelineDesc}>
+                Payouts are transferred automatically to your verified bank account with 0% hassle. Full damage and replacement guarantee included.
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* ── 3. 3-Pillar Value Proposition ── */}
@@ -118,6 +196,21 @@ export function LendPage() {
           </Link>
         </div>
       </section>
+
+      {/* ── 6. Sticky Bottom CTA Bar on Mobile ── */}
+      {showStickyCta && (
+        <div className={styles.stickyBottomBar}>
+          <div className={styles.stickyBottomInner}>
+            <div className={styles.stickyBottomInfo}>
+              <span className={styles.stickyBottomTitle}>Monetize Couture</span>
+              <span className={styles.stickyBottomSub}>Earn up to 80% net payout</span>
+            </div>
+            <Link to="/listings/new" className={styles.stickyBottomBtn}>
+              Start Listing →
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

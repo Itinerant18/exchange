@@ -11,6 +11,71 @@ import { AlertBanner } from '../../../components/feedback/index.js';
 import { resolveErrorMessage } from '../../../config/errorMessages.js';
 import styles from './CreateListingPage.module.css';
 
+const DRAFT_KEY = 'exchange_create_listing_draft_v1';
+
+const STEP_TITLES = {
+  1: 'Core Details',
+  2: 'Discovery Intel',
+  3: 'Photography & Video',
+  4: 'Monetization',
+  5: 'Review & Publish',
+};
+
+async function compressImage(file) {
+  if (!file || !file.type.startsWith('image/')) return file;
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const maxEdge = 2048;
+        let { width, height } = img;
+        if (width > maxEdge || height > maxEdge) {
+          if (width > height) {
+            height = Math.round((height * maxEdge) / width);
+            width = maxEdge;
+          } else {
+            width = Math.round((width * maxEdge) / height);
+            height = maxEdge;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file);
+              return;
+            }
+            const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(compressedFile);
+          },
+          'image/jpeg',
+          0.82
+        );
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(file);
+      };
+      img.src = url;
+    } catch {
+      resolve(file);
+    }
+  });
+}
+
 const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL', '2', '4', '6', '8', '10', '12', '14', '16'];
 
 const SAMPLE_LOOKS = [
@@ -211,6 +276,9 @@ function formatFacetValue(value) {
 export function CreateListingPage() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [draftAvailable, setDraftAvailable] = useState(false);
 
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
@@ -249,6 +317,111 @@ export function CreateListingPage() {
   const [attributes, setAttributes] = useState({});
   const [conditionScore, setConditionScore] = useState(10);
   const [activeFacetGroup, setActiveFacetGroup] = useState('occasion_style');
+
+  // Check for saved draft on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && (parsed.form?.title || parsed.form?.brand)) {
+          setDraftAvailable(true);
+        }
+      }
+    } catch {}
+  }, []);
+
+  function restoreDraft() {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.form) setForm((prev) => ({ ...prev, ...parsed.form }));
+        if (parsed.attributes) setAttributes(parsed.attributes);
+        if (parsed.conditionScore) setConditionScore(parsed.conditionScore);
+      }
+    } catch {}
+    setDraftAvailable(false);
+  }
+
+  function dismissDraft() {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch {}
+    setDraftAvailable(false);
+  }
+
+  // Auto-save form draft to localStorage
+  useEffect(() => {
+    if (!form.title && !form.brand) return;
+    const timer = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          DRAFT_KEY,
+          JSON.stringify({ form, attributes, conditionScore, savedAt: Date.now() })
+        );
+      } catch {}
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [form, attributes, conditionScore]);
+
+  function validateStep(step) {
+    setError('');
+    if (step === 1) {
+      if (!form.brand.trim()) {
+        setError('Please provide the Designer or Brand name.');
+        return false;
+      }
+      if (!form.title.trim() || form.title.trim().length < 3) {
+        setError('Outfit title must be at least 3 characters long.');
+        return false;
+      }
+      if (!form.categoryId) {
+        setError('Please select a category for this outfit.');
+        return false;
+      }
+      return true;
+    }
+    if (step === 2) {
+      return true;
+    }
+    if (step === 3) {
+      if (mediaItems.length === 0) {
+        setError('Please attach at least one photograph or runway video before proceeding.');
+        return false;
+      }
+      return true;
+    }
+    if (step === 4) {
+      if (!form.isRental && !form.isSale) {
+        setError('Please select at least one offer type (Rental or Sale).');
+        return false;
+      }
+      if (form.isRental && (!form.rentalPriceRupees || Number(form.rentalPriceRupees) <= 0)) {
+        setError('Please specify a daily rental rate for event rentals.');
+        return false;
+      }
+      if (form.isSale && (!form.salePriceRupees || Number(form.salePriceRupees) <= 0)) {
+        setError('Please specify a purchase price for pre-loved resale.');
+        return false;
+      }
+      return true;
+    }
+    return true;
+  }
+
+  function handleNextStep() {
+    if (validateStep(currentStep)) {
+      setCurrentStep((prev) => Math.min(5, prev + 1));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  function handlePrevStep() {
+    setError('');
+    setCurrentStep((prev) => Math.max(1, prev - 1));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   const primaryItem = mediaItems.find((m) => m.isPrimary) || mediaItems[0] || null;
 
@@ -292,13 +465,13 @@ export function CreateListingPage() {
       .finally(() => setLoadingCategories(false));
   }, []);
 
-  function handleFiles(incomingFiles) {
+  async function handleFiles(incomingFiles) {
     if (!incomingFiles || incomingFiles.length === 0) return;
     const files = Array.from(incomingFiles);
     setError('');
 
     const newItems = [];
-    for (const file of files) {
+    for (let file of files) {
       const isVideo = file.type.startsWith('video/') || Boolean(file.name.match(/\.(mp4|webm|mov|ogg)$/i));
       const isImage = file.type.startsWith('image/') || Boolean(file.name.match(/\.(png|jpe?g|webp|avif)$/i));
 
@@ -307,14 +480,30 @@ export function CreateListingPage() {
         continue;
       }
 
+      if (isImage) {
+        try {
+          file = await compressImage(file);
+        } catch {
+          // fallback to original if compression fails
+        }
+      }
+
       if (isImage && file.size > 15 * 1024 * 1024) {
         setError(`Image "${file.name}" exceeds the 15 MB limit.`);
         continue;
       }
 
-      if (isVideo && file.size > 60 * 1024 * 1024) {
-        setError(`Video "${file.name}" exceeds the 60 MB limit.`);
-        continue;
+      if (isVideo) {
+        if (file.size > 60 * 1024 * 1024) {
+          setError(`Video "${file.name}" exceeds the 60 MB limit.`);
+          continue;
+        }
+        if (file.size > 50 * 1024 * 1024) {
+          const conn = typeof navigator !== 'undefined' && navigator.connection;
+          if (conn && (conn.type === 'cellular' || ['2g', '3g', '4g'].includes(conn.effectiveType) || conn.saveData)) {
+            setError(`Notice: Video "${file.name}" is ${(file.size / (1024 * 1024)).toFixed(1)} MB. Uploading over cellular data may consume bandwidth.`);
+          }
+        }
       }
 
       const tempId = `media-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
@@ -346,6 +535,9 @@ export function CreateListingPage() {
 
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+    if (cameraInputRef.current) {
+      cameraInputRef.current.value = '';
     }
   }
 
@@ -608,7 +800,10 @@ export function CreateListingPage() {
       // 3. Create listing row (with attached media items and inventory created atomically)
       const listing = await listingsApi.createListing(payload);
 
-      // 4. Navigate to the newly created listing detail page
+      // 4. Clear saved draft and navigate to the newly created listing detail page
+      try {
+        localStorage.removeItem(DRAFT_KEY);
+      } catch {}
       navigate(`/listings/${listing.id}`);
     } catch (err) {
       setError(resolveErrorMessage(err, 'Failed to publish listing. Please check the fields and try again.').message);
@@ -625,13 +820,66 @@ export function CreateListingPage() {
 
   return (
     <div className={styles.page}>
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        style={{ display: 'none' }}
+        onChange={(e) => handleFiles(e.target.files)}
+      />
+
       <div className={styles.container}>
+        {/* ── Mobile Wizard Progress Header ── */}
+        <div className={styles.mobileWizardHeader}>
+          <div className={styles.wizardProgressTrack}>
+            <div
+              className={styles.wizardProgressBar}
+              style={{ width: `${(currentStep / 5) * 100}%` }}
+            />
+          </div>
+          <div className={styles.wizardHeaderContent}>
+            <span className={styles.wizardStepBadge}>
+              Step {currentStep} of 5 · {STEP_TITLES[currentStep]}
+            </span>
+            {currentStep > 1 && currentStep < 5 && (
+              <button
+                type="button"
+                className={styles.wizardJumpBtn}
+                onClick={() => setCurrentStep(5)}
+              >
+                Preview
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* ── Breadcrumb & Header ── */}
         <nav className={styles.breadcrumb} aria-label="Breadcrumb">
           <Link to="/listings">Catalog</Link>
           <span className={styles.divider}>/</span>
           <span className={styles.breadcrumbCurrent}>List an Outfit</span>
         </nav>
+
+        {/* ── Draft Restoration Banner ── */}
+        {draftAvailable && (
+          <div className={styles.draftBanner} role="alert">
+            <div className={styles.draftBannerContent}>
+              <span className={styles.draftIcon}>✦</span>
+              <div>
+                <strong>Unsaved Draft Found:</strong> Restore your previous listing details?
+              </div>
+            </div>
+            <div className={styles.draftActions}>
+              <button type="button" className={styles.draftRestoreBtn} onClick={restoreDraft}>
+                Restore Draft
+              </button>
+              <button type="button" className={styles.draftDismissBtn} onClick={dismissDraft}>
+                Discard
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className={styles.header}>
           <span className={styles.eyebrow}>CONSIGNMENT & ATELIER PORTAL</span>
@@ -654,7 +902,7 @@ export function CreateListingPage() {
           {/* ── Form Column ── */}
           <form onSubmit={handleSubmit} className={styles.form} noValidate>
             {/* Section 1: Garment & Designer Intel */}
-            <div className={styles.section}>
+            <div className={`${styles.section} ${styles.sectionStep1} ${currentStep === 1 ? styles.stepActive : ''}`}>
               <div className={styles.sectionHeader}>
                 <div className={styles.stepBadgeRow}>
                   <span className={styles.sectionStep}>STEP 01</span>
@@ -804,7 +1052,7 @@ export function CreateListingPage() {
             </div>
 
             {/* Section 2: Style Attributes (Categorized Facet Taxonomy) */}
-            <div className={styles.section}>
+            <div className={`${styles.section} ${styles.sectionStep2} ${currentStep === 2 ? styles.stepActive : ''}`}>
               <div className={styles.sectionHeader}>
                 <div className={styles.stepBadgeRow}>
                   <span className={styles.sectionStep}>STEP 02</span>
@@ -881,7 +1129,7 @@ export function CreateListingPage() {
             </div>
 
             {/* Section 3: Multi-Media & Runway Video Gallery */}
-            <div className={styles.section}>
+            <div className={`${styles.section} ${styles.sectionStep3} ${currentStep === 3 ? styles.stepActive : ''}`}>
               <div className={styles.sectionHeader}>
                 <div className={styles.stepBadgeRow}>
                   <span className={styles.sectionStep}>STEP 03</span>
@@ -1024,16 +1272,32 @@ export function CreateListingPage() {
                         Select multiple files: JPG, PNG, WebP (up to 15 MB) • MP4, WebM, MOV clips (up to 60 MB)
                       </span>
                     </div>
-                    <button
-                      type="button"
-                      className={styles.chooseFileBtn}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fileInputRef.current?.click();
-                      }}
-                    >
-                      Choose Photos & Videos
-                    </button>
+                    <div className={styles.uploadBtnRow}>
+                      <button
+                        type="button"
+                        className={styles.chooseFileBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fileInputRef.current?.click();
+                        }}
+                      >
+                        Choose from Library
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.cameraBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          cameraInputRef.current?.click();
+                        }}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                          <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                        Take Photo
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -1220,7 +1484,7 @@ export function CreateListingPage() {
             </div>
 
             {/* Section 4: Offer Modes & Financials */}
-            <div className={styles.section}>
+            <div className={`${styles.section} ${styles.sectionStep4} ${currentStep === 4 ? styles.stepActive : ''}`}>
               <div className={styles.sectionHeader}>
                 <div className={styles.stepBadgeRow}>
                   <span className={styles.sectionStep}>STEP 04</span>
@@ -1438,7 +1702,7 @@ export function CreateListingPage() {
           </form>
 
           {/* ── Right Column: Sticky Live Catalog Preview ── */}
-          <aside className={styles.previewCol} aria-label="Live Catalog Preview">
+          <aside className={`${styles.previewCol} ${currentStep === 5 ? styles.previewStepActive : ''}`} aria-label="Live Catalog Preview">
             <div className={styles.stickyPreview}>
               <div className={styles.previewHeader}>
                 <span className={styles.previewBadge}>✦ LIVE CATALOG PREVIEW</span>
@@ -1622,6 +1886,42 @@ export function CreateListingPage() {
             </div>
           </aside>
         </div>
+      </div>
+
+      {/* ── Mobile Wizard Sticky Footer (<1024px) ── */}
+      <div className={styles.mobileWizardFooter}>
+        {currentStep > 1 ? (
+          <button
+            type="button"
+            className={styles.wizardBackBtn}
+            onClick={handlePrevStep}
+          >
+            ← Back
+          </button>
+        ) : (
+          <Link to="/listings" className={styles.wizardBackBtn}>
+            Cancel
+          </Link>
+        )}
+
+        {currentStep < 5 ? (
+          <button
+            type="button"
+            className={styles.wizardNextBtn}
+            onClick={handleNextStep}
+          >
+            Next: {STEP_TITLES[currentStep + 1]} →
+          </button>
+        ) : (
+          <button
+            type="button"
+            className={styles.wizardPublishBtn}
+            disabled={busy || !form.title.trim()}
+            onClick={handleSubmit}
+          >
+            {busy ? 'Publishing Outfit…' : 'Publish Outfit →'}
+          </button>
+        )}
       </div>
     </div>
   );
