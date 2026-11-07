@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext.jsx';
-import { appConfig } from '../../../config/appConfig.js';
 import { authErrorMessage } from '../../../config/authMessages.js';
 import { TurnstileWidget } from '../../../components/common/TurnstileWidget.jsx';
 import { OAuthButtons } from '../components/OAuthButtons.jsx';
@@ -66,13 +65,6 @@ export function RegisterPage() {
       <div className={styles.pageInner}>
         <div className={styles.formSection}>
           <div className={styles.formHeader}>
-            <Link to="/" className={styles.logo} aria-label={`${appConfig.name} Home`}>
-              <img
-                src="/logo-light.png"
-                alt="Exchange24 - Rent Wear Repeat"
-                className={styles.authLogoImg}
-              />
-            </Link>
             <h1 className={styles.title}>Create your account</h1>
             <p className={styles.subtitle}>
               Join the circular fashion community.
