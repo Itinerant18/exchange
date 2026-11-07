@@ -1,5 +1,6 @@
 import { Client } from 'pg';
 import type { Env } from '../types';
+import { normalizeDatabaseError } from '../utils/errors';
 
 export async function withDb<T>(env: Env, ctx: ExecutionContext, fn: (client: Client) => Promise<T>): Promise<T> {
   if (!env.HYPERDRIVE?.connectionString) {
@@ -9,6 +10,8 @@ export async function withDb<T>(env: Env, ctx: ExecutionContext, fn: (client: Cl
   await client.connect();
   try {
     return await fn(client);
+  } catch (err: any) {
+    throw normalizeDatabaseError(err);
   } finally {
     ctx.waitUntil(client.end());
   }

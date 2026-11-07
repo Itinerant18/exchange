@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../../../services/apiClient.js';
 import { authErrorMessage } from '../../../config/authMessages.js';
+import { AlertBanner } from '../../../components/feedback/index.js';
+
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [result, setResult] = useState(null);
@@ -10,13 +12,16 @@ export function ForgotPasswordPage() {
 
   async function submit(e) {
     e.preventDefault();
-    setError(''); setBusy(true);
+    setError('');
+    setBusy(true);
     try {
       const data = await apiRequest('/auth/forgot-password', { method: 'POST', body: { email } });
       setResult(data);
     } catch (err) {
       setError(authErrorMessage(err));
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -24,21 +29,35 @@ export function ForgotPasswordPage() {
       <div className="card">
         <h1 className="page-title">Forgot password</h1>
         <form onSubmit={submit}>
-          <div className="form-row">
-            <label className="label">Email</label>
-            <input className="input" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-          </div>
-          {error && <p className="error">{error}</p>}
+          {error && <AlertBanner type="error" message={error} onDismiss={() => setError('')} />}
           {result && (
-            <p className="success">
-              If the email exists, a reset token was issued.
-              {result.devToken && (
-                <span> Dev token: <code>{result.devToken}</code> — use on <Link to={`/reset-password?token=${result.devToken}`}>reset page</Link>.</span>
-              )}
-            </p>
+            <AlertBanner
+              type="success"
+              title="Reset Instructions Sent"
+              message="If an account is associated with this email, we have sent instructions to reset your password. Please check your inbox and spam folder."
+            />
           )}
-          <button className="btn" disabled={busy} type="submit">{busy ? 'Sending…' : 'Send reset link'}</button>
+
+          <div className="form-row">
+            <label className="label">Email address</label>
+            <input
+              className="input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+
+          <button className="btn btn-primary" style={{ width: '100%', marginTop: '1rem' }} disabled={busy || !email} type="submit">
+            {busy ? 'Sending…' : 'Send reset link'}
+          </button>
         </form>
+
+        <p style={{ marginTop: '1.25rem', textAlign: 'center', fontSize: '13px' }}>
+          Remembered your password? <Link to="/login">Sign in</Link>
+        </p>
       </div>
     </div>
   );

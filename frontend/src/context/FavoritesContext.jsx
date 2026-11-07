@@ -1,11 +1,13 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { favoritesApi } from '../api/favoritesApi.js';
 import { useAuth } from './AuthContext.jsx';
+import { useToast } from '../components/feedback/index.js';
 
 const FavoritesContext = createContext(null);
 
 export function FavoritesProvider({ children }) {
   const { isAuthed } = useAuth();
+  const { toast } = useToast();
   const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [loading, setLoading] = useState(false);
 
@@ -39,6 +41,7 @@ export function FavoritesProvider({ children }) {
   const toggleFavorite = useCallback(
     async (listingId) => {
       if (!isAuthed) {
+        toast.info('Sign in to save this look to your private wishlist.');
         return false;
       }
       const willBeFav = !favoriteIds.has(listingId);
@@ -54,8 +57,10 @@ export function FavoritesProvider({ children }) {
       try {
         if (willBeFav) {
           await favoritesApi.addFavorite(listingId);
+          toast.success('Added to your private wishlist.');
         } else {
           await favoritesApi.removeFavorite(listingId);
+          toast.info('Removed from your wishlist.');
         }
         return true;
       } catch (err) {
@@ -66,10 +71,11 @@ export function FavoritesProvider({ children }) {
           else next.add(listingId);
           return next;
         });
-        throw err;
+        toast.error('Could not update your wishlist. Please try again.');
+        return false;
       }
     },
-    [favoriteIds, isAuthed],
+    [favoriteIds, isAuthed, toast],
   );
 
   return (

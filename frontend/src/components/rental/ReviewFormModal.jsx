@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { reviewsApi } from '../../api/reviewsApi.js';
+import { AlertBanner } from '../feedback/index.js';
+import { resolveErrorMessage } from '../../config/errorMessages.js';
 import styles from './ReviewFormModal.module.css';
 
 const BODY_TYPE_OPTIONS = [
@@ -107,7 +109,7 @@ export function ReviewFormModal({
         onClose();
       }, 1500);
     } catch (err) {
-      setError(err.message || 'Failed to submit review. Please try again.');
+      setError(resolveErrorMessage(err, 'Failed to submit review. Please try again.').message);
     } finally {
       setLoading(false);
     }
@@ -150,9 +152,11 @@ export function ReviewFormModal({
         ) : (
           <form onSubmit={handleSubmit} className={styles.form}>
             {error && (
-              <div className="alert alert-error" role="alert">
-                {error}
-              </div>
+              <AlertBanner
+                type="error"
+                message={error}
+                onDismiss={() => setError('')}
+              />
             )}
 
             {/* ── Star Rating ── */}

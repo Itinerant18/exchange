@@ -9,6 +9,8 @@ import type { Env, RentalWorkflowParams } from './types';
 import { getCorsHeaders, SECURITY_HEADERS, jsonResponse } from './types';
 import { InventoryLockDO } from './durable-objects/InventoryLockDO';
 import { RentalLifecycleWorkflow } from './workflows/RentalWorkflow';
+import { AppError } from './utils/errors';
+import { recordEdgeAudit } from './services/d1Client';
 
 import { handleHealthRoutes } from './modules/health';
 import { handleCategoriesRoutes } from './modules/categories';
@@ -106,16 +108,41 @@ async function handleApi(
       cors,
     );
   } catch (err: any) {
-    console.error('[ApiRouter] Unhandled error:', err);
+    const requestId = request.headers.get('x-request-id') || crypto.randomUUID();
+    const clientIp = request.headers.get('cf-connecting-ip') || 'unknown';
+
+    if (err instanceof AppError) {
+      return jsonResponse(
+        {
+          error: {
+            message: err.message,
+            code: err.code,
+            details: err.details,
+            retryable: err.retryable,
+          },
+          requestId,
+        } as any,
+        err.status,
+        { ...cors, 'x-request-id': requestId },
+      );
+    }
+
+    console.error(`[ApiRouter][${requestId}] Unhandled error:`, err);
+    recordEdgeAudit(env, ctx, 'SYSTEM_UNHANDLED_ERROR', null, clientIp, {
+      requestId,
+      error: String(err?.message || err),
+    });
+
     return jsonResponse(
       {
         error: {
-          message: err.message || 'Internal server error',
-          code: 'INTERNAL_SERVER_ERROR',
+          message: 'An unexpected server pause occurred. Please try again shortly.',
+          code: 'SYSTEM_INTERNAL_ERROR',
         },
-      },
+        requestId,
+      } as any,
       500,
-      cors,
+      { ...cors, 'x-request-id': requestId },
     );
   }
 }
