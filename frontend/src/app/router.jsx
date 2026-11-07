@@ -21,6 +21,7 @@ import { MyOrdersPage } from '../features/orders/index.js';
 import { ProfilePage } from '../features/profile/index.js';
 import { DisputesPage } from '../features/disputes/index.js';
 import { FavoritesPage } from '../features/favorites/index.js';
+import { BlogIndexPage, BlogDetailPage } from '../features/blog/index.js';
 
 // Route-level code splitting for heavy routes (§7 budget)
 const CreateListingPage = lazy(() => import('../features/listings/pages/CreateListingPage.jsx').then((m) => ({ default: m.CreateListingPage })));
@@ -54,6 +55,8 @@ export const router = createBrowserRouter([
       { path: 'forgot-password', element: <ForgotPasswordPage /> },
       { path: 'reset-password', element: <ResetPasswordPage /> },
       { path: 'listings', element: <ListingsPage /> },
+      { path: 'blog', element: <BlogIndexPage /> },
+      { path: 'blog/:slug', element: <BlogDetailPage /> },
       { path: 'lend', element: <LazyRoute><LendPage /></LazyRoute> },
       { path: 'listings/new', element: <ProtectedRoute><LazyRoute><CreateListingPage /></LazyRoute></ProtectedRoute> },
       { path: 'listings/:id', element: <ListingDetailPage /> },

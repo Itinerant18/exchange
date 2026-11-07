@@ -257,6 +257,12 @@ export function AppLayout() {
             >
               Lend Couture
             </NavLink>
+            <NavLink
+              to="/blog"
+              className={({ isActive }) => isActive ? styles.navLinkActive : styles.navLink}
+            >
+              The Journal
+            </NavLink>
           </nav>
 
           {/* Header Action Utilities */}
@@ -407,6 +413,13 @@ export function AppLayout() {
                 onClick={() => setMenuOpen(false)}
               >
                 Lend Couture
+              </NavLink>
+              <NavLink
+                to="/blog"
+                className={({ isActive }) => isActive ? styles.menuDrawerLinkActive : styles.menuDrawerLink}
+                onClick={() => setMenuOpen(false)}
+              >
+                The Journal &amp; Style Guides
               </NavLink>
 
               <div className={styles.menuDivider} />
@@ -596,6 +609,7 @@ export function AppLayout() {
               <Link to="/listings?sale=true">Pre-Loved Resale</Link>
               <Link to="/lend">Lender Studio &amp; Earnings</Link>
               <Link to="/listings/new">List an Outfit</Link>
+              <Link to="/blog">The Journal &amp; Editorial</Link>
             </div>
           </details>
 

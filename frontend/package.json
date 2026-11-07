@@ -12,7 +12,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "node --check src/utils/formatters.js",
-    "test": "node --import ./tests/register-loader.mjs --test tests/apiClient.adversarial.test.mjs tests/milestone2.adversarial.test.mjs tests/luxury-rental-e2e.test.mjs",
+    "test": "node --import ./tests/register-loader.mjs --test tests/apiClient.adversarial.test.mjs tests/milestone2.adversarial.test.mjs tests/luxury-rental-e2e.test.mjs tests/blog.test.mjs",
     "test:mobile": "playwright test --config=playwright.mobile.config.js"
   },
   "dependencies": {
