@@ -12,12 +12,12 @@
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #999999;
+  color: rgba(255, 255, 255, 0.7);
   margin-bottom: var(--space-6);
 }
 
 .breadcrumb a {
-  color: #999999;
+  color: rgba(255, 255, 255, 0.7);
   text-decoration: none;
 }
 
@@ -282,7 +282,7 @@
 
 .ratingCount {
   font-size: 11px;
-  color: #999999;
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .priceContainer {
@@ -309,12 +309,12 @@
 
 .rentalDurationTag {
   font-size: 14px;
-  color: #999999;
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .retailCompare {
   font-size: 13px;
-  color: #777777;
+  color: rgba(255, 255, 255, 0.6);
   text-decoration: line-through;
 }
 

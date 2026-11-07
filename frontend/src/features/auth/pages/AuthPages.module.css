@@ -271,7 +271,7 @@
 .panelFoot {
   font-family: var(--font-extended);
   font-size: 11px;
-  color: #999999;
+  color: rgba(255, 255, 255, 0.75);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0;
@@ -299,7 +299,7 @@
 .quoteAuthor {
   font-family: var(--font-extended);
   font-size: 11px;
-  color: #999999;
+  color: var(--color-gold-zari, #C8A251);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin: 0;

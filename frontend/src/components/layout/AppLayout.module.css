@@ -431,7 +431,7 @@
   background: none;
   border: none;
   font-size: 12px;
-  color: var(--color-ink-secondary, #4D4B47);
+  color: rgba(255, 255, 255, 0.75);
   cursor: pointer;
   text-decoration: underline;
   padding: 0;

@@ -211,3 +211,4 @@ export function getBlogPostsByCategory(category) {
   }
   return BLOG_POSTS.filter((post) => post.category.toLowerCase() === category.toLowerCase());
 }
+

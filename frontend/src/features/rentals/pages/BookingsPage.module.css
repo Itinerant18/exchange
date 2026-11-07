@@ -28,7 +28,7 @@
   font-family: var(--font-body);
   font-size: 14px;
   font-weight: 300;
-  color: #999999;
+  color: rgba(255, 255, 255, 0.75);
   margin: 0;
 }
 

@@ -32,10 +32,11 @@
 
   /* ── Canvas & Surfaces (Deep Royal Burgundy / Magenta & Elevated Surfaces) ── */
   --color-canvas: #570020;
-  --color-canvas-base: #570020;
-  --color-canvas-subtle: #420022;
+  --color-canvas-base: #F8F8F8;
+  --color-canvas-subtle: #F0EEEA;
   --color-canvas-editorial: #570020;
   --color-canvas-alt: #29000B;
+  --color-on-canvas: #FFFFFF;
   --color-surface: #FFFFFF;
   --color-surface-pure: #FFFFFF;
   --color-surface-raised: #FFFFFF;

@@ -54,7 +54,8 @@ export function BlogDetailPage() {
     : '/listings?rental=true';
 
   return (
-    <article className={styles.articleContainer}>
+    <div className={styles.articlePage}>
+      <article className={styles.articleContainer}>
       {/* ── Breadcrumb Navigation ── */}
       <nav className={styles.breadcrumb} aria-label="Breadcrumb">
         <Link to="/" className={styles.breadcrumbLink}>Home</Link>
@@ -186,5 +187,7 @@ export function BlogDetailPage() {
         </section>
       )}
     </article>
+  </div>
   );
 }
+

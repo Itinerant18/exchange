@@ -15,7 +15,7 @@
 
 .pageSubtitle {
   font-size: 0.95rem;
-  color: var(--color-on-surface-muted, #999999);
+  color: rgba(255, 255, 255, 0.75);
   margin: 0 0 var(--space-6);
 }
 
