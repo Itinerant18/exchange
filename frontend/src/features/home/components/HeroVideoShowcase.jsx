@@ -68,6 +68,13 @@ export function HeroVideoShowcase() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
   const [videoError, setVideoError] = useState(false);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const isMobileWidth = window.innerWidth < 768;
+    const isDataSaver = navigator.connection?.saveData === true;
+    const isSlowConnection = ['slow-2g', '2g', '3g'].includes(navigator.connection?.effectiveType);
+    return !isMobileWidth && !isDataSaver && !isSlowConnection;
+  });
   const videoRef = useRef(null);
 
   const activeReel = HERO_REELS[activeReelIdx];
@@ -75,7 +82,7 @@ export function HeroVideoShowcase() {
   // Playback synchronization
   useEffect(() => {
     setVideoError(false);
-    if (videoRef.current && activeReel.videoSrc) {
+    if (shouldLoadVideo && videoRef.current && activeReel.videoSrc) {
       videoRef.current.load();
       if (isPlaying) {
         videoRef.current.play().catch(() => {
@@ -83,9 +90,31 @@ export function HeroVideoShowcase() {
         });
       }
     }
-  }, [activeReelIdx, activeReel.videoSrc]);
+  }, [activeReelIdx, activeReel.videoSrc, shouldLoadVideo]);
+
+  // Pause off-screen video to preserve data and battery
+  useEffect(() => {
+    if (!videoRef.current || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting && videoRef.current && !videoRef.current.paused) {
+          videoRef.current.pause();
+        } else if (entry.isIntersecting && videoRef.current && isPlaying && shouldLoadVideo) {
+          videoRef.current.play().catch(() => {});
+        }
+      },
+      { threshold: 0.25 }
+    );
+    observer.observe(videoRef.current);
+    return () => observer.disconnect();
+  }, [isPlaying, shouldLoadVideo]);
 
   const togglePlay = () => {
+    if (!shouldLoadVideo) {
+      setShouldLoadVideo(true);
+      setIsPlaying(true);
+      return;
+    }
     if (!videoRef.current) return;
     if (isPlaying) {
       videoRef.current.pause();
@@ -109,15 +138,15 @@ export function HeroVideoShowcase() {
         
         {/* 1. Cinematic Background Video or High-Res Editorial Poster */}
         <div className={styles.mediaContainer}>
-          {activeReel.videoSrc && !videoError ? (
+          {shouldLoadVideo && activeReel.videoSrc && !videoError ? (
             <video
               ref={videoRef}
               key={activeReel.videoSrc}
               className={styles.heroVideo}
               poster={activeReel.posterImage}
-              preload="auto"
+              preload="none"
               playsInline
-              autoPlay
+              autoPlay={isPlaying}
               muted={isMuted}
               loop
               onError={() => setVideoError(true)}
@@ -129,6 +158,8 @@ export function HeroVideoShowcase() {
               src={activeReel.posterImage}
               alt={activeReel.headline}
               className={styles.fallbackPoster}
+              fetchpriority="high"
+              decoding="async"
             />
           )}
         </div>

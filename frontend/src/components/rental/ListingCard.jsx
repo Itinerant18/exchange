@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatPaiseToRupees } from '../../utils/formatters.js';
+import { canHover } from '../../utils/mediaQueries.js';
 import { useFavorites } from '../../context/FavoritesContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import styles from './ListingCard.module.css';
@@ -104,7 +105,7 @@ export function ListingCard({ listing, onHoverPreview = true, sampleVideoFallbac
   }, []);
 
   const handleMouseEnter = () => {
-    if (!onHoverPreview || !resolvedVideoSrc || !videoRef.current) return;
+    if (!canHover() || !onHoverPreview || !resolvedVideoSrc || !videoRef.current) return;
     setIsHovered(true);
     setIsVideoLoading(true);
 

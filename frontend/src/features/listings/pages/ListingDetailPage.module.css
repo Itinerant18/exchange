@@ -484,15 +484,142 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 960px) {
+@media (max-width: 767px) {
+  .page {
+    padding-bottom: calc(84px + var(--safe-bottom, 0px));
+  }
+
   .pdpGrid {
-    grid-template-columns: 1fr;
-    gap: var(--space-8);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+
+  .visualCol {
+    display: contents;
+  }
+
+  .gallery {
+    order: 1;
+  }
+
+  .consoleCol {
+    order: 2;
+  }
+
+  .garmentDetails {
+    order: 3;
+  }
+
+  .fitInsightsWrapper {
+    order: 4;
+  }
+
+  .sustainabilitySection {
+    order: 5;
+  }
+
+  .reviewsWrapper {
+    order: 6;
   }
 
   .stickyConsole {
     position: static;
   }
+
+  .pdpWishlistBtn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .pdpGrid {
+    grid-template-columns: 55% 45%;
+    gap: var(--space-6);
+  }
+
+  .stickyConsole {
+    position: static;
+  }
+}
+
+/* ── Sticky Bottom CTA Bar (<768px) ── */
+.mobileStickyCtaBar {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--z-sticky-cta, 400);
+  background: rgba(20, 0, 8, 0.96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(200, 162, 81, 0.35);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.4);
+  padding: 12px 16px calc(12px + var(--safe-bottom, 0px));
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .mobileStickyCtaBar {
+    display: none;
+  }
+}
+
+.mobileCtaPriceCol {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobileCtaPrice {
+  font-family: var(--font-display, serif);
+  font-size: 20px;
+  font-weight: 500;
+  color: #FFFFFF;
+  line-height: 1.1;
+}
+
+.mobileCtaDuration {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.mobileCtaBtn {
+  min-height: 44px;
+  padding: 0 24px;
+  background: var(--color-antique-zari-gold, #C8A251);
+  color: #1A1A1A;
+  border: 1px solid var(--color-antique-zari-gold, #C8A251);
+  border-radius: var(--radius-full, 999px);
+  font-family: var(--font-extended, sans-serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mobileCtaBtn:hover:not(:disabled) {
+    background: #DFC278;
+  }
+}
+
+.mobileCtaBtn:active {
+  transform: scale(0.97);
+}
+
+.mobileCtaBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .designerAndWishlistRow {
@@ -867,6 +994,7 @@
   display: block;
   max-width: min(920px, 88vw);
   max-height: calc(100vh - 140px);
+  max-height: calc(100dvh - 140px);
   object-fit: contain;
   border: 1px solid var(--color-gold-zari, #C8A251);
   border-radius: var(--radius-xs, 4px);
@@ -883,6 +1011,7 @@
   width: min(640px, 88vw);
   aspect-ratio: 3 / 4;
   max-height: calc(100vh - 140px);
+  max-height: calc(100dvh - 140px);
   border: 1px solid var(--color-gold-zari, #C8A251);
   border-radius: var(--radius-xs, 4px);
   background: radial-gradient(120% 120% at 50% 0%, rgba(87, 0, 32, 0.5) 0%, rgba(20, 8, 13, 0.95) 70%);

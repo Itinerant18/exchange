@@ -155,6 +155,14 @@ export function BagDrawer() {
             <span className={styles.itemMeta}>
               {formatDate(payload.startDate)} → {formatDate(payload.endDate)}
             </span>
+            <button
+              type="button"
+              className={styles.removeItemBtn}
+              onClick={clearBag}
+              aria-label="Remove outfit from bag"
+            >
+              Remove
+            </button>
           </div>
         </div>
 

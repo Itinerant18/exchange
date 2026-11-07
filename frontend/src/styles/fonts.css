@@ -1,5 +1,5 @@
 /* ── Font definitions & fallbacks (Editorial Luxury Pairing) ── */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+/* Web fonts loaded via preconnected <link> in index.html with display=swap */
 
 :root {
   --font-display: 'Martina', 'Playfair Display', 'Cormorant Garamond', 'Didot', 'Palatino Linotype', Georgia, serif;

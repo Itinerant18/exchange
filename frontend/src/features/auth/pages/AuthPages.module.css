@@ -1,6 +1,7 @@
 /* ── Auth Pages Layout ── */
 .page {
   min-height: calc(100vh - 8rem);
+  min-height: calc(100dvh - 8rem);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -104,7 +105,7 @@
 .submitBtn {
   margin-top: var(--space-2);
   width: 100%;
-  min-height: 44px;
+  min-height: 52px;
   justify-content: center;
   padding: 0 var(--space-4);
   font-family: var(--font-extended);
@@ -116,10 +117,51 @@
   color: #FFFFFF;
   border-radius: var(--radius-full);
   border: 1px solid var(--color-hairline);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
 }
 
-.submitBtn:hover {
-  opacity: 0.85;
+@media (hover: hover) and (pointer: fine) {
+  .submitBtn:hover {
+    opacity: 0.85;
+  }
+}
+
+.passwordWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.passwordInput {
+  padding-right: 48px !important;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-on-surface-muted, #767676);
+  padding: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .passwordToggle:hover {
+    color: var(--color-on-surface, #111111);
+  }
 }
 
 .spinner {
@@ -317,7 +359,7 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 64rem) {
+@media (max-width: 1023px) {
   .pageInner {
     grid-template-columns: 1fr;
     min-height: auto;
@@ -333,7 +375,7 @@
   }
 }
 
-@media (max-width: 48rem) {
+@media (max-width: 767px) {
   .page {
     padding: var(--space-4);
   }
@@ -401,7 +443,7 @@
   justify-content: center;
   gap: var(--space-3);
   width: 100%;
-  min-height: 44px;
+  min-height: 52px;
   padding: 10px 16px;
   background: #FFFFFF;
   color: #111111;
@@ -414,9 +456,11 @@
   transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.oauthBtn:hover:not(:disabled) {
-  background: #F9F9F9;
-  border-color: #111111;
+@media (hover: hover) and (pointer: fine) {
+  .oauthBtn:hover:not(:disabled) {
+    background: #F9F9F9;
+    border-color: #111111;
+  }
 }
 
 .oauthBtn:active:not(:disabled) {
@@ -434,9 +478,11 @@
   border-color: #000000;
 }
 
-.oauthBtnApple:hover:not(:disabled) {
-  background: #1F1F1F;
-  border-color: #1F1F1F;
+@media (hover: hover) and (pointer: fine) {
+  .oauthBtnApple:hover:not(:disabled) {
+    background: #1F1F1F;
+    border-color: #1F1F1F;
+  }
 }
 
 .oauthBtnApple.oauthBtnDisabled {

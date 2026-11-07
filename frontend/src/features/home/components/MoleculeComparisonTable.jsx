@@ -52,6 +52,7 @@ export function MoleculeComparisonTable() {
           </p>
         </div>
 
+        {/* Desktop & Tablet Table */}
         <div className={styles.tableWrapper}>
           <table className={styles.table}>
             <thead>
@@ -90,6 +91,29 @@ export function MoleculeComparisonTable() {
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Stacked Comparison Cards (<768px) */}
+        <div className={styles.mobileCardsList} aria-label="Comparison overview">
+          {COMPARISON_ROWS.map((row) => (
+            <div key={row.feature} className={`${styles.mobileCard} ${row.highlight ? styles.mobileCardHighlight : ''}`}>
+              <h3 className={styles.mobileCardFeature}>{row.feature}</h3>
+              <div className={styles.mobileCardRenting}>
+                <div className={styles.mobileCardLabelRow}>
+                  <span className={styles.checkIcon}>✓</span>
+                  <span className={styles.mobileCardBadge}>Renting on Exchange</span>
+                </div>
+                <p className={styles.mobileCardText}>{row.renting}</p>
+              </div>
+              <div className={styles.mobileCardBuying}>
+                <div className={styles.mobileCardLabelRow}>
+                  <span className={styles.crossIcon}>✕</span>
+                  <span className={styles.mobileCardLabelBuying}>Buying New</span>
+                </div>
+                <p className={styles.mobileCardSubText}>{row.buying}</p>
+              </div>
+            </div>
+          ))}
         </div>
 
         <div className={styles.ctaRow}>

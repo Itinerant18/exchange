@@ -69,13 +69,16 @@
   border: 1px solid rgba(0, 0, 0, 0.08);
   padding: 1.25rem 1.5rem;
   cursor: pointer;
+  min-height: 44px;
   transition: all 0.25s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
-.pillItem:hover {
-  border-color: rgba(87, 0, 32, 0.3);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+@media (hover: hover) and (pointer: fine) {
+  .pillItem:hover {
+    border-color: rgba(87, 0, 32, 0.3);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+  }
 }
 
 .pillItemActive {
@@ -235,9 +238,10 @@
   margin: 0;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 767px) {
   .contentGrid {
     grid-template-columns: 1fr;
+    gap: var(--space-8);
   }
   
   .imageCard {

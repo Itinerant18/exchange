@@ -245,11 +245,162 @@
   border: 1px solid var(--color-hairline);
 }
 
+/* ── Sticky Mobile Toolbar (<768px) ── */
+.mobileStickyToolbar {
+  display: flex;
+  position: sticky;
+  top: var(--header-height, 56px);
+  z-index: var(--z-sticky-bar, 300);
+  background: var(--color-canvas, #570020);
+  border-block: 1px solid rgba(200, 162, 81, 0.3);
+  margin: calc(var(--space-4) * -1) calc(var(--space-4) * -1) var(--space-4);
+  padding: 6px 12px;
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+  .mobileStickyToolbar {
+    display: none;
+  }
+}
+
+.mobileToolbarBtn {
+  flex: 1;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(200, 162, 81, 0.35);
+  border-radius: var(--radius-full, 999px);
+  color: #FFFFFF;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0 12px;
+  transition: all 0.2s ease;
+}
+
+.mobileToolbarBtn:active {
+  transform: scale(0.98);
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* ── Sort Bottom Sheet ── */
+.sortBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1000);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.sortSheet {
+  width: 100%;
+  max-width: 500px;
+  background: #FFFFFF;
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px calc(20px + var(--safe-bottom, 0px));
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.sortHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.sortTitle {
+  margin: 0;
+  font-family: var(--font-display, serif);
+  font-size: 18px;
+  font-weight: 500;
+  color: #111111;
+}
+
+.sortCloseBtn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #777777;
+  cursor: pointer;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sortOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sortOption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  background: #F8F8F8;
+  color: #111111;
+  font-family: var(--font-body, sans-serif);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.sortOptionActive {
+  background: rgba(87, 0, 32, 0.08);
+  border-color: var(--color-brand-burgundy, #570020);
+  color: var(--color-brand-burgundy, #570020);
+  font-weight: 600;
+}
+
+.sortCheck {
+  color: var(--color-brand-burgundy, #570020);
+  font-weight: bold;
+}
+
 /* ── Grid ── */
-.grid {
+.grid, .loadingGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-6);
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .grid, .loadingGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid, .loadingGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 .emptyState {
@@ -329,26 +480,43 @@
 }
 
 /* ── Responsive ── */
-@media (max-width: 1024px) {
-  .grid, .loadingGrid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 768px) {
-  .grid, .loadingGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
+@media (max-width: 767px) {
   .controlsRow {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: var(--space-3);
+    padding-block: var(--space-2);
   }
-}
 
-@media (max-width: 480px) {
-  .grid, .loadingGrid {
-    grid-template-columns: 1fr;
+  .typeTabs {
+    display: none;
+  }
+
+  .controlsActions {
+    display: none;
+  }
+
+  .occasionPills {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .occasionPills::-webkit-scrollbar {
+    display: none;
+  }
+
+  .occasionPill {
+    flex-shrink: 0;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 14px;
+    scroll-snap-align: start;
   }
 }
 

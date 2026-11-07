@@ -45,14 +45,40 @@
 }
 
 .carouselTrack {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
   gap: var(--space-4, 1rem);
+  padding-bottom: var(--space-2, 0.5rem);
+  scrollbar-width: none;
 }
 
-@media (min-width: 640px) {
+.carouselTrack::-webkit-scrollbar {
+  display: none;
+}
+
+.tileCard {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  flex: 0 0 72vw;
+  max-width: 320px;
+  scroll-snap-align: start;
+  transition: transform 0.3s ease;
+}
+
+@media (min-width: 768px) {
   .carouselTrack {
+    display: grid;
     grid-template-columns: repeat(3, 1fr);
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+
+  .tileCard {
+    flex: unset;
+    max-width: none;
   }
 }
 
@@ -63,22 +89,16 @@
   }
 }
 
-.tileCard {
-  display: flex;
-  flex-direction: column;
-  text-decoration: none;
-  group: hover;
-  transition: transform 0.3s ease;
-}
-
-.tileCard:hover {
-  transform: translateY(-4px);
+@media (hover: hover) and (pointer: fine) {
+  .tileCard:hover {
+    transform: translateY(-4px);
+  }
 }
 
 .imageBox {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: 3 / 4;
   border-radius: 20px;
   overflow: hidden;
   background: #EAEAEA;

@@ -159,9 +159,14 @@ export function FilterModal({
         </div>
 
         <div className={styles.modalFooter}>
+          {activeCount > 0 && (
+            <button type="button" className={styles.footerClearBtn} onClick={onClearAll}>
+              Clear ({activeCount})
+            </button>
+          )}
           <button type="button" className={styles.doneBtn} onClick={onClose}>
             {totalResults !== undefined && totalResults !== null
-              ? `VIEW ${totalResults} ${totalResults === 1 ? 'STYLE' : 'STYLES'}`
+              ? `SHOW ${totalResults} ${totalResults === 1 ? 'LOOK' : 'LOOKS'}`
               : 'Show Results'}
           </button>
         </div>

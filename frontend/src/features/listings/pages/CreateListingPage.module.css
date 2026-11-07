@@ -218,7 +218,7 @@
   min-height: 48px;
   padding: 0.75rem 1rem;
   font-family: var(--font-body);
-  font-size: 14px;
+  font-size: max(16px, 1rem);
   font-weight: 400;
   color: var(--color-ink-primary, #1A1A1A);
   background: #FFFFFF;
@@ -1378,6 +1378,7 @@
   flex-direction: column;
   gap: var(--space-4);
   max-height: calc(100vh - 120px);
+  max-height: calc(100dvh - 120px);
   overflow-y: auto;
   scrollbar-width: none;
 }

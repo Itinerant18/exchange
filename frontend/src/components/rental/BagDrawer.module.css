@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 1000;
+  z-index: var(--z-drawer, 900);
   background: rgba(0, 0, 0, 0.45);
   display: flex;
   justify-content: flex-end;
@@ -11,10 +11,11 @@
 .drawer {
   width: min(420px, 100vw);
   height: 100vh;
+  height: 100dvh;
   background: var(--color-canvas, #FFFFFF);
   display: flex;
   flex-direction: column;
-  padding: var(--space-6) var(--space-5);
+  padding: var(--space-6) var(--space-5) calc(var(--space-6) + var(--safe-bottom, 0px));
   box-shadow: -8px 0 40px rgba(0, 0, 0, 0.18);
   animation: slideIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   overflow-y: auto;
@@ -41,12 +42,37 @@
   font-size: 1.25rem;
   cursor: pointer;
   color: var(--color-text, #111111);
-  padding: var(--space-1);
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  padding: 0;
   line-height: 1;
 }
 
-.closeBtn:hover {
-  opacity: 0.6;
+@media (hover: hover) and (pointer: fine) {
+  .closeBtn:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+}
+
+.removeItemBtn {
+  background: none;
+  border: none;
+  color: #C0392B;
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px 0;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
 }
 
 .error {
@@ -319,19 +345,29 @@
 }
 
 .confirmBtn {
-  background: #111111;
+  background: var(--color-brand-burgundy, #570020);
   color: #FFFFFF;
-  border: none;
+  border: 1px solid var(--color-gold-zari, #C8A251);
   padding: 14px 20px;
-  border-radius: 4px;
-  font-size: 0.9rem;
+  min-height: 48px;
+  border-radius: var(--radius-full, 999px);
+  font-family: var(--font-extended, sans-serif);
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.confirmBtn:hover:not(:disabled) {
-  background: #333333;
+@media (hover: hover) and (pointer: fine) {
+  .confirmBtn:hover:not(:disabled) {
+    background: var(--color-brand-burgundy-hover, #400017);
+  }
+}
+
+.confirmBtn:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .confirmBtn:disabled {
@@ -347,4 +383,35 @@
 @keyframes slideIn {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
+}
+
+@keyframes drawerSlideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@media (max-width: 767px) {
+  .overlay {
+    align-items: flex-end;
+    justify-content: center;
+  }
+
+  .drawer {
+    width: 100vw;
+    height: 100dvh;
+    max-width: 100vw;
+    border-radius: 20px 20px 0 0;
+    padding: var(--space-4) var(--space-4) calc(var(--space-4) + var(--safe-bottom, 0px));
+    animation: drawerSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .actions {
+    position: sticky;
+    bottom: 0;
+    background: #FFFFFF;
+    padding-top: var(--space-3);
+    padding-bottom: var(--safe-bottom, 0px);
+    border-top: 1px solid var(--color-hairline, #E5E5E5);
+    z-index: 10;
+  }
 }

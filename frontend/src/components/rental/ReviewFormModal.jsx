@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { reviewsApi } from '../../api/reviewsApi.js';
 import { AlertBanner } from '../feedback/index.js';
 import { resolveErrorMessage } from '../../config/errorMessages.js';
+import { canHover } from '../../utils/mediaQueries.js';
 import styles from './ReviewFormModal.module.css';
 
 const BODY_TYPE_OPTIONS = [
@@ -170,8 +171,8 @@ export function ReviewFormModal({
                     className={`${styles.starBtn} ${
                       (hoverRating || rating) >= star ? styles.starFilled : styles.starEmpty
                     }`}
-                    onMouseEnter={() => setHoverRating(star)}
-                    onMouseLeave={() => setHoverRating(0)}
+                    onMouseEnter={canHover() ? () => setHoverRating(star) : undefined}
+                    onMouseLeave={canHover() ? () => setHoverRating(0) : undefined}
                     onClick={() => setRating(star)}
                     aria-label={`${star} star${star > 1 ? 's' : ''}`}
                     role="radio"

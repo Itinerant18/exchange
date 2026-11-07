@@ -321,12 +321,26 @@
 
 .listingsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-4);
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .listingsGrid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+  }
+}
+
+@media (min-width: 1024px) {
+  .listingsGrid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-4);
+  }
 }
 
 /* ── Responsive ── */
-@media (max-width: 900px) {
+@media (max-width: 767px) {
   .heroMetrics {
     grid-template-columns: 1fr;
     gap: var(--space-4);
@@ -337,24 +351,6 @@
   }
 
   .stepsGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .listingsGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 540px) {
-  .occasionGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .stepsGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .listingsGrid {
     grid-template-columns: 1fr;
   }
 
@@ -471,19 +467,14 @@
   max-width: var(--content-width);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-8);
-}
-
-@media (min-width: 640px) {
-  .trustBarContainer {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4, 16px);
 }
 
 @media (min-width: 1024px) {
   .trustBarContainer {
     grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-8);
   }
 }
 
@@ -867,24 +858,18 @@
 
 /* Multi-Card Video Grid */
 .catwalkGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-6, 24px);
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  gap: var(--space-4, 16px);
   margin-top: var(--space-4);
+  padding-bottom: var(--space-2);
+  scrollbar-width: none;
 }
 
-@media (max-width: 1200px) {
-  .catwalkGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 640px) {
-  .catwalkGrid {
-    grid-template-columns: 1fr;
-    max-width: 360px;
-    margin-inline: auto;
-  }
+.catwalkGrid::-webkit-scrollbar {
+  display: none;
 }
 
 .catwalkCard {
@@ -897,13 +882,39 @@
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  flex: 0 0 72vw;
+  max-width: 320px;
+  scroll-snap-align: start;
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
-.catwalkCard:hover {
-  transform: translateY(-4px);
-  border-color: rgba(200, 162, 81, 0.6);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+@media (min-width: 768px) {
+  .catwalkGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    overflow-x: visible;
+    scroll-snap-type: none;
+    gap: var(--space-6, 24px);
+  }
+
+  .catwalkCard {
+    flex: unset;
+    max-width: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .catwalkGrid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .catwalkCard:hover {
+    transform: translateY(-4px);
+    border-color: rgba(200, 162, 81, 0.6);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45);
+  }
 }
 
 .catwalkPlayerWrapper {

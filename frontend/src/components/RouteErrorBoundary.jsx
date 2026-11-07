@@ -11,7 +11,7 @@ export function RouteErrorBoundary() {
   return (
     <div
       style={{
-        minHeight: '100vh',
+        minHeight: '100dvh',
         backgroundColor: '#570020',
         color: '#FFFFFF',
         display: 'flex',

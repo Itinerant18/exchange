@@ -499,12 +499,14 @@ export function ListingDetailPage() {
           </div>
 
           {/* Sizing & Fit Insights Engine */}
-          <FitInsights
-            size={listingSize}
-            colour={colour}
-            condition={condition}
-            brand={brand}
-          />
+          <div className={styles.fitInsightsWrapper}>
+            <FitInsights
+              size={listingSize}
+              colour={colour}
+              condition={condition}
+              brand={brand}
+            />
+          </div>
 
           {/* ── Circular Sustainability Impact ── */}
           <div className={styles.sustainabilitySection}>
@@ -517,7 +519,9 @@ export function ListingDetailPage() {
           </div>
 
           {/* Real Customer Photos & Reviews from Backend */}
-          <CustomerReviews listingId={id} activeUserSize={primarySize} listingTitle={title} />
+          <div className={styles.reviewsWrapper}>
+            <CustomerReviews listingId={id} activeUserSize={primarySize} listingTitle={title} />
+          </div>
         </div>
 
         {/* ── Right Column: Sticky Booking & Sizing Console ── */}
@@ -868,6 +872,48 @@ export function ListingDetailPage() {
           )}
         </div>
       )}
+
+      {/* ── Sticky Bottom CTA Bar (<768px) ── */}
+      <div className={styles.mobileStickyCtaBar} aria-label="Reserve outfit bar">
+        <div className={styles.mobileCtaPriceCol}>
+          <span className={styles.mobileCtaPrice}>
+            {mode === 'buy' ? formatPaiseToRupees(pricing.buyPrice) : formatPaiseToRupees(pricing.total)}
+          </span>
+          <span className={styles.mobileCtaDuration}>
+            {mode === 'buy' ? 'Pre-owned purchase' : `${rentalDuration} days rental`}
+          </span>
+        </div>
+        <button
+          type="button"
+          className={styles.mobileCtaBtn}
+          onClick={(e) => {
+            if (mode === 'rent' && !isDateSelected) {
+              const dateElem = document.getElementById('delivery-date-input');
+              if (dateElem) {
+                dateElem.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                dateElem.focus();
+                return;
+              }
+            }
+            if (mode === 'buy') {
+              handleBuyNow(e);
+            } else {
+              handleAddToBag(e);
+            }
+          }}
+          disabled={mode === 'rent' ? (checkingAvailability || isSoldOutForDates) : (submitting || buyUnitIds.length === 0)}
+        >
+          {mode === 'buy'
+            ? (submitting ? 'Placing Order…' : 'Buy Now')
+            : (submitting
+                ? 'Adding…'
+                : !isDateSelected
+                ? 'Select Dates'
+                : isSoldOutForDates
+                ? 'Unavailable'
+                : 'Reserve Look →')}
+        </button>
+      </div>
     </div>
   );
 }

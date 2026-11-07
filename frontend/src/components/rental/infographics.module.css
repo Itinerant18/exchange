@@ -299,7 +299,10 @@
 }
 
 .categoryPill {
-  padding: 8px 14px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
   background: var(--color-canvas-subtle);
   border: 1px solid transparent;
   border-radius: var(--radius-full);
@@ -310,9 +313,11 @@
   transition: all var(--duration-fast) var(--ease-spring);
 }
 
-.categoryPill:hover {
-  background: var(--color-brand-burgundy-subtle);
-  color: var(--color-brand-burgundy);
+@media (hover: hover) and (pointer: fine) {
+  .categoryPill:hover {
+    background: var(--color-brand-burgundy-subtle);
+    color: var(--color-brand-burgundy);
+  }
 }
 
 .categoryPillActive {
@@ -337,8 +342,10 @@
 }
 
 .counterBtn {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   border-radius: 50%;
   border: 1px solid rgba(26, 26, 26, 0.15);
   background: var(--color-surface-pure);
@@ -352,10 +359,16 @@
   transition: all var(--duration-fast) var(--ease-spring);
 }
 
-.counterBtn:hover {
-  background: var(--color-brand-burgundy);
-  color: var(--color-ink-inverse);
-  border-color: var(--color-brand-burgundy);
+@media (hover: hover) and (pointer: fine) {
+  .counterBtn:hover {
+    background: var(--color-brand-burgundy);
+    color: var(--color-ink-inverse);
+    border-color: var(--color-brand-burgundy);
+  }
+}
+
+.counterBtn:active {
+  transform: scale(0.96);
 }
 
 .metricsGrid {
@@ -722,17 +735,31 @@
 /* ─────────────────────────────────────────────────────────────
    Responsive Layouts
    ───────────────────────────────────────────────────────────── */
-@media (max-width: 860px) {
-  .lenderCalcGrid {
-    grid-template-columns: 1fr;
-  }
-  .metricsGrid {
-    grid-template-columns: 1fr;
-  }
-  .calcControlsRow {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 767px) {
+  .lenderCalcGrid,
+  .metricsGrid,
+  .calcControlsRow,
   .checklistGrid {
     grid-template-columns: 1fr;
+  }
+
+  .stepperTrack {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: var(--space-2);
+    padding-bottom: var(--space-2);
+    scrollbar-width: none;
+  }
+
+  .stepperTrack::-webkit-scrollbar {
+    display: none;
+  }
+
+  .stepButton {
+    flex: 0 0 130px;
+    scroll-snap-align: start;
+    min-height: 44px;
   }
 }

@@ -1,7 +1,7 @@
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--z-modal, 9011);
+  z-index: var(--z-modal, 1000);
   background: rgba(26, 26, 26, 0.55);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
@@ -15,7 +15,9 @@
   flex-direction: column;
   width: min(480px, 100vw);
   height: 100vh;
+  height: 100dvh;
   max-height: 100vh;
+  max-height: 100dvh;
   background: var(--color-surface, #F8F8F8);
   color: var(--color-ink-primary, #1A1A1A);
   border-left: 1px solid var(--color-gold-border, rgba(200, 162, 81, 0.3));
@@ -55,14 +57,26 @@
   appearance: none;
   border: 0;
   background: transparent;
-  font-size: 16px;
+  font-size: 18px;
   cursor: pointer;
   color: var(--color-on-surface-muted, #6b665f);
-  padding: var(--space-2, 8px);
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: var(--radius-full, 999px);
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.closeBtn:hover {
-  color: var(--color-on-surface, #1c1a17);
+@media (hover: hover) and (pointer: fine) {
+  .closeBtn:hover {
+    color: var(--color-on-surface, #1c1a17);
+    background: rgba(0, 0, 0, 0.05);
+  }
 }
 
 .modalBody {
@@ -134,14 +148,17 @@
   background: var(--surface-soft, #f7f5f1);
   color: var(--color-on-surface, #1c1a17);
   border-radius: 999px;
-  padding: 6px 12px;
+  padding: 8px 14px;
+  min-height: 44px;
   font-size: 13px;
   cursor: pointer;
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-.valuePill:hover {
-  border-color: var(--color-on-surface, #1c1a17);
+@media (hover: hover) and (pointer: fine) {
+  .valuePill:hover {
+    border-color: var(--color-on-surface, #1c1a17);
+  }
 }
 
 .valuePillActive {
@@ -165,7 +182,7 @@
 .modalFooter {
   position: sticky;
   bottom: 0;
-  padding: var(--space-4, 16px) var(--space-6, 24px);
+  padding: var(--space-4, 16px) var(--space-6, 24px) calc(var(--space-4, 16px) + var(--safe-bottom, 0px));
   background: #FFFFFF;
   border-top: 1px solid rgba(26, 26, 26, 0.08);
   box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
@@ -174,10 +191,34 @@
   align-items: center;
 }
 
+.footerClearBtn {
+  appearance: none;
+  background: transparent;
+  border: 1px solid rgba(26, 26, 26, 0.2);
+  color: var(--color-ink-primary, #1A1A1A);
+  border-radius: var(--radius-full, 9999px);
+  padding: 12px 18px;
+  min-height: 44px;
+  font-family: var(--font-extended, sans-serif);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.footerClearBtn:hover {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: #1A1A1A;
+}
+
 .doneBtn {
   flex: 1;
   width: 100%;
   padding: 14px 24px;
+  min-height: 44px;
   background: var(--color-brand-burgundy, #570020);
   color: #FFFFFF;
   border: 1px solid var(--color-gold-zari, #C8A251);
@@ -193,7 +234,24 @@
   box-shadow: 0 4px 14px rgba(87, 0, 32, 0.25);
 }
 
-.doneBtn:hover {
-  background: var(--color-brand-burgundy-hover, #400017);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .doneBtn:hover {
+    background: var(--color-brand-burgundy-hover, #400017);
+    transform: translateY(-1px);
+  }
+}
+
+.doneBtn:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 767px) {
+  .modal {
+    width: 100vw;
+    height: 100dvh;
+    max-width: 100vw;
+    max-height: 100dvh;
+    border-radius: 0;
+    border-left: none;
+  }
 }

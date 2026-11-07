@@ -245,11 +245,17 @@
   transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
 }
 
-.primaryBtn:hover {
-  background-color: var(--color-brand-burgundy-hover, #400017);
-  transform: translateY(-1px);
-  opacity: 0.95;
-  box-shadow: 0 12px 24px -6px rgba(87, 0, 32, 0.45);
+@media (hover: hover) and (pointer: fine) {
+  .primaryBtn:hover {
+    background-color: var(--color-brand-burgundy-hover, #400017);
+    transform: translateY(-1px);
+    opacity: 0.95;
+    box-shadow: 0 12px 24px -6px rgba(87, 0, 32, 0.45);
+  }
+}
+
+.primaryBtn:active {
+  transform: translateY(0);
 }
 
 .ctaGuarantee {
@@ -258,21 +264,119 @@
   color: #666666;
 }
 
-@media (max-width: 768px) {
+/* Mobile Stacked Comparison Cards */
+.mobileCardsList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4, 16px);
+  margin-bottom: var(--space-8, 32px);
+}
+
+.mobileCard {
+  background: #FFFFFF;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.mobileCardHighlight {
+  border-color: rgba(87, 0, 32, 0.25);
+  background: #FAF8F5;
+}
+
+.mobileCardFeature {
+  margin: 0;
+  font-family: var(--font-display, serif);
+  font-size: 16px;
+  font-weight: 500;
+  color: #111111;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-bottom: 8px;
+}
+
+.mobileCardRenting {
+  background: #FCFBF9;
+  border-left: 3px solid var(--color-brand-burgundy, #570020);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 12px;
+}
+
+.mobileCardBuying {
+  background: #FAFAFA;
+  border-left: 3px solid #CCCCCC;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 12px;
+}
+
+.mobileCardLabelRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.mobileCardBadge {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-brand-burgundy, #570020);
+}
+
+.mobileCardLabelBuying {
+  font-family: var(--font-extended, sans-serif);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #777777;
+}
+
+.mobileCardText {
+  margin: 0;
+  font-size: 13px;
+  color: #111111;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.mobileCardSubText {
+  margin: 0;
+  font-size: 13px;
+  color: #666666;
+  line-height: 1.4;
+}
+
+@media (max-width: 767px) {
+  .tableWrapper {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .mobileCardsList {
+    display: none;
+  }
+
   .table th,
   .table td {
     padding: 1rem 0.85rem;
     font-size: 12px;
   }
-  
+
   .featureColHeader {
     width: 30%;
   }
-  
+
   .colTitle, .colTitleRenting {
     font-size: 1rem;
   }
-  
+
   .rentingText {
     font-size: 12px;
   }

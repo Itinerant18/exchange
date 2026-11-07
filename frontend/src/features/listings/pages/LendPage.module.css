@@ -1,6 +1,7 @@
 .page {
   background: var(--color-canvas, #F8F8F8);
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 /* Hero Section */

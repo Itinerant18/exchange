@@ -28,6 +28,7 @@ export function TurnstileWidget({
           sitekey: appConfig.turnstileSiteKey || '0x4AAAAAAF2CZKS04qmu5moS',
           action,
           theme: 'auto',
+          size: typeof window !== 'undefined' && window.innerWidth < 360 ? 'compact' : 'flexible',
           callback: (token) => {
             if (!cancelled && onVerify) onVerify(token);
           },

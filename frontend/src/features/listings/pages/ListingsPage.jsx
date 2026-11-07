@@ -26,6 +26,13 @@ const SILHOUETTES = [
 
 const ALL_FACET_KEYS = [...FACET_KEYS, 'silhouette'];
 
+const SORT_OPTIONS = [
+  { label: 'Recommended', value: 'featured' },
+  { label: 'Price: Low to High', value: 'price_asc' },
+  { label: 'Price: High to Low', value: 'price_desc' },
+  { label: 'Newest Arrivals', value: 'newest' },
+];
+
 export function ListingsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [items, setItems] = useState([]);
@@ -40,6 +47,7 @@ export function ListingsPage() {
     || 'all';
   const filterType = rawType === 'rent' ? 'rental' : rawType;
   const page = Number(searchParams.get('page')) || 1;
+  const sortBy = searchParams.get('sort') || 'featured';
 
   // Derive facet selections directly from searchParams
   const selectedFacets = useMemo(() => {
@@ -54,11 +62,46 @@ export function ListingsPage() {
 
   const [searchInput, setSearchInput] = useState(q);
   const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [sortSheetOpen, setSortSheetOpen] = useState(false);
   const [facetCounts, setFacetCounts] = useState({});
 
   const activeFacetCount = useMemo(() => {
     return Object.values(selectedFacets).reduce((sum, values) => sum + values.length, 0);
   }, [selectedFacets]);
+
+  const sortedItems = useMemo(() => {
+    if (!items || items.length === 0) return items;
+    const list = [...items];
+    if (sortBy === 'price_asc') {
+      return list.sort((a, b) => {
+        const pa = a.rentalPricePaise ?? (a.rentalPrice ? a.rentalPrice * 100 : 0);
+        const pb = b.rentalPricePaise ?? (b.rentalPrice ? b.rentalPrice * 100 : 0);
+        return pa - pb;
+      });
+    }
+    if (sortBy === 'price_desc') {
+      return list.sort((a, b) => {
+        const pa = a.rentalPricePaise ?? (a.rentalPrice ? a.rentalPrice * 100 : 0);
+        const pb = b.rentalPricePaise ?? (b.rentalPrice ? b.rentalPrice * 100 : 0);
+        return pb - pa;
+      });
+    }
+    if (sortBy === 'newest') {
+      return list.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    }
+    return list;
+  }, [items, sortBy]);
+
+  function handleSortChange(val) {
+    const newParams = new URLSearchParams(searchParams);
+    if (val === 'featured') {
+      newParams.delete('sort');
+    } else {
+      newParams.set('sort', val);
+    }
+    setSearchParams(newParams);
+    setSortSheetOpen(false);
+  }
 
   const loadListings = useCallback(async () => {
     setLoading(true);
@@ -319,6 +362,75 @@ export function ListingsPage() {
         totalResults={items.length}
       />
 
+      {/* ── Sticky Mobile Toolbar (<768px): 50/50 Split Filter & Sort ── */}
+      <div className={styles.mobileStickyToolbar}>
+        <button
+          type="button"
+          className={styles.mobileToolbarBtn}
+          onClick={() => setFilterModalOpen(true)}
+          aria-label="Open filters"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <line x1="4" y1="21" x2="4" y2="14" />
+            <line x1="4" y1="10" x2="4" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12" y2="3" />
+            <line x1="20" y1="21" x2="20" y2="16" />
+            <line x1="20" y1="12" x2="20" y2="3" />
+            <line x1="1" y1="14" x2="7" y2="14" />
+            <line x1="9" y1="8" x2="15" y2="8" />
+            <line x1="17" y1="16" x2="23" y2="16" />
+          </svg>
+          <span>Filter{activeFacetCount > 0 ? ` (${activeFacetCount})` : ''}</span>
+        </button>
+        <button
+          type="button"
+          className={styles.mobileToolbarBtn}
+          onClick={() => setSortSheetOpen(true)}
+          aria-label="Change sort order"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="m3 16 4 4 4-4" />
+            <path d="M7 20V4" />
+            <path d="m21 8-4-4-4 4" />
+            <path d="M17 4v16" />
+          </svg>
+          <span>Sort: {SORT_OPTIONS.find((s) => s.value === sortBy)?.label || 'Sort'} ▾</span>
+        </button>
+      </div>
+
+      {/* ── Sort Bottom Sheet for Mobile ── */}
+      {sortSheetOpen && (
+        <div className={styles.sortBackdrop} onClick={() => setSortSheetOpen(false)}>
+          <div className={styles.sortSheet} onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Sort collection">
+            <div className={styles.sortHeader}>
+              <h3 className={styles.sortTitle}>Sort Collection</h3>
+              <button
+                type="button"
+                className={styles.sortCloseBtn}
+                onClick={() => setSortSheetOpen(false)}
+                aria-label="Close sort dialog"
+              >
+                ✕
+              </button>
+            </div>
+            <div className={styles.sortOptions}>
+              {SORT_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`${styles.sortOption} ${sortBy === opt.value ? styles.sortOptionActive : ''}`}
+                  onClick={() => handleSortChange(opt.value)}
+                >
+                  <span>{opt.label}</span>
+                  {sortBy === opt.value && <span className={styles.sortCheck}>✓</span>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── 3:4 Aspect Ratio Product Cards Grid ── */}
       {loading ? (
         <div className={styles.loadingGrid}>
@@ -326,9 +438,9 @@ export function ListingsPage() {
             <div key={i} className={styles.skeletonCard} />
           ))}
         </div>
-      ) : items.length > 0 ? (
+      ) : sortedItems.length > 0 ? (
         <div className={styles.grid}>
-          {items.map((listing) => (
+          {sortedItems.map((listing) => (
             <ListingCard key={listing.id} listing={listing} />
           ))}
         </div>
